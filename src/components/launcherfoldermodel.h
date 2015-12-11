@@ -97,6 +97,8 @@ class LIPSTICK_EXPORT LauncherFolderModel : public LauncherFolderItem
     Q_PROPERTY(QStringList directories READ directories WRITE setDirectories NOTIFY directoriesChanged)
     Q_PROPERTY(QStringList iconDirectories READ iconDirectories WRITE setIconDirectories NOTIFY iconDirectoriesChanged)
     Q_PROPERTY(QStringList categories READ categories WRITE setCategories NOTIFY categoriesChanged)
+    Q_PROPERTY(QStringList blacklistedCategories READ blacklistedCategories WRITE setBlacklistedCategories NOTIFY blacklistedCategoriesChanged)
+
 public:
     LauncherFolderModel(QObject *parent = 0);
 
@@ -111,6 +113,9 @@ public:
 
     QStringList categories() const;
     void setCategories(const QStringList &categories);
+
+    QStringList blacklistedCategories() const;
+    void setBlacklistedCategories(const QStringList &categories);
 
     Q_INVOKABLE bool moveToFolder(QObject *item, LauncherFolderItem *folder, int index = -1);
 
@@ -127,6 +132,7 @@ signals:
     void directoriesChanged();
     void iconDirectoriesChanged();
     void categoriesChanged();
+    void blacklistedCategoriesChanged();
     void notifyLaunching(LauncherItem *item);
     void canceledNotifyLaunching(LauncherItem *item);
     void applicationRemoved(LauncherItem *item);
@@ -148,7 +154,7 @@ private slots:
 private:
     void saveFolder(QXmlStreamWriter &xml, LauncherFolderItem *folder);
 
-    DeferredLauncherModel *m_LauncherModel;
+    DeferredLauncherModel *m_launcherModel;
     QTimer m_saveTimer;
     bool m_loading;
     bool m_initialized;

@@ -346,26 +346,28 @@ public:
 
 LauncherFolderModel::LauncherFolderModel(QObject *parent)
     : LauncherFolderItem(parent)
-    , m_LauncherModel(new DeferredLauncherModel(this))
+    , m_launcherModel(new DeferredLauncherModel(this))
     , m_loading(false)
     , m_initialized(false)
 {
-    connect(m_LauncherModel, &LauncherModel::directoriesChanged, this, &LauncherFolderModel::directoriesChanged);
-    connect(m_LauncherModel, &LauncherModel::iconDirectoriesChanged, this, &LauncherFolderModel::iconDirectoriesChanged);
-    connect(m_LauncherModel, &LauncherModel::categoriesChanged, this, &LauncherFolderModel::categoriesChanged);
+    connect(m_launcherModel, &LauncherModel::directoriesChanged, this, &LauncherFolderModel::directoriesChanged);
+    connect(m_launcherModel, &LauncherModel::blacklistedCategoriesChanged, this, &LauncherFolderModel::blacklistedCategoriesChanged);
+    connect(m_launcherModel, &LauncherModel::iconDirectoriesChanged, this, &LauncherFolderModel::iconDirectoriesChanged);
+    connect(m_launcherModel, &LauncherModel::categoriesChanged, this, &LauncherFolderModel::categoriesChanged);
 
     initialize();
 }
 
 LauncherFolderModel::LauncherFolderModel(InitializationMode, QObject *parent)
     : LauncherFolderItem(parent)
-    , m_LauncherModel(new DeferredLauncherModel(this))
+    , m_launcherModel(new DeferredLauncherModel(this))
     , m_loading(false)
     , m_initialized(false)
 {
-    connect(m_LauncherModel, &LauncherModel::directoriesChanged, this, &LauncherFolderModel::directoriesChanged);
-    connect(m_LauncherModel, &LauncherModel::iconDirectoriesChanged, this, &LauncherFolderModel::iconDirectoriesChanged);
-    connect(m_LauncherModel, &LauncherModel::categoriesChanged, this, &LauncherFolderModel::categoriesChanged);
+    connect(m_launcherModel, &LauncherModel::directoriesChanged, this, &LauncherFolderModel::directoriesChanged);
+    connect(m_launcherModel, &LauncherModel::blacklistedCategoriesChanged, this, &LauncherFolderModel::blacklistedCategoriesChanged);
+    connect(m_launcherModel, &LauncherModel::iconDirectoriesChanged, this, &LauncherFolderModel::iconDirectoriesChanged);
+    connect(m_launcherModel, &LauncherModel::categoriesChanged, this, &LauncherFolderModel::categoriesChanged);
 }
 
 void LauncherFolderModel::initialize()
@@ -374,17 +376,17 @@ void LauncherFolderModel::initialize()
         return;
     m_initialized = true;
 
-    m_LauncherModel->initialize();
+    m_launcherModel->initialize();
 
     m_saveTimer.setSingleShot(true);
-    connect(m_LauncherModel, SIGNAL(itemRemoved(QObject*)),
+    connect(m_launcherModel, SIGNAL(itemRemoved(QObject*)),
             this, SLOT(appRemoved(QObject*)));
-    connect(m_LauncherModel, SIGNAL(itemAdded(QObject*)),
+    connect(m_launcherModel, SIGNAL(itemAdded(QObject*)),
             this, SLOT(appAdded(QObject*)));
-    connect(m_LauncherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::notifyLaunching,
+    connect(m_launcherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::notifyLaunching,
             this, &LauncherFolderModel::notifyLaunching);
     connect(&m_saveTimer, SIGNAL(timeout()), this, SLOT(save()));
-    connect(m_LauncherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::canceledNotifyLaunching,
+    connect(m_launcherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::canceledNotifyLaunching,
             this, &LauncherFolderModel::canceledNotifyLaunching);
 
     QDir config;
@@ -397,13 +399,13 @@ void LauncherFolderModel::initialize()
 
 QString LauncherFolderModel::scope() const
 {
-    return m_LauncherModel->scope();
+    return m_launcherModel->scope();
 }
 
 void LauncherFolderModel::setScope(const QString &scope)
 {
-    if (m_LauncherModel->scope() != scope) {
-        m_LauncherModel->setScope(scope);
+    if (m_launcherModel->scope() != scope) {
+        m_launcherModel->setScope(scope);
         emit scopeChanged();
 
         if (m_initialized) {
@@ -414,32 +416,42 @@ void LauncherFolderModel::setScope(const QString &scope)
 
 QStringList LauncherFolderModel::directories() const
 {
-    return m_LauncherModel->directories();
+    return m_launcherModel->directories();
 }
 
 void LauncherFolderModel::setDirectories(QStringList dirs)
 {
-    m_LauncherModel->setDirectories(dirs);
+    m_launcherModel->setDirectories(dirs);
 }
 
 QStringList LauncherFolderModel::iconDirectories() const
 {
-    return m_LauncherModel->iconDirectories();
+    return m_launcherModel->iconDirectories();
 }
 
 void LauncherFolderModel::setIconDirectories(QStringList dirs)
 {
-    m_LauncherModel->setIconDirectories(dirs);
+    m_launcherModel->setIconDirectories(dirs);
 }
 
 QStringList LauncherFolderModel::categories() const
 {
-    return m_LauncherModel->categories();
+    return m_launcherModel->categories();
 }
 
 void LauncherFolderModel::setCategories(const QStringList &categories)
 {
-    m_LauncherModel->setCategories(categories);
+    m_launcherModel->setCategories(categories);
+}
+
+void LauncherFolderModel::setBlacklistedCategories(const QStringList &categories)
+{
+    m_launcherModel->setBlacklistedCategories(categories);
+}
+
+QStringList LauncherFolderModel::blacklistedCategories() const
+{
+    return m_launcherModel->blacklistedCategories();
 }
 
 // Move item to folder at index. If index < 0 the item will be appended.
@@ -485,8 +497,8 @@ void LauncherFolderModel::appAdded(QObject *item)
 
 void LauncherFolderModel::import()
 {
-    for (int i = 0; i < m_LauncherModel->rowCount(); ++i) {
-        addItem(m_LauncherModel->get(i));
+    for (int i = 0; i < m_launcherModel->rowCount(); ++i) {
+        addItem(m_launcherModel->get(i));
     }
 }
 
@@ -511,7 +523,7 @@ static QString configurationFileForScope(const QString &scope)
 void LauncherFolderModel::save()
 {
     m_saveTimer.stop();
-    QFile file(configurationFileForScope(m_LauncherModel->scope()));
+    QFile file(configurationFileForScope(m_launcherModel->scope()));
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "Failed to save apps menu" << configFile();
         return;
@@ -548,7 +560,7 @@ void LauncherFolderModel::load()
     m_loading = true;
     clear();
 
-    QFile file(configurationFileForScope(m_LauncherModel->scope()));
+    QFile file(configurationFileForScope(m_launcherModel->scope()));
     if (!file.open(QIODevice::ReadOnly)) {
         // We haven't saved a folder model yet - import all apps.
         import();
@@ -556,7 +568,7 @@ void LauncherFolderModel::load()
         return;
     }
 
-    QVector<bool> loadedItems(m_LauncherModel->itemCount());
+    QVector<bool> loadedItems(m_launcherModel->itemCount());
     loadedItems.fill(false);
     QStack<LauncherFolderItem*> menus;
     QString textData;
@@ -592,10 +604,10 @@ void LauncherFolderModel::load()
                 }
             } else if (xml.name() == QLatin1String("Filename")) {
                 if (!menus.isEmpty()) {
-                    int idx = m_LauncherModel->indexInModel(textData);
+                    int idx = m_launcherModel->indexInModel(textData);
                     if (idx >= 0) {
                         loadedItems[idx] = true;
-                        LauncherItem *item = qobject_cast<LauncherItem*>(m_LauncherModel->get(idx));
+                        LauncherItem *item = qobject_cast<LauncherItem*>(m_launcherModel->get(idx));
                         if (item) {
                             loadedCount++;
                             LauncherFolderItem *folder = menus.top();
@@ -612,7 +624,7 @@ void LauncherFolderModel::load()
 
     for (int i = 0; i < loadedItems.count(); ++i) {
         if (!loadedItems.at(i)) {
-            addItem(m_LauncherModel->get(i));
+            addItem(m_launcherModel->get(i));
         }
     }
 
