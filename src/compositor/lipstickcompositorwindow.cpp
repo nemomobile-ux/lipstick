@@ -160,6 +160,18 @@ void LipstickCompositorWindow::tryRemove()
     }
 }
 
+void LipstickCompositorWindow::refreshMouseRegion()
+{
+    //TODO
+    qWarning() << Q_FUNC_INFO << "Not implemented";
+}
+
+void LipstickCompositorWindow::refreshGrabbedKeys()
+{
+    //TODO
+    qWarning() << Q_FUNC_INFO << "Not implemented";
+}
+
 bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == window() && m_interceptingTouch) {

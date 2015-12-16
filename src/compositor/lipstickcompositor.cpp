@@ -57,9 +57,7 @@ LipstickCompositor::LipstickCompositor()
     , m_topmostWindowOrientation(Qt::PrimaryOrientation)
     , m_screenOrientation(Qt::PrimaryOrientation)
     , m_sensorOrientation(Qt::PrimaryOrientation)
-    , m_displayState(0)
     , m_retainedSelection(0)
-    , m_currentDisplayState(MeeGo::QmDisplayState::Unknown)
     , m_updatesEnabled(true)
     , m_completed(false)
     , m_onUpdatesDisabledUnfocusedWindowId(0)
@@ -119,7 +117,7 @@ LipstickCompositor::LipstickCompositor()
     m_timedDbus = new Maemo::Timed::Interface();
     if( !m_timedDbus->isValid() )
     {
-      qWarning() << "invalid dbus interface:" << m_timedDbus->lastError();
+        qWarning() << "invalid dbus interface:" << m_timedDbus->lastError();
     }
 
     QTimer::singleShot(0, this, SLOT(initialize()));
@@ -293,12 +291,7 @@ void LipstickCompositor::clearKeyboardFocus()
 
 void LipstickCompositor::setDisplayOff()
 {
-    if (!m_displayState) {
-        qWarning() << "No display";
-        return;
-    }
-
-    m_displayState->set(MeeGo::QmDisplayState::Off);
+    HomeApplication::instance()->setDisplayOff();
 }
 
 void LipstickCompositor::surfaceDamaged(const QRegion &)
@@ -375,10 +368,10 @@ void LipstickCompositor::onSurfaceDying()
 
 void LipstickCompositor::initialize()
 {
-    m_displayState = new MeeGo::QmDisplayState(this);
-    MeeGo::QmDisplayState::DisplayState displayState = m_displayState->get();
-    reactOnDisplayStateChanges(displayState);
-    connect(m_displayState, SIGNAL(displayStateChanged(MeeGo::QmDisplayState::DisplayState)), this, SLOT(reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState)));
+    HomeApplication *home = HomeApplication::instance();
+    reactOnDisplayStateChanges(HomeApplication::DisplayUnknown, home->displayState());
+    connect(home, SIGNAL(displayStateChanged(HomeApplication::DisplayState,HomeApplication::DisplayState)),
+            this, SLOT(reactOnDisplayStateChanges(HomeApplication::DisplayState,HomeApplication::DisplayState)));
 
     new LipstickCompositorAdaptor(this);
 
@@ -488,6 +481,21 @@ void LipstickCompositor::windowDestroyed()
     emit ghostWindowCountChanged();
 }
 
+void LipstickCompositor::windowPropertyChanged(const QString &property)
+{
+    qWarning() << "NOT IMPLEMENTED: Window properties changed:" << property;
+    QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+    if(window) {
+        if (property == QLatin1String("MOUSE_REGION")) {
+            window->refreshMouseRegion();
+        } else if (property == QLatin1String("GRABBED_KEYS")) {
+            window->refreshGrabbedKeys();
+        }
+    }
+
+}
+
 void LipstickCompositor::surfaceUnmapped(QWaylandSurface *surface)
 {
     if (surface == m_fullscreenSurface)
@@ -535,11 +543,11 @@ void LipstickCompositor::windowRemoved(int id)
 QQmlComponent *LipstickCompositor::shaderEffectComponent()
 {
     const char *qml_source =
-        "import QtQuick 2.0\n"
-        "ShaderEffect {\n"
+            "import QtQuick 2.0\n"
+            "ShaderEffect {\n"
             "property QtObject window\n"
             "property ShaderEffectSource source: ShaderEffectSource { sourceItem: window }\n"
-        "}";
+            "}";
 
     if (!m_shaderEffect) {
         m_shaderEffect = new QQmlComponent(qmlEngine(this));
@@ -599,27 +607,23 @@ void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrient
     }
 }
 
-void LipstickCompositor::reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state)
+void LipstickCompositor::reactOnDisplayStateChanges(HomeApplication::DisplayState oldState, HomeApplication::DisplayState newState)
 {
-    if (m_currentDisplayState == state) {
-        return;
-    }
-
-    if (state == MeeGo::QmDisplayState::On) {
+    if (newState == HomeApplication::DisplayOn) {
         emit displayOn();
-    } else if (state == MeeGo::QmDisplayState::Off) {
+    } else if (newState == HomeApplication::DisplayOff) {
         QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
         emit displayOff();
     }
 
-    bool changeInDimming = (state == MeeGo::QmDisplayState::Dimmed) != (m_currentDisplayState == MeeGo::QmDisplayState::Dimmed);
+    bool changeInDimming = (newState == HomeApplication::DisplayDimmed) != (oldState == HomeApplication::DisplayDimmed);
 
-    bool changeInAmbient = ((state == MeeGo::QmDisplayState::Off) != (m_currentDisplayState == MeeGo::QmDisplayState::Off)) && ambientEnabled();
+    bool changeInAmbient = ((newState == HomeApplication::DisplayOff) != (m_currentDisplayState == HomeApplication::DisplayOff)) && ambientEnabled();
 
-    bool enterAmbient = changeInAmbient && (state == MeeGo::QmDisplayState::Off);
-    bool leaveAmbient = changeInAmbient && (state != MeeGo::QmDisplayState::Off);
+    bool enterAmbient = changeInAmbient && (newState == HomeApplication::DisplayOff);
+    bool leaveAmbient = changeInAmbient && (newState != HomeApplication::DisplayOff);
 
-    m_currentDisplayState = state;
+    m_currentDisplayState = newState;
 
     if (changeInDimming) {
         emit displayDimmedChanged();
@@ -644,26 +648,26 @@ void LipstickCompositor::setScreenOrientationFromSensor()
 
     Qt::ScreenOrientation sensorOrientation = m_sensorOrientation;
     switch (reading->orientation()) {
-        case QOrientationReading::TopUp:
-            sensorOrientation = Qt::PortraitOrientation;
-            break;
-        case QOrientationReading::TopDown:
-            sensorOrientation = Qt::InvertedPortraitOrientation;
-            break;
-        case QOrientationReading::LeftUp:
-            sensorOrientation = Qt::InvertedLandscapeOrientation;
-            break;
-        case QOrientationReading::RightUp:
-            sensorOrientation = Qt::LandscapeOrientation;
-            break;
-        case QOrientationReading::FaceUp:
-        case QOrientationReading::FaceDown:
-            /* Keep screen orientation at previous state */
-            break;
-        case QOrientationReading::Undefined:
-        default:
-            sensorOrientation = Qt::PrimaryOrientation;
-            break;
+    case QOrientationReading::TopUp:
+        sensorOrientation = Qt::PortraitOrientation;
+        break;
+    case QOrientationReading::TopDown:
+        sensorOrientation = Qt::InvertedPortraitOrientation;
+        break;
+    case QOrientationReading::LeftUp:
+        sensorOrientation = Qt::InvertedLandscapeOrientation;
+        break;
+    case QOrientationReading::RightUp:
+        sensorOrientation = Qt::LandscapeOrientation;
+        break;
+    case QOrientationReading::FaceUp:
+    case QOrientationReading::FaceDown:
+        /* Keep screen orientation at previous state */
+        break;
+    case QOrientationReading::Undefined:
+    default:
+        sensorOrientation = Qt::PrimaryOrientation;
+        break;
     }
 
     if (sensorOrientation != m_sensorOrientation) {
@@ -773,7 +777,7 @@ void LipstickCompositor::scheduleAmbientUpdate()
 void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 {
     if (enabled) {
-        if (m_currentDisplayState == MeeGo::QmDisplayState::On) {
+        if (m_currentDisplayState == HomeApplication::DisplayOn) {
             return;
         }
         if (!ambientEnabled()) {

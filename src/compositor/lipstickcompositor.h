@@ -18,6 +18,8 @@
 
 #include <QQuickWindow>
 #include "lipstickglobal.h"
+#include "homeapplication.h"
+#include <QQmlParserStatus>
 #include <QWaylandQuickCompositor>
 #include <QWaylandQuickOutput>
 #include <QWaylandXdgShell>
@@ -27,7 +29,6 @@
 #include <QPointer>
 #include <QTimer>
 #include <MGConfItem>
-#include <qmdisplaystate.h>
 
 #include <timed-qt5/interface>
 #include <timed-qt5/exception>
@@ -95,7 +96,7 @@ public:
 
     QVariant orientationLock() const { return m_orientationLock->value("dynamic"); }
 
-    bool displayDimmed() const { return m_currentDisplayState == MeeGo::QmDisplayState::Dimmed; }
+    bool displayDimmed() const { return m_currentDisplayState == HomeApplication::DisplayDimmed; }
 
     QObject *clipboard() const;
 
@@ -120,7 +121,7 @@ public:
     bool ambientEnabled() const { return m_ambientModeEnabled; }
     Q_INVOKABLE void setAmbientUpdatesEnabled(bool enabled);
 
-    bool displayAmbient() const { return (m_currentDisplayState == MeeGo::QmDisplayState::Off) && ambientEnabled(); }
+    bool displayAmbient() const { return (m_currentDisplayState == HomeApplication::DisplayOff) && ambientEnabled(); }
     Q_INVOKABLE void setUpdatesEnabled(bool enabled, bool inAmbientMode = false);
     LipstickCompositorWindow *createView(QWaylandSurface *surf);
 
@@ -177,7 +178,8 @@ private slots:
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
-    void reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state);
+    void windowPropertyChanged(const QString &property);
+    void reactOnDisplayStateChanges(HomeApplication::DisplayState oldState, HomeApplication::DisplayState newState);
     void homeApplicationAboutToDestroy();
     void setScreenOrientationFromSensor();
     void clipboardDataChanged();
@@ -227,11 +229,10 @@ private:
     Qt::ScreenOrientation m_topmostWindowOrientation;
     Qt::ScreenOrientation m_screenOrientation;
     Qt::ScreenOrientation m_sensorOrientation;
-    MeeGo::QmDisplayState *m_displayState;
     QOrientationSensor* m_orientationSensor;
     QPointer<QMimeData> m_retainedSelection;
     MGConfItem *m_orientationLock;
-    MeeGo::QmDisplayState::DisplayState m_currentDisplayState;
+    HomeApplication::DisplayState m_currentDisplayState;
     bool m_updatesEnabled;
     bool m_completed;
     int m_onUpdatesDisabledUnfocusedWindowId;

@@ -101,6 +101,8 @@ private:
 
     bool canRemove() const;
     void tryRemove();
+    void refreshMouseRegion();
+    void refreshGrabbedKeys();
     void handleTouchEvent(QTouchEvent *e);
 
     void setTitle(QString title);
