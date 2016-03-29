@@ -19,6 +19,6 @@ HEADERS += \
     $$NOTIFICATIONSRCDIR/lipsticknotification.h \
     $$UTILITYSRCDIR/closeeventeater.h \
     $$COMPOSITORSRCDIR/lipstickcompositor.h \
-    ../../src/qmsystem2/qmlocks.h \
-    ../../src/qmsystem2/qmdisplaystate.h \
+    $$QMSYSTEM2/qmlocks.h \
+    $$QMSYSTEM2/qmdisplaystate.h \
     $$SRCDIR/homewindow.h \

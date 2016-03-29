@@ -24,7 +24,7 @@ QMAKE_STRIP = echo
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
-INCLUDEPATH += utilities components xtools 3rdparty qmsystem2
+INCLUDEPATH += utilities touchscreen components xtools 3rdparty qmsystem2
 
 include(compositor/compositor.pri)
 
@@ -51,6 +51,7 @@ PUBLICHEADERS += \
     bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
+    touchscreen/touchscreen.h \
     qmsystem2/qmactivity.h \
     qmsystem2/qmdisplaystate.h \
     qmsystem2/qmlocks.h \
@@ -76,6 +77,7 @@ HEADERS += \
     notifications/androidprioritystore.h \
     screenlock/screenlock.h \
     screenlock/screenlockadaptor.h \
+    touchscreen/touchscreen_p.h \
     volume/volumecontrol.h \
     volume/pulseaudiocontrol.h \
     lipstickapi.h \
@@ -118,6 +120,7 @@ SOURCES += \
     notifications/androidprioritystore.cpp \
     screenlock/screenlock.cpp \
     screenlock/screenlockadaptor.cpp \
+    touchscreen/touchscreen.cpp \
     volume/volumecontrol.cpp \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \

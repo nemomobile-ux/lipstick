@@ -25,6 +25,7 @@
 #include <QMimeData>
 #include <QtGui/qpa/qplatformnativeinterface.h>
 #include "homeapplication.h"
+#include "touchscreen/touchscreen.h"
 #include "windowmodel.h"
 #include "lipstickcompositorprocwindow.h"
 #include "lipstickcompositor.h"
@@ -368,10 +369,9 @@ void LipstickCompositor::onSurfaceDying()
 
 void LipstickCompositor::initialize()
 {
-    HomeApplication *home = HomeApplication::instance();
-    reactOnDisplayStateChanges(HomeApplication::DisplayUnknown, home->displayState());
-    connect(home, SIGNAL(displayStateChanged(HomeApplication::DisplayState,HomeApplication::DisplayState)),
-            this, SLOT(reactOnDisplayStateChanges(HomeApplication::DisplayState,HomeApplication::DisplayState)));
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    reactOnDisplayStateChanges(TouchScreen::DisplayUnknown, touchScreen->currentDisplayState());
+    connect(touchScreen, &TouchScreen::displayStateChanged, this, &LipstickCompositor::reactOnDisplayStateChanges);
 
     new LipstickCompositorAdaptor(this);
 
@@ -607,23 +607,29 @@ void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrient
     }
 }
 
-void LipstickCompositor::reactOnDisplayStateChanges(HomeApplication::DisplayState oldState, HomeApplication::DisplayState newState)
+bool LipstickCompositor::displayDimmed() const
 {
-    if (newState == HomeApplication::DisplayOn) {
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    return touchScreen->currentDisplayState() == TouchScreen::DisplayDimmed;
+}
+
+void LipstickCompositor::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState)
+{
+    if (newState == TouchScreen::DisplayOn) {
         emit displayOn();
-    } else if (newState == HomeApplication::DisplayOff) {
+    } else if (newState == TouchScreen::DisplayOff) {
         QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
         emit displayOff();
     }
 
-    bool changeInDimming = (newState == HomeApplication::DisplayDimmed) != (oldState == HomeApplication::DisplayDimmed);
+    bool changeInDimming = (newState == TouchScreen::DisplayDimmed) != (oldState == TouchScreen::DisplayDimmed);
 
-    bool changeInAmbient = ((newState == HomeApplication::DisplayOff) != (m_currentDisplayState == HomeApplication::DisplayOff)) && ambientEnabled();
+    bool changeInAmbient = ((newState == TouchScreen::DisplayOff) != (oldState == TouchScreen::DisplayOff)) && ambientEnabled();
 
-    bool enterAmbient = changeInAmbient && (newState == HomeApplication::DisplayOff);
-    bool leaveAmbient = changeInAmbient && (newState != HomeApplication::DisplayOff);
+    bool enterAmbient = changeInAmbient && (newState == TouchScreen::DisplayOff);
+    bool leaveAmbient = changeInAmbient && (newState != TouchScreen::DisplayOff);
 
-    m_currentDisplayState = newState;
+    oldState = newState;
 
     if (changeInDimming) {
         emit displayDimmedChanged();
@@ -776,8 +782,9 @@ void LipstickCompositor::scheduleAmbientUpdate()
 
 void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 {
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
     if (enabled) {
-        if (m_currentDisplayState == HomeApplication::DisplayOn) {
+        if (touchScreen->currentDisplayState() == TouchScreen::DisplayOn) {
             return;
         }
         if (!ambientEnabled()) {
@@ -788,6 +795,12 @@ void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
     if (enabled) {
         emit displayAmbientUpdate();
     }
+}
+
+bool LipstickCompositor::displayAmbient() const
+{
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    return touchScreen->currentDisplayState() == TouchScreen::DisplayOn;
 }
 
 void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)

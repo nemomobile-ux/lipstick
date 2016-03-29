@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <QGuiApplication>
 #include "lipstickglobal.h"
+#include "touchscreen/touchscreen.h"
 
 class QQmlEngine;
 class HomeWindow;
@@ -29,27 +30,14 @@ class ScreenshotService;
 class BluetoothAgent;
 class LocaleManager;
 
-namespace MeeGo {
-    class QmDisplayState;
-}
-
 /*!
  * Extends QApplication with features necessary to create a desktop.
  */
 class LIPSTICK_EXPORT HomeApplication : public QGuiApplication
 {
     Q_OBJECT
-    Q_ENUMS(DisplayState)
 
 public:
-
-    enum DisplayState {
-        DisplayOff = -1,   // MeeGo::QmDisplayState::Off
-        DisplayDimmed = 0, // MeeGo::QmDisplayState::Dimmed
-        DisplayOn = 1,     // MeeGo::QmDisplayState::On
-        DisplayUnknown     // MeeGo::QmDisplayState::Unknown
-    };
-
     /*!
      * Constructs an application object.
      *
@@ -107,7 +95,9 @@ public:
      */
     bool homeActive() const;
 
-    DisplayState displayState();
+    TouchScreen *touchScreen() const;
+
+    TouchScreen::DisplayState displayState();
     void setDisplayOff();
     void takeScreenshot(const QString &path);
 
@@ -132,7 +122,7 @@ signals:
     /*!
      * Emitted upon display state change.
      */
-    void displayStateChanged(HomeApplication::DisplayState oldDisplayState, HomeApplication::DisplayState newDisplayState);
+    void displayStateChanged(TouchScreen::DisplayState oldDisplayState, TouchScreen::DisplayState newDisplayState);
 
 protected:
     virtual bool event(QEvent *);
@@ -174,6 +164,8 @@ private:
     //! QML Engine instance
     QQmlEngine *m_qmlEngine;
 
+    TouchScreen *m_touchScreen;
+
     //! Logic for locking and unlocking the screen
     ScreenLock *m_screenLock;
 
@@ -201,8 +193,6 @@ private:
     //! Whether the home ready signal has been sent or not
     bool m_homeReadySent;
 
-    DisplayState m_currentDisplayState;
-    MeeGo::QmDisplayState *m_displayState;
     ScreenshotService *m_screenshotService;
 };
 
