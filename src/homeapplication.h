@@ -169,9 +169,6 @@ private:
     //! Logic for locking and unlocking the screen
     ScreenLock *m_screenLock;
 
-    //! Logic for locking and unlocking the device
-    DeviceLock *m_deviceLock;
-
     //! Logic for setting the device volume
     VolumeControl *m_volumeControl;
 

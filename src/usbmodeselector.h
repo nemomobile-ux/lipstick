@@ -21,11 +21,11 @@
 #include <QObject>
 #include <QStringList>
 #include "lipstickglobal.h"
-#include "devicelock/devicelock.h"
+
+#include <nemo-devicelock/devicelock.h>
 
 class HomeWindow;
 class QUsbModed;
-class DeviceLock;
 
 class LIPSTICK_EXPORT USBModeSelector : public QObject
 {
@@ -54,7 +54,7 @@ public:
         Locked
     };
 
-    explicit USBModeSelector(DeviceLock *deviceLock, QObject *parent = 0);
+    explicit USBModeSelector(QObject *parent = 0);
 
     /*!
      * Returns whether the window should be visible or not.
@@ -193,9 +193,6 @@ private:
 private:
     //! For getting and setting the USB mode
     QUsbModed *m_usbMode;
-
-    //! For getting information about the device lock state
-    DeviceLock *m_deviceLock;
 
     //! Whether or not the USB mode selection dialog is currently visible
     bool m_windowVisible;
