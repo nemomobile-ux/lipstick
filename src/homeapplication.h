@@ -29,6 +29,8 @@ class ConnectionSelector;
 class ScreenshotService;
 class BluetoothAgent;
 class LocaleManager;
+class VpnAgent;
+class ConnmanVpnProxy;
 
 /*!
  * Extends QApplication with features necessary to create a desktop.
@@ -191,6 +193,9 @@ private:
     bool m_homeReadySent;
 
     ScreenshotService *m_screenshotService;
+
+    VpnAgent *m_vpnAgent;
+    ConnmanVpnProxy * m_connmanVpn;
 };
 
 #endif /* HOMEAPPLICATION_H_ */
