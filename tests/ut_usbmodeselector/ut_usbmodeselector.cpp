@@ -222,7 +222,7 @@ void Ut_USBModeSelector::testConnectingUSBWhenDeviceIsLockedEmitsDialogShown()
 
     QSignalSpy spy(usbModeSelector, SIGNAL(dialogShown()));
     deviceLock->setState(deviceLocked);
-    usbModeSelector->handleUSBEvent(QUsbModed::Mode::Connected);
+    usbModeSelector->applyUSBMode(QUsbModed::Mode::Connected);
     QCOMPARE(spy.count(), dialogShownCount);
 }
 
