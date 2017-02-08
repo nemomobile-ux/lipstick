@@ -469,21 +469,16 @@ void LauncherModel::setCategories(const QStringList &categories)
     }
 }
 
-QStringList LauncherModel::blacklistedCategories() const
+QStringList LauncherModel::blacklistedApplications() const
 {
-    return m_blacklistedCategories;
+    return m_blacklistedApplications;
 }
 
-void LauncherModel::setBlacklistedCategories(const QStringList &categories)
+void LauncherModel::setBlacklistedApplications(const QStringList &blacklistedApplications)
 {
-    if (m_blacklistedCategories != categories) {
-        m_blacklistedCategories = categories;
-        emit blacklistedCategoriesChanged();
-
-        if (m_initialized) {
-            // Force a complete rebuild of the model.
-            m_launcherMonitor.reset(m_directories);
-        }
+    if (m_blacklistedApplications != blacklistedApplications) {
+        m_blacklistedApplications = blacklistedApplications;
+        emit blacklistedApplicationsChanged();
     }
 }
 
@@ -796,6 +791,8 @@ LauncherItem *LauncherModel::addItemIfValid(const QString &path)
     bool isValid = item->isValid();
     bool shouldDisplay = item->shouldDisplay() && displayCategory(item);
 
+    item->setIsBlacklisted(isBlacklisted(item));
+
     if (isValid && shouldDisplay) {
         addItem(item);
     } else {
@@ -817,12 +814,7 @@ bool LauncherModel::displayCategory(LauncherItem *item) const
             break;
         }
     }
-    foreach (const QString &category, item->desktopCategories()) {
-        if (m_blacklistedCategories.contains(category)) {
-            display = false;
-            break;
-        }
-    }
+
     return display;
 }
 
@@ -863,4 +855,9 @@ LauncherItem *LauncherModel::temporaryItemToReplace()
         }
     }
     return item;
+}
+
+bool LauncherModel::isBlacklisted(LauncherItem *item) const
+{
+    return item && m_blacklistedApplications.contains(item->filePath());
 }
