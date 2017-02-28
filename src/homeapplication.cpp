@@ -157,7 +157,7 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 {
     if (!homeReadySent) {
         homeReadySent = true;
-        disconnect(LipstickCompositor::instance(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
 
         emit homeReady();
     }
@@ -240,20 +240,22 @@ void HomeApplication::setCompositorPath(const QString &path)
         return;
     } 
 
-    QObject *compositor = component.beginCreate(qmlEngine->rootContext());
+    QQuickItem *compositor = qobject_cast<QQuickItem*>(component.beginCreate(qmlEngine->rootContext()));
     if (compositor) {
         compositor->setParent(this);
+
         if (LipstickCompositor::instance()) {
-            LipstickCompositor::instance()->setGeometry(QRect(QPoint(0, 0), QGuiApplication::primaryScreen()->size()));
+            LipstickCompositor::instance()->quickWindow()->setGeometry(QRect(QPoint(0, 0), QGuiApplication::primaryScreen()->size()));
             connect(usbModeSelector, SIGNAL(showUnlockScreen()),
                     LipstickCompositor::instance(), SIGNAL(showUnlockScreen()));
+            compositor->setParentItem(LipstickCompositor::instance()->quickWindow()->contentItem());
         }
 
         component.completeCreate();
 
         if (!qmlEngine->incubationController() && LipstickCompositor::instance()) {
             // install default incubation controller
-            qmlEngine->setIncubationController(LipstickCompositor::instance()->incubationController());
+            qmlEngine->setIncubationController(LipstickCompositor::instance()->quickWindow()->incubationController());
         }
     } else {
         qWarning() << "HomeApplication: Error creating compositor from" << path;
@@ -287,7 +289,7 @@ QQmlEngine *HomeApplication::engine() const
 void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
 {
     if (!homeReadySent && mainWindowVisible) {
-        connect(LipstickCompositor::instance(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        connect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
     }
 }
 

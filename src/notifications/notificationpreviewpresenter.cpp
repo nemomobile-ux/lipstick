@@ -20,6 +20,7 @@
 #include "notifications/notificationfeedbackplayer.h"
 #include <QScreen> // should be included by lipstickcompositor.h
 #include "compositor/lipstickcompositor.h"
+#include "compositor/lipstickcompositorwindow.h"
 #include "notificationpreviewpresenter.h"
 #include "lipstickqmlpath.h"
 
@@ -211,9 +212,9 @@ bool NotificationPreviewPresenter::notificationShouldBeShown(LipstickNotificatio
     const bool notificationIsCritical = notification->urgency() >= 2 || notification->hints().value(NotificationManager::HINT_DISPLAY_ON).toBool();
 
     uint mode = AllNotificationsEnabled;
-    QWaylandSurface *surface = LipstickCompositor::instance()->surfaceForId(LipstickCompositor::instance()->topmostWindowId());
-    if (surface != 0) {
-        mode = surface->windowProperties().value("NOTIFICATION_PREVIEWS_DISABLED", uint(AllNotificationsEnabled)).toUInt();
+    LipstickCompositorWindow *win = LipstickCompositor::instance()->m_windows.value(LipstickCompositor::instance()->topmostWindowId(), 0);
+    if (win != 0) {
+        mode = win->windowProperties().value("NOTIFICATION_PREVIEWS_DISABLED", uint(AllNotificationsEnabled)).toUInt();
     }
 
     return ((!screenLocked && !deviceLocked) || notificationIsCritical) &&

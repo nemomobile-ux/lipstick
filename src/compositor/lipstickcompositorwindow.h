@@ -16,13 +16,17 @@
 #ifndef LIPSTICKCOMPOSITORWINDOW_H
 #define LIPSTICKCOMPOSITORWINDOW_H
 
-#include <QWaylandSurfaceItem>
+#include <QWaylandQuickItem>
 #include <QWaylandBufferRef>
+#include <QWaylandWlShellSurface>
 #include "lipstickglobal.h"
 
+namespace QtWayland {
+    class ExtendedSurface;
+}
 class LipstickCompositorWindowHwcNode;
 
-class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandSurfaceItem
+class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
 {
     Q_OBJECT
 
@@ -35,12 +39,12 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandSurfaceItem
     Q_PROPERTY(QString category READ category CONSTANT)
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(qint64 processId READ processId CONSTANT)
+    Q_PROPERTY(qint16 windowFlags READ windowFlags NOTIFY windowFlagsChanged)
 
-    Q_PROPERTY(QRect mouseRegionBounds READ mouseRegionBounds NOTIFY mouseRegionBoundsChanged)
     Q_PROPERTY(bool focusOnTouch READ focusOnTouch WRITE setFocusOnTouch NOTIFY focusOnTouchChanged)
 
 public:
-    LipstickCompositorWindow(int windowId, const QString &, QWaylandQuickSurface *surface, QQuickItem *parent = 0);
+    LipstickCompositorWindow(int windowId, const QString &, QWaylandSurface *surface, QQuickItem *parent = 0);
     ~LipstickCompositorWindow();
 
     QVariant userData() const;
@@ -55,8 +59,7 @@ public:
     QString category() const;
     virtual QString title() const;
     virtual bool isInProcess() const;
-
-    QRect mouseRegionBounds() const;
+    qint16 windowFlags();
 
     bool eventFilter(QObject *object, QEvent *event);
 
@@ -67,6 +70,7 @@ public:
     bool focusOnTouch() const;
     void setFocusOnTouch(bool focusOnTouch);
 
+    QVariantMap windowProperties();
 
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
@@ -82,9 +86,9 @@ signals:
     void userDataChanged();
     void titleChanged();
     void delayRemoveChanged();
-    void mouseRegionBoundsChanged();
     void committed();
     void focusOnTouchChanged();
+    void windowFlagsChanged();
 
 private slots:
     void handleTouchCancel();
@@ -93,6 +97,7 @@ private slots:
 
 private:
     friend class LipstickCompositor;
+    friend class WindowModel;
     friend class WindowPixmapItem;
     void imageAddref(QQuickItem *item);
     void imageRelease(QQuickItem *item);
@@ -100,30 +105,28 @@ private:
 
     bool canRemove() const;
     void tryRemove();
-    void refreshMouseRegion();
-    void refreshGrabbedKeys();
     void handleTouchEvent(QTouchEvent *e);
+
+    void setExtendedSurface(QtWayland::ExtendedSurface *extSurface);
+    QtWayland::ExtendedSurface *extendedSurface();
+    void setTitle(QString title);
+    QString m_title;
 
     int m_windowId;
     QString m_category;
     bool m_delayRemove:1;
     bool m_windowClosed:1;
     bool m_removePosted:1;
-    bool m_mouseRegionValid:1;
     bool m_interceptingTouch:1;
     bool m_mapped : 1;
     bool m_noHardwareComposition: 1;
     bool m_focusOnTouch : 1;
     bool m_hasVisibleReferences : 1;
     QVariant m_data;
-    QRegion m_mouseRegion;
-    QList<int> m_grabbedKeys;
-    struct {
-        QWaylandSurface *oldFocus;
-        QList<int> keys;
-    } m_pressedGrabbedKeys;
     QList<QMetaObject::Connection> m_surfaceConnections;
     QVector<QQuickItem *> m_refs;
+    QtWayland::ExtendedSurface *m_extSurface;
+    QWaylandWlShellSurface *m_wlShellSurface;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H

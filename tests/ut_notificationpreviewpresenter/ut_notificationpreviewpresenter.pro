@@ -1,7 +1,7 @@
 include(../common.pri)
 TARGET = ut_notificationpreviewpresenter
 INCLUDEPATH += $$SRCDIR $$NOTIFICATIONSRCDIR $$UTILITYSRCDIR $$SRCDIR/compositor ../../src/qmsystem2
-QT += qml quick dbus compositor
+QT += qml quick dbus waylandcompositor
 
 # unit test and unit
 SOURCES += \
