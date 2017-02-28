@@ -22,6 +22,7 @@
 
 #include <QRunnable>
 #include <QThreadPool>
+#include <QCoreApplication>
 
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
@@ -30,6 +31,13 @@
 
 #include <private/qquickitem_p.h>
 #include <private/qmemrotate_p.h>
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
+#include <math.h>
+
+static bool hwcimage_is_enabled();
 
 #define HWCIMAGE_LOAD_EVENT ((QEvent::Type) (QEvent::User + 1))
 #define DEFAULT_THEME "sailfish-default"
@@ -765,6 +773,7 @@ void HwcImageTexture::bind()
     if (!m_bound) {
         m_bound = true;
         m_buffer->bindToTexture();
+        glEGLImageTargetTexture2DOESlipstick(GL_TEXTURE_2D, m_image);
     }
 }
 

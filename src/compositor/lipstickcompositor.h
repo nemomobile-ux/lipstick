@@ -21,7 +21,10 @@
 #include "homeapplication.h"
 #include <QQmlParserStatus>
 #include <QWaylandQuickCompositor>
-#include <QWaylandSurfaceItem>
+#include <QWaylandQuickOutput>
+#include <QWaylandWlShellSurface>
+#include <QQmlComponent>
+#include <QWaylandClient>
 #include <QPointer>
 #include <QTimer>
 #include <MGConfItem>
@@ -29,11 +32,17 @@
 #include <QDBusContext>
 #include <QDBusMessage>
 
+namespace QtWayland {
+    class SurfaceExtensionGlobal;
+    class ExtendedSurface;
+}
+
 class WindowModel;
 class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
 class LipstickRecorderManager;
+<<<<<<< HEAD
 class LipstickKeymap;
 class QMceNameOwner;
 
@@ -55,14 +64,9 @@ struct QueuedSetUpdatesEnabledCall
     bool m_enable;
 };
 
-class LIPSTICK_EXPORT LipstickCompositor
-    : public QQuickWindow
-    , public QWaylandQuickCompositor
-    , public QQmlParserStatus
-    , public QDBusContext
+class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
 {
     Q_OBJECT
-    Q_INTERFACES(QQmlParserStatus)
 
     Q_PROPERTY(int windowCount READ windowCount NOTIFY windowCountChanged)
     Q_PROPERTY(int ghostWindowCount READ ghostWindowCount NOTIFY ghostWindowCountChanged)
@@ -74,11 +78,11 @@ class LIPSTICK_EXPORT LipstickCompositor
     Q_PROPERTY(Qt::ScreenOrientation topmostWindowOrientation READ topmostWindowOrientation WRITE setTopmostWindowOrientation NOTIFY topmostWindowOrientationChanged)
     Q_PROPERTY(Qt::ScreenOrientation screenOrientation READ screenOrientation WRITE setScreenOrientation NOTIFY screenOrientationChanged)
     Q_PROPERTY(Qt::ScreenOrientation sensorOrientation READ sensorOrientation NOTIFY sensorOrientationChanged)
-    Q_PROPERTY(LipstickKeymap *keymap READ keymap WRITE setKeymap NOTIFY keymapChanged)
     Q_PROPERTY(QObject* clipboard READ clipboard CONSTANT)
     Q_PROPERTY(QVariant orientationLock READ orientationLock NOTIFY orientationLockChanged)
     Q_PROPERTY(bool displayDimmed READ displayDimmed NOTIFY displayDimmedChanged)
     Q_PROPERTY(bool completed READ completed NOTIFY completedChanged)
+    Q_PROPERTY(QQuickWindow *quickWindow READ quickWindow CONSTANT)
 
 public:
     LipstickCompositor();
@@ -86,10 +90,7 @@ public:
 
     static LipstickCompositor *instance();
 
-    void classBegin() Q_DECL_OVERRIDE;
-    void componentComplete() Q_DECL_OVERRIDE;
-    void surfaceCreated(QWaylandSurface *surface) Q_DECL_OVERRIDE;
-    bool openUrl(WaylandClient *client, const QUrl &url) Q_DECL_OVERRIDE;
+    bool openUrl(QWaylandClient *client, const QUrl &url);
     void retainedSelectionReceived(QMimeData *mimeData) Q_DECL_OVERRIDE;
 
     int windowCount() const;
@@ -118,9 +119,6 @@ public:
 
     bool displayDimmed() const;
 
-    LipstickKeymap *keymap() const;
-    void setKeymap(LipstickKeymap *keymap);
-
     QObject *clipboard() const;
 
     bool debug() const;
@@ -141,7 +139,9 @@ public:
 
     void setUpdatesEnabledNow(bool enabled);
     void setUpdatesEnabled(bool enabled);
-    QWaylandSurfaceView *createView(QWaylandSurface *surf) Q_DECL_OVERRIDE;
+    LipstickCompositorWindow *createView(QWaylandSurface *surf);
+
+    QQuickWindow *quickWindow() { return m_window; }
 
 protected:
     void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
@@ -169,8 +169,6 @@ signals:
     void orientationLockChanged();
     void displayDimmedChanged();
 
-    void keymapChanged();
-
     void displayOn();
     void displayOff();
     void displayAboutToBeOn();
@@ -186,16 +184,14 @@ signals:
             const QList<ContentAction::Action> &candidateActions);
 
 private slots:
-    void surfaceMapped();
-    void surfaceUnmapped();
+    void onHasContentChanged();
     void surfaceSizeChanged();
     void surfaceTitleChanged();
-    void surfaceRaised();
-    void surfaceLowered();
+    void surfaceSetTransient(QWaylandSurface *transientParent, const QPoint &relativeToParent, bool inactive);
+    void surfaceSetFullScreen(QWaylandWlShellSurface::FullScreenMethod method, uint framerate, QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
-    void windowPropertyChanged(const QString &);
     bool openUrl(const QUrl &);
     void reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState);
     void homeApplicationAboutToDestroy();
@@ -203,28 +199,29 @@ private slots:
     void clipboardDataChanged();
     void onVisibleChanged(bool visible);
     void onSurfaceDying();
-    void updateKeymap();
     void initialize();
     void processQueuedSetUpdatesEnabledCalls();
+
+    void onShellSurfaceCreated(QWaylandWlShellSurface *wlShellSurface);
+    void onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface);
 
 private:
     friend class LipstickCompositorWindow;
     friend class LipstickCompositorProcWindow;
     friend class WindowModel;
-    friend class WindowPixmapItem;
-    friend class WindowProperty;
+    friend class NotificationPreviewPresenter;
+    friend class NotificationFeedbackPlayer;
 
+    void surfaceMapped(QWaylandSurface *surface);
+    void surfaceUnmapped(QWaylandSurface *surface);
     void surfaceUnmapped(LipstickCompositorWindow *item);
 
     int windowIdForLink(QWaylandSurface *, uint) const;
-
-    void surfaceUnmapped(QWaylandSurface *);
-
     void windowAdded(int);
     void windowRemoved(int);
     void windowDestroyed(LipstickCompositorWindow *item);
-    void readContent();
     void surfaceCommitted();
+    void onSurfaceCreated(QWaylandSurface *surface);
 
     QQmlComponent *shaderEffectComponent();
 
@@ -259,6 +256,11 @@ private:
 
     QList<QueuedSetUpdatesEnabledCall> m_queuedSetUpdatesEnabledCalls;
     QMceNameOwner *m_mceNameOwner;
+    bool m_fakeRepaintTriggered;
+    QQuickWindow *m_window;
+    QWaylandOutput *m_output;
+    QWaylandWlShell *m_wlShell;
+    QtWayland::SurfaceExtensionGlobal *m_surfExtGlob;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H

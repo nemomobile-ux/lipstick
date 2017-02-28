@@ -667,6 +667,7 @@ void NotificationManager::restoreNotifications(bool update)
 bool NotificationManager::connectToDatabase()
 {
     QString databasePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/system/privileged/Notifications");
+
     if (!QDir::root().exists(databasePath)) {
         QDir::root().mkpath(databasePath);
     }
