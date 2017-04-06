@@ -11,7 +11,7 @@ Group:      System/Libraries
 License:    LGPLv2.1
 URL:        http://github.com/nemomobile/lipstick
 Source0:    %{name}-%{version}.tar.bz2
-Requires:   mce >= 1.31.0
+Requires:   mce >= 1.87.0
 Requires:   pulseaudio-modules-nemo-mainvolume >= 6.0.19
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
@@ -133,7 +133,6 @@ make %{?_smp_mflags}
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{icondirectory}
 %qmake5_install
-
 
 %post -p /sbin/ldconfig
 
