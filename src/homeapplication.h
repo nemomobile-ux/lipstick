@@ -26,6 +26,7 @@ class USBModeSelector;
 class ShutdownScreen;
 class ConnectionSelector;
 class ScreenshotService;
+class BluetoothAgent;
 
 /*!
  * Extends QApplication with features necessary to create a desktop.
@@ -161,6 +162,9 @@ private:
 
     //! Logic for showing the USB mode selection dialog
     USBModeSelector *usbModeSelector;
+
+    //! Logic for showing the Bluetooth pairing dialog
+    BluetoothAgent *bluetoothAgent;
 
     //! Logic for showing the shutdown screen and related notifications
     ShutdownScreen *shutdownScreen;

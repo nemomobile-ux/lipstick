@@ -41,6 +41,7 @@
 
 #include "volume/volumecontrol.h"
 #include "usbmodeselector.h"
+#include "bluetoothagent.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
 #include "connectionselector.h"
@@ -102,6 +103,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
     usbModeSelector = new USBModeSelector(this);
+    bluetoothAgent = new BluetoothAgent(this);
     shutdownScreen = new ShutdownScreen(this);
     new ShutdownScreenAdaptor(shutdownScreen);
     connectionSelector = new ConnectionSelector(this);
