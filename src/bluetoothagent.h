@@ -30,7 +30,7 @@ class BluetoothAgent : public QObject, protected QDBusContext
 {
 
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.freedesktop.DBus.ObjectManager")
+    Q_CLASSINFO("D-Bus Interface", "org.bluez.Agent1")
     Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
 
     Q_PROPERTY(State state READ getState NOTIFY stateChanged)
