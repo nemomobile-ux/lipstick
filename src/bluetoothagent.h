@@ -22,6 +22,7 @@
 #include <QDBusConnection>
 #include <QDBusContext>
 #include <QDBusObjectPath>
+#include <QDBusServiceWatcher>
 #include <QDBusMessage>
 
 class HomeWindow;
@@ -83,9 +84,14 @@ private:
     quint32 passkey;
     QDBusMessage pendingReply;
     QDBusObjectPath device;
+    QDBusServiceWatcher *mWatcher;
 
     void setTrusted(QDBusObjectPath path);
     void reject();
+
+private slots:
+    void serviceRegistered(const QString& name);
+    void serviceUnregistered(const QString& name);
 
 public slots:
     void Release();

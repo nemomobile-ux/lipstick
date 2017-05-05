@@ -36,13 +36,30 @@ BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
     mPath = "/org/asteroidos/launcher/agent";
     bus.registerObject(mPath, this, QDBusConnection::ExportAllSlots | QDBusConnection::ExportAllProperties);
 
-    QDBusInterface agentManager("org.bluez", "/org/bluez", "org.bluez.AgentManager1", bus);
-    agentManager.call("RegisterAgent", qVariantFromValue(getPath()), AGENT_CAPABILITY);
-		agentManager.asyncCall("RequestDefaultAgent", qVariantFromValue(getPath()));
+    mWatcher = new QDBusServiceWatcher("org.bluez", bus);
+    connect(mWatcher, SIGNAL(serviceRegistered(const QString&)), this, SLOT(serviceRegistered(const QString&)));
+    connect(mWatcher, SIGNAL(serviceUnregistered(const QString&)), this, SLOT(serviceUnregistered(const QString&)));
+
+    QDBusInterface remoteOm("org.bluez", "/", "org.bluez.AgentManager1", bus);
+    if(remoteOm.isValid())
+        serviceRegistered("org.bluez");
 
     state = Idle;
     pinCode = "";
     passkey = 0;
+}
+
+void BluetoothAgent::serviceRegistered(const QString&)
+{
+    QDBusInterface agentManager("org.bluez", "/org/bluez", "org.bluez.AgentManager1", QDBusConnection::systemBus());
+    agentManager.call("RegisterAgent", qVariantFromValue(getPath()), AGENT_CAPABILITY);
+		agentManager.asyncCall("RequestDefaultAgent", qVariantFromValue(getPath()));
+}
+
+void BluetoothAgent::serviceUnregistered(const QString&)
+{
+    setState(Idle);
+    setWindowVisible(false);
 }
 
 void BluetoothAgent::setTrusted(QDBusObjectPath path)
