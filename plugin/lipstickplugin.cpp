@@ -26,6 +26,7 @@
 #include <volume/volumecontrol.h>
 #include <usbmodeselector.h>
 #include <shutdownscreen.h>
+#include <bluetoothagent.h>
 #include <compositor/lipstickcompositor.h>
 #include <compositor/lipstickcompositorwindow.h>
 #include <compositor/windowmodel.h>
@@ -72,4 +73,6 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterType<QObjectListModel>();
 
     qmlRegisterRevision<QQuickWindow,1>("org.nemomobile.lipstick", 0, 1);
+
+    qmlRegisterUncreatableType<BluetoothAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothAgent", "This type is created by lipstick");
 }

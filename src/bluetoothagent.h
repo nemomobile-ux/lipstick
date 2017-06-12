@@ -24,13 +24,14 @@
 #include <QDBusObjectPath>
 #include <QDBusServiceWatcher>
 #include <QDBusMessage>
+#include "lipstickglobal.h"
 
 class HomeWindow;
 
-class BluetoothAgent : public QObject, protected QDBusContext
+class LIPSTICK_EXPORT BluetoothAgent : public QObject, protected QDBusContext
 {
-
     Q_OBJECT
+    Q_ENUMS(State);
     Q_CLASSINFO("D-Bus Interface", "org.bluez.Agent1")
     Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
 

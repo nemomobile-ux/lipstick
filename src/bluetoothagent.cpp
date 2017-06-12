@@ -58,8 +58,8 @@ void BluetoothAgent::serviceRegistered(const QString&)
 
 void BluetoothAgent::serviceUnregistered(const QString&)
 {
-    setState(Idle);
     setWindowVisible(false);
+    setState(Idle);
 }
 
 void BluetoothAgent::setTrusted(QDBusObjectPath path)
@@ -173,8 +173,8 @@ QString BluetoothAgent::RequestPinCode(QDBusObjectPath object, const QDBusMessag
 {
     device = object;
     setTrusted(device);
-    setState(ReqPinCode);
     setWindowVisible(true);
+    setState(ReqPinCode);
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
@@ -186,8 +186,8 @@ quint32 BluetoothAgent::RequestPasskey(QDBusObjectPath object, const QDBusMessag
 {
     device = object;
     setTrusted(device);
-    setState(ReqPasskey);
     setWindowVisible(true);
+    setState(ReqPasskey);
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
@@ -199,26 +199,24 @@ void BluetoothAgent::DisplayPinCode(QDBusObjectPath object, QString pc)
 {
     device = object;
     setPinCode(pc);
-    emit pinCodeChanged();
-    setState(DispPinCode);
     setWindowVisible(true);
+    setState(DispPinCode);
 }
 
 void BluetoothAgent::DisplayPasskey(QDBusObjectPath object, quint32 pk, quint16)
 {
     device = object;
     setPasskey(pk);
-    emit passkeyChanged();
-    setState(DispPasskey);
     setWindowVisible(true);
+    setState(DispPasskey);
 }
 
 void BluetoothAgent::RequestConfirmation(QDBusObjectPath object, quint32 pk, const QDBusMessage &message)
 {
     device = object;
     setPasskey(pk);
-    setState(ReqConfirmation);
     setWindowVisible(true);
+    setState(ReqConfirmation);
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
@@ -227,18 +225,19 @@ void BluetoothAgent::RequestConfirmation(QDBusObjectPath object, quint32 pk, con
 void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMessage &message)
 {
     device = object;
-    setState(ReqAuthorization);
     setWindowVisible(true);
+    setState(ReqAuthorization);
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
 }
 
-void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString, const QDBusMessage &message)
+void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, const QDBusMessage &message)
 {
     device = object;
-    setState(AuthService);
     setWindowVisible(true);
+    setState(AuthService);
+    setPinCode(uuid);
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
