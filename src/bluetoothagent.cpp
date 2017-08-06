@@ -28,7 +28,7 @@
 #include "lipstickqmlpath.h"
 #include "bluetoothagent.h"
 
-#define AGENT_CAPABILITY        "DisplayYesNo"
+#define AGENT_CAPABILITY        "KeyboardDisplay"
 
 BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
 {
