@@ -28,7 +28,7 @@
 #include "lipstickqmlpath.h"
 #include "bluetoothagent.h"
 
-#define AGENT_CAPABILITY        "KeyboardDisplay"
+#define AGENT_CAPABILITY        "DisplayYesNo"
 
 BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
 {
@@ -70,7 +70,7 @@ void BluetoothAgent::setTrusted(QDBusObjectPath path)
 
 void BluetoothAgent::reject()
 {
-    sendErrorReply("org.bluez.Error.Rejected", "Rejected");
+    QDBusConnection::systemBus().send(pendingErrorReply);
 }
 
 QDBusObjectPath BluetoothAgent::getPath()
@@ -178,6 +178,7 @@ QString BluetoothAgent::RequestPinCode(QDBusObjectPath object, const QDBusMessag
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
+    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 
     return "";
 }
@@ -191,6 +192,7 @@ quint32 BluetoothAgent::RequestPasskey(QDBusObjectPath object, const QDBusMessag
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
+    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 
     return 0;
 }
@@ -220,6 +222,7 @@ void BluetoothAgent::RequestConfirmation(QDBusObjectPath object, quint32 pk, con
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
+    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 }
 
 void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMessage &message)
@@ -230,6 +233,7 @@ void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMes
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
+    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 }
 
 void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, const QDBusMessage &message)
@@ -241,6 +245,7 @@ void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, cons
 
     message.setDelayedReply(true);
     pendingReply = message.createReply();
+    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 }
 
 void BluetoothAgent::Cancel()

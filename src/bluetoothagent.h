@@ -83,7 +83,7 @@ private:
     bool reqConfirm, reqAuth;
     QString pinCode;
     quint32 passkey;
-    QDBusMessage pendingReply;
+    QDBusMessage pendingReply, pendingErrorReply;
     QDBusObjectPath device;
     QDBusServiceWatcher *mWatcher;
 
