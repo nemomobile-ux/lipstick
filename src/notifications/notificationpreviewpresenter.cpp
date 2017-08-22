@@ -65,11 +65,9 @@ NotificationPreviewPresenter::NotificationPreviewPresenter(
     m_screenLock(screenLock),
     m_deviceLock(deviceLock)
 {
-    connect(NotificationManager::instance(), SIGNAL(notificationAdded(uint)), this, SLOT(updateNotification(uint)));
-    connect(NotificationManager::instance(), SIGNAL(notificationRemoved(uint)), this, SLOT(removeNotification(uint)));
-    connect(this, SIGNAL(notificationPresented(uint)), m_notificationFeedbackPlayer, SLOT(addNotification(uint)));
-
-    connect(NotificationManager::instance(), &NotificationManager::aboutToUpdateNotification,
+    connect(NotificationManager::instance(), &NotificationManager::notificationAdded,
+            this, &NotificationPreviewPresenter::updateNotification);
+    connect(NotificationManager::instance(), &NotificationManager::notificationModified,
             this, &NotificationPreviewPresenter::updateNotification);
     QTimer::singleShot(0, this, SLOT(createWindowIfNecessary()));
 }
