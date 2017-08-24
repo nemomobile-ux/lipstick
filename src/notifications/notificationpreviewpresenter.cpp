@@ -112,8 +112,10 @@ void NotificationPreviewPresenter::showNextNotification()
         }
 
         if (!show) {
-            // Don't show the notification but just remove it from the queue
-            emit notificationPresented(notification->replacesId());
+            if (m_deviceLock->state() != NemoDeviceLock::DeviceLock::ManagerLockout) { // Suppress feedback if locked out.
+                // Don't show the notification but just remove it from the queue
+                emit notificationPresented(notification->id());
+            }
 
             setCurrentNotification(0);
 
@@ -124,7 +126,7 @@ void NotificationPreviewPresenter::showNextNotification()
                 m_window->show();
             }
 
-            emit notificationPresented(notification->replacesId());
+            emit notificationPresented(notification->id());
 
             setCurrentNotification(notification);
         }
@@ -223,16 +225,7 @@ void NotificationPreviewPresenter::setCurrentNotification(LipstickNotification *
 {
     if (m_currentNotification != notification) {
         if (m_currentNotification) {
-            const bool notificationWasCritical = m_currentNotification->urgency() >= 2 ||
-                                                 m_currentNotification->hints().value(NotificationManager::HINT_DISPLAY_ON).toBool();
-            if (notificationWasCritical) {
-                // Release our screen wake for the previous notification
-                QDBusMessage msg = QDBusMessage::createMethodCall(MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_NOTIFICATION_END);
-                msg.setArguments(QVariantList() << QString::number(m_currentNotification->replacesId()) << MCE_LINGER_DURATION);
-                QDBusConnection::systemBus().asyncCall(msg);
-            }
-
-            NotificationManager::instance()->MarkNotificationDisplayed(m_currentNotification->replacesId());
+            NotificationManager::instance()->MarkNotificationDisplayed(m_currentNotification->id());
         }
 
         m_currentNotification = notification;
@@ -245,10 +238,9 @@ void NotificationPreviewPresenter::setCurrentNotification(LipstickNotification *
             const bool notificationCanUnblank = !notification->hints().value(NotificationManager::HINT_SUPPRESS_DISPLAY_ON).toBool();
 
             if (notificationIsCritical && notificationCanUnblank) {
-                QString mceIdToAdd = QString("lipstick_notification_") + QString::number(notification->replacesId());
-
+                QString mceIdToAdd = QString("lipstick_notification_") + QString::number(notification->id());
                 QDBusMessage msg = QDBusMessage::createMethodCall(MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_NOTIFICATION_BEGIN);
-                msg.setArguments(QVariantList() << QString::number(notification->replacesId()) << MCE_DURATION << MCE_EXTEND_DURATION);
+                msg.setArguments(QVariantList() << QString::number(notification->id()) << MCE_DURATION << MCE_EXTEND_DURATION);
                 QDBusConnection::systemBus().asyncCall(msg);
             }
         }
