@@ -21,30 +21,31 @@
 
 // 1. DECLARE STUB
 // FIXME - stubgen is not yet finished
-class NotificationManagerStub : public StubBase {
-  public:
-   enum NotificationClosedReason { NotificationExpired=1, NotificationDismissedByUser, CloseNotificationCalled } ;
-  virtual NotificationManager * instance(bool owner = true);
-  virtual LipstickNotification * notification(uint id) const;
-  virtual QList<uint> notificationIds() const;
-  virtual QStringList GetCapabilities();
-  virtual uint Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout);
-  virtual void CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason);
-  virtual void MarkNotificationDisplayed(uint id);
-  virtual QString GetServerInformation(QString &name, QString &vendor, QString &version);
-  virtual NotificationList GetNotifications(const QString &appName);
-  virtual NotificationList GetNotificationsByCategory(const QString &category);
-  virtual void removeNotificationsWithCategory(const QString &category);
-  virtual void updateNotificationsWithCategory(const QString &category);
-  virtual void commit();
-  virtual void invokeAction(const QString &action);
-  virtual void removeNotificationIfUserRemovable(uint id);
-  virtual void removeUserRemovableNotifications();
-  virtual void expire();
-  virtual void reportModifications();
-  virtual void NotificationManagerConstructor(QObject *parent, bool owner);
-  virtual void NotificationManagerDestructor();
-}; 
+class NotificationManagerStub : public StubBase
+{
+public:
+    enum NotificationClosedReason { NotificationExpired = 1, NotificationDismissedByUser, CloseNotificationCalled } ;
+    virtual NotificationManager *instance(bool owner = true);
+    virtual LipstickNotification *notification(uint id) const;
+    virtual QList<uint> notificationIds() const;
+    virtual QStringList GetCapabilities();
+    virtual uint Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout);
+    virtual void CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason);
+    virtual void markNotificationDisplayed(uint id);
+    virtual QString GetServerInformation(QString &name, QString &vendor, QString &version);
+    virtual NotificationList GetNotifications(const QString &appName);
+    virtual NotificationList GetNotificationsByCategory(const QString &category);
+    virtual void removeNotificationsWithCategory(const QString &category);
+    virtual void updateNotificationsWithCategory(const QString &category);
+    virtual void commit();
+    virtual void invokeAction(const QString &action);
+    virtual void removeNotificationIfUserRemovable(uint id);
+    virtual void removeUserRemovableNotifications();
+    virtual void expire();
+    virtual void reportModifications();
+    virtual void NotificationManagerConstructor(QObject *parent, bool owner);
+    virtual void NotificationManagerDestructor();
+};
 
 // 2. IMPLEMENT STUB
 NotificationManager * NotificationManagerStub::instance(bool owner) {
@@ -85,11 +86,11 @@ uint NotificationManagerStub::Notify(const QString &appName, uint replacesId, co
   return stubReturnValue<uint>("Notify");
 }
 
-void NotificationManagerStub::CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<uint >(id));
-  params.append( new Parameter<NotificationManager::NotificationClosedReason >(closeReason));
-  stubMethodEntered("CloseNotification",params);
+void NotificationManagerStub::markNotificationDisplayed(uint id)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<uint >(id));
+    stubMethodEntered("markNotificationDisplayed", params);
 }
 
 void NotificationManagerStub::MarkNotificationDisplayed(uint id) {
@@ -228,8 +229,9 @@ void NotificationManager::CloseNotification(uint id, NotificationClosedReason cl
   gNotificationManagerStub->CloseNotification(id, closeReason);
 }
 
-void NotificationManager::MarkNotificationDisplayed(uint id) {
-  gNotificationManagerStub->MarkNotificationDisplayed(id);
+void NotificationManager::markNotificationDisplayed(uint id)
+{
+    gNotificationManagerStub->markNotificationDisplayed(id);
 }
 
 QString NotificationManager::GetServerInformation(QString &name, QString &vendor, QString &version) {
