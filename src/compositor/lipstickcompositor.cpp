@@ -178,7 +178,6 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
     connect(surface, SIGNAL(sizeChanged()), this, SLOT(surfaceSizeChanged()));
     connect(surface, SIGNAL(damaged(QRegion)), this, SLOT(surfaceDamaged(QRegion)));
     connect(surface, SIGNAL(redraw()), this, SLOT(windowSwapped()));
-    connect(surface, SIGNAL(surfaceDestroyed()), this, SLOT(windowSwapped()));
 }
 
 void LipstickCompositor::onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface)
