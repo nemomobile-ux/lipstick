@@ -21,6 +21,7 @@
 #include <QWaylandQuickCompositor>
 #include <QWaylandQuickOutput>
 #include <QWaylandWlShellSurface>
+#include <QWaylandQtWindowManager>
 #include <QQmlComponent>
 #include <QWaylandClient>
 #include <QPointer>
@@ -161,7 +162,6 @@ private slots:
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
-    bool openUrl(const QUrl &);
     void reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state);
     void homeApplicationAboutToDestroy();
     void setScreenOrientationFromSensor();
@@ -225,6 +225,7 @@ private:
     QWaylandOutput *m_output;
     QWaylandWlShell *m_wlShell;
     QtWayland::SurfaceExtensionGlobal *m_surfExtGlob;
+    QWaylandQtWindowManager *m_wm;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H

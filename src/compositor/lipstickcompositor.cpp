@@ -73,6 +73,9 @@ LipstickCompositor::LipstickCompositor()
     m_surfExtGlob = new QtWayland::SurfaceExtensionGlobal(this);
     connect(m_surfExtGlob, &QtWayland::SurfaceExtensionGlobal::extendedSurfaceReady, this, &LipstickCompositor::onExtendedSurfaceReady);
 
+    m_wm = new QWaylandQtWindowManager(this);
+    connect(m_wm, &QWaylandQtWindowManager::openUrl, this, &LipstickCompositor::openUrl);
+
     setRetainedSelectionEnabled(true);
 
     if (m_instance) qFatal("LipstickCompositor: Only one compositor instance per process is supported");
@@ -190,11 +193,6 @@ void LipstickCompositor::onExtendedSurfaceReady(QtWayland::ExtendedSurface *extS
 bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
 {
     Q_UNUSED(client)
-    return openUrl(url);
-}
-
-bool LipstickCompositor::openUrl(const QUrl &url)
-{
 #if defined(HAVE_CONTENTACTION)
     ContentAction::Action action = url.scheme() == "file"? ContentAction::Action::defaultActionForFile(url.toString()) : ContentAction::Action::defaultActionForScheme(url.toString());
     if (action.isValid()) {
