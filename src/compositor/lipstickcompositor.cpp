@@ -132,6 +132,8 @@ LipstickCompositor::~LipstickCompositor()
 
     delete m_timedDbus;
     delete m_shaderEffect;
+
+    m_instance = nullptr;
 }
 
 LipstickCompositor *LipstickCompositor::instance()
