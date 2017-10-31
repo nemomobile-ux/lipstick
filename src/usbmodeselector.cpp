@@ -118,6 +118,7 @@ void USBModeSelector::applyUSBMode(QString mode)
 
 void USBModeSelector::showNotification(QString mode)
 {
+    static uint prevNotifId = 0;
     QString category;
     QString body;
     if (mode == QUsbModed::Mode::Disconnected) {
@@ -159,7 +160,8 @@ void USBModeSelector::showNotification(QString mode)
     QVariantHash hints;
     hints.insert(NotificationManager::HINT_CATEGORY, category);
     hints.insert(NotificationManager::HINT_PREVIEW_BODY, body);
-    manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
+    manager->CloseNotification(prevNotifId, NotificationManager::CloseNotificationCalled);
+    prevNotifId = manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
 }
 
 void USBModeSelector::showError(const QString &errorCode)
