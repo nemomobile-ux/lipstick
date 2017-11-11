@@ -83,9 +83,9 @@ private:
     bool reqConfirm, reqAuth;
     QString pinCode;
     quint32 passkey;
-    QDBusMessage pendingReply, pendingErrorReply;
     QDBusObjectPath device;
     QDBusServiceWatcher *mWatcher;
+    QDBusMessage m_latestMessage;
 
     void setTrusted(QDBusObjectPath path);
     void reject();

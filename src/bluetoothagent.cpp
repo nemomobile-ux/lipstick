@@ -70,6 +70,7 @@ void BluetoothAgent::setTrusted(QDBusObjectPath path)
 
 void BluetoothAgent::reject()
 {
+    QDBusMessage pendingErrorReply = m_latestMessage.createErrorReply("org.bluez.Error.Rejected", "Rejected");
     QDBusConnection::systemBus().send(pendingErrorReply);
 }
 
@@ -148,6 +149,7 @@ void BluetoothAgent::setWindowVisible(bool visible)
 
 void BluetoothAgent::userAccepts()
 {
+    QDBusMessage pendingReply = m_latestMessage.createReply();
     if(state == ReqPinCode)
         pendingReply << pinCode;
     else if(state == ReqPasskey)
@@ -177,8 +179,6 @@ QString BluetoothAgent::RequestPinCode(QDBusObjectPath object, const QDBusMessag
     setState(ReqPinCode);
 
     message.setDelayedReply(true);
-    pendingReply = message.createReply();
-    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 
     return "";
 }
@@ -191,8 +191,6 @@ quint32 BluetoothAgent::RequestPasskey(QDBusObjectPath object, const QDBusMessag
     setState(ReqPasskey);
 
     message.setDelayedReply(true);
-    pendingReply = message.createReply();
-    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
 
     return 0;
 }
@@ -221,8 +219,8 @@ void BluetoothAgent::RequestConfirmation(QDBusObjectPath object, quint32 pk, con
     setState(ReqConfirmation);
 
     message.setDelayedReply(true);
-    pendingReply = message.createReply();
-    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
+
+    m_latestMessage = message;
 }
 
 void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMessage &message)
@@ -232,8 +230,8 @@ void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMes
     setState(ReqAuthorization);
 
     message.setDelayedReply(true);
-    pendingReply = message.createReply();
-    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
+
+    m_latestMessage = message;
 }
 
 void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, const QDBusMessage &message)
@@ -244,8 +242,8 @@ void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, cons
     setPinCode(uuid);
 
     message.setDelayedReply(true);
-    pendingReply = message.createReply();
-    pendingErrorReply = message.createErrorReply("org.bluez.Error.Rejected", "Rejected");
+
+    m_latestMessage = message;
 }
 
 void BluetoothAgent::Cancel()
