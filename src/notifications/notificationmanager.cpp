@@ -627,7 +627,9 @@ void NotificationManager::publish(const LipstickNotification *notification, uint
     }
 
     // Add the notification, its actions and its hints to the database
-    execSQL("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", QVariantList() << id << notification->appName() << notification->appIcon() << notification->summary() << notification->body() << notification->expireTimeout() << notification->disambiguatedAppName());
+    execSQL("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
+            QVariantList() << id << notification->appName() << notification->appIcon() << notification->summary()
+            << notification->body() << notification->expireTimeout() << notification->disambiguatedAppName());
     foreach (const QString &action, notification->actions()) {
         execSQL("INSERT INTO actions VALUES (?, ?)", QVariantList() << id << action);
     }
@@ -637,7 +639,9 @@ void NotificationManager::publish(const LipstickNotification *notification, uint
         execSQL("INSERT INTO hints VALUES (?, ?, ?)", QVariantList() << id << hit.key() << hit.value());
     }
 
-    NOTIFICATIONS_DEBUG("PUBLISH:" << notification->appName() << notification->appIcon() << notification->summary() << notification->body() << notification->actions() << notification->hints() << notification->expireTimeout() << "->" << id);
+    NOTIFICATIONS_DEBUG("PUBLISH:" << notification->appName() << notification->appIcon() << notification->summary()
+                        << notification->body() << notification->actions() << notification->hints()
+                        << notification->expireTimeout() << "->" << id);
     m_modifiedIds.insert(id);
     if (!m_modificationTimer.isActive()) {
         m_modificationTimer.start();
@@ -989,7 +993,7 @@ void NotificationManager::fetchData(bool update)
     foreach (LipstickNotification *n, m_notifications) {
         connect(n, SIGNAL(actionInvoked(QString)), this, SLOT(invokeAction(QString)), Qt::QueuedConnection);
         connect(n, SIGNAL(removeRequested()), this, SLOT(removeNotificationIfUserRemovable()), Qt::QueuedConnection);
-#if DEBUG_NOTIFICATIONS
+#ifdef DEBUG_NOTIFICATIONS
         const uint id = n->id();
         NOTIFICATIONS_DEBUG("RESTORED:" << n->appName() << n->appIcon() << n->summary() << n->body() << actions[id] << hints[id] << n->expireTimeout() << "->" << id);
 #endif
