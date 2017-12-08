@@ -27,6 +27,7 @@ class ShutdownScreen;
 class ConnectionSelector;
 class ScreenshotService;
 class BluetoothAgent;
+class LocaleManager;
 
 /*!
  * Extends QApplication with features necessary to create a desktop.
@@ -99,6 +100,8 @@ public:
 
     void takeScreenshot(const QString &path);
 
+    LocaleManager *localeManager();
+
 signals:
     /*!
      * Emitted whenever the home active flag changes.
@@ -165,6 +168,9 @@ private:
 
     //! Logic for showing the Bluetooth pairing dialog
     BluetoothAgent *bluetoothAgent;
+
+    //! Logic for showing the Bluetooth pairing dialog
+    LocaleManager *localeMngr;
 
     //! Logic for showing the shutdown screen and related notifications
     ShutdownScreen *shutdownScreen;

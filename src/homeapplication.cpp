@@ -42,6 +42,7 @@
 #include "volume/volumecontrol.h"
 #include "usbmodeselector.h"
 #include "bluetoothagent.h"
+#include "localemanager.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
 #include "connectionselector.h"
@@ -71,9 +72,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     QTranslator *engineeringEnglish = new QTranslator(this);
     engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
     installTranslator(engineeringEnglish);
-    QTranslator *translator = new QTranslator(this);
-    translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
-    installTranslator(translator);
 
     // Set the application name, as used in notifications
     //% "System"
@@ -105,6 +103,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     usbModeSelector = new USBModeSelector(this);
     bluetoothAgent = new BluetoothAgent(this);
     shutdownScreen = new ShutdownScreen(this);
+    localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(shutdownScreen);
     connectionSelector = new ConnectionSelector(this);
 
@@ -130,6 +129,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     qmlEngine->rootContext()->setContextProperty("LipstickSettings", LipstickSettings::instance());
     qmlEngine->rootContext()->setContextProperty("deviceLock", deviceLock);
     qmlEngine->rootContext()->setContextProperty("volumeControl", volumeControl);
+    qmlEngine->rootContext()->setContextProperty("localeManager", localeMngr);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }
@@ -298,4 +298,9 @@ void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
 void HomeApplication::takeScreenshot(const QString &path)
 {
     m_screenshotService->saveScreenshot(path);
+}
+
+LocaleManager *HomeApplication::localeManager()
+{
+    return localeMngr;
 }

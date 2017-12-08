@@ -33,7 +33,7 @@
 BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
 {
     QDBusConnection bus = QDBusConnection::systemBus();
-    mPath = "/org/asteroidos/launcher/agent";
+    mPath = "/org/nemomobile/lipstick/agent";
     bus.registerObject(mPath, this, QDBusConnection::ExportAllSlots | QDBusConnection::ExportAllProperties);
 
     mWatcher = new QDBusServiceWatcher("org.bluez", bus);
