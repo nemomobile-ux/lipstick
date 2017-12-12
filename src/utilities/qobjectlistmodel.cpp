@@ -27,7 +27,9 @@ QObjectListModel::QObjectListModel(QObject *parent, QList<QObject*> *list)
 
 QHash<int, QByteArray> QObjectListModel::roleNames() const
 {
-    return {{Qt::UserRole + 1, QByteArrayLiteral("object")}};
+    QHash<int, QByteArray> roles;
+    roles[Qt::UserRole + 1] = "object";
+    return roles;
 }
 
 int QObjectListModel::indexOf(QObject *obj) const
