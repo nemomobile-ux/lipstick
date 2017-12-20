@@ -24,7 +24,7 @@ LocaleManager::LocaleManager(HomeApplication *app) : QDBusAbstractAdaptor(app)
     m_translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
     m_app->installTranslator(m_translator);
 
-    QDBusConnection::sessionBus().registerObject("/org/nemomobile/lipstick/localemanager", this, QDBusConnection::ExportAllSlots);
+    QDBusConnection::systemBus().registerObject("/org/nemomobile/lipstick/localemanager", this, QDBusConnection::ExportAllSlots);
 }
 
 QString LocaleManager::getEmptyString()
