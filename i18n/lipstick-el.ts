@@ -77,7 +77,7 @@
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
-        <source>Device is overheating. turn it off.</source>
+        <source>Device is overheating. Turn it off.</source>
         <translation>Η συσκευή ζεστάθηκε υπερβολικά. Απενεργοποιήστε την.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
