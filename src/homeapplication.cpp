@@ -208,6 +208,9 @@ HomeApplication::~HomeApplication()
 
     delete m_mainWindowInstance;
     m_mainWindowInstance = nullptr;
+
+    delete m_qmlEngine;
+    m_qmlEngine = nullptr;
 }
 
 HomeApplication *HomeApplication::instance()
