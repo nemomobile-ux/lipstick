@@ -18,6 +18,7 @@
 #include "lipstickglobal.h"
 #include "touchscreen/touchscreen.h"
 
+class QSocketNotifier;
 class QQmlEngine;
 class HomeWindow;
 class ScreenLock;
@@ -130,6 +131,9 @@ signals:
 protected:
     virtual bool event(QEvent *);
 
+private:
+    void setUpSignalHandlers();
+
 private slots:
     /*!
      * Emits the homeReady() signal unless it has already been sent
@@ -153,16 +157,18 @@ private:
 
     //! A signal handler that quits the QApplication
     static void quitSignalHandler(int);
+    //! An eventfd object for signal handling
+    static int s_quitSignalFd;
+    //! Socket notifier for signal handling
+    QSocketNotifier *m_quitSignalNotifier;
+    //! The original SIGINT action
+    struct sigaction m_originalSigIntAction;
+    //! The original SIGTERM action
+    struct sigaction m_originalSigTermAction;
 
     HomeWindow *m_mainWindowInstance;
     QString m_qmlPath;
     QString m_compositorPath;
-
-    //! The original SIGINT handler
-    sighandler_t m_originalSigIntHandler;
-
-    //! The original SIGTERM handler
-    sighandler_t m_originalSigTermHandler;
 
     //! QML Engine instance
     QQmlEngine *m_qmlEngine;
