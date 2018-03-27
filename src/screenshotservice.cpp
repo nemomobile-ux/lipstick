@@ -46,7 +46,7 @@ void ScreenshotService::saveScreenshot(const QString &path)
             grab = grab.transformed(xform, Qt::SmoothTransformation);
         }
 
-        grab.save(path.isEmpty() ? (QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/" + QDateTime::currentDateTime().toString("yyyyMMddhhmmss") + ".png") : path);
+        grab.save(path.isEmpty() ? (QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/" + QDateTime::currentDateTime().toString("yyyyMMddhhmmss") + ".png") : path, 0, 100);
 
         if (renderStage)
             renderStage->setBypassHwc(false);
