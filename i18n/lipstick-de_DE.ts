@@ -27,7 +27,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>Trenne das Ladegerät von der Steckdose, um Strom zu sparen.</translation>
+        <translation>Ladegerät aus der Steckdose ziehen, um Strom zu sparen</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
