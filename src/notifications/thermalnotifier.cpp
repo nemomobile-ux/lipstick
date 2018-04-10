@@ -38,7 +38,7 @@ void ThermalNotifier::applyThermalState(MeeGo::QmThermal::ThermalState state)
         createAndPublishNotification("x-nemo.battery.temperature", qtTrId("qtn_shut_high_temp_alert"));
         break;
     case MeeGo::QmThermal::LowTemperatureWarning:
-        //% "Low temperature warning"
+        //% "The device is too cold"
         createAndPublishNotification("x-nemo.battery.temperature", qtTrId("qtn_shut_low_temp_warning"));
         break;
     default:

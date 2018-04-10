@@ -236,7 +236,7 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationID id)
          qtTrId("qtn_ener_exit_psnote"),
          ""},
         {"x-nemo.battery.lowbattery", // NotificationLowBattery
-         //% "Low battery"
+         //% "Low battery level"
          qtTrId("qtn_ener_lowbatt"),
          ""},
         {"x-nemo.battery.notenoughpower", // NotificationNoEnoughPower
