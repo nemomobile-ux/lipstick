@@ -4,7 +4,7 @@
 <context>
     <name></name>
     <message id="qtn_ap_lipstick">
-        <location filename="../src/homeapplication.cpp" line="80"/>
+        <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
         <translation>System</translation>
     </message>
@@ -31,8 +31,9 @@
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
-        <source>Charging not started. Replace charger.</source>
-        <translation>Aufladen hat nicht begonnen. Ladegerät auswechseln.</translation>
+        <source>Not charging. Adjust or recycle charger.</source>
+        <oldsource>Charging not started. Replace charger.</oldsource>
+        <translation type="unfinished">Aufladen hat nicht begonnen. Ladegerät auswechseln.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -60,25 +61,29 @@
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
-        <source>Not enough power to charge</source>
-        <translation>Nicht genug Leistung um Aufzuladen</translation>
+        <source>Power input below charging threshold</source>
+        <oldsource>Not enough power to charge</oldsource>
+        <translation type="unfinished">Nicht genug Leistung um Aufzuladen</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
-        <source>Getting low with storage. Please check.</source>
-        <translation>Der Gerätespeicher ist fast voll. Bitte überprüfen.</translation>
+        <source>Storage space running out.</source>
+        <oldsource>Getting low with storage. Please check.</oldsource>
+        <translation type="unfinished">Der Gerätespeicher ist fast voll. Bitte überprüfen.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
-        <source>Device is getting hot. Close all apps.</source>
-        <translation>Das Gerät wird heiß. Schließe alle Apps.</translation>
+        <source>Device getting hot. Close all apps.</source>
+        <oldsource>Device is getting hot. Close all apps.</oldsource>
+        <translation type="unfinished">Das Gerät wird heiß. Schließe alle Apps.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
-        <source>Device is overheating. Turn it off.</source>
-        <translation>Das Gerät überhitzt. Schalte es aus.</translation>
+        <source>Device overheating. Turn it off.</source>
+        <oldsource>Device is overheating. Turn it off.</oldsource>
+        <translation type="unfinished">Das Gerät überhitzt. Schalte es aus.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -95,8 +100,9 @@
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
-        <source>USB cable plugged in. Unplug the USB cable to shutdown.</source>
-        <translation>USB Kabel verbunden. Entferne das USB Kabel zum Herunterfahren.</translation>
+        <source>USB cable plugged in. Unplug it to shut down device.</source>
+        <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
+        <translation type="unfinished">USB Kabel verbunden. Entferne das USB Kabel zum Herunterfahren.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -142,14 +148,16 @@
     <message id="qtn_usb_sync_active">
         <location filename="../src/usbmodeselector.cpp" line="144"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
-        <source>Sync and connect in use</source>
-        <translation>Sync und Connect in Nutzung</translation>
+        <source>Sync-and-connect in use</source>
+        <oldsource>Sync and connect in use</oldsource>
+        <translation type="unfinished">Sync und Connect in Nutzung</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="186"/>
-        <source>Adb mode in use</source>
-        <translation>Adb Modus in Nutzung</translation>
+        <source>ADB mode in use</source>
+        <oldsource>Adb mode in use</oldsource>
+        <translation type="unfinished">Adb Modus in Nutzung</translation>
     </message>
     <message id="qtn_usb_diag_active">
         <location filename="../src/usbmodeselector.cpp" line="150"/>

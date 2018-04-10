@@ -4,7 +4,7 @@
 <context>
     <name></name>
     <message id="qtn_ap_lipstick">
-        <location filename="../src/homeapplication.cpp" line="80"/>
+        <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
         <translation>系统</translation>
     </message>
@@ -31,8 +31,9 @@
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
-        <source>Charging not started. Replace charger.</source>
-        <translation>充电没有开始,请更换充电器.</translation>
+        <source>Not charging. Adjust or recycle charger.</source>
+        <oldsource>Charging not started. Replace charger.</oldsource>
+        <translation type="unfinished">充电没有开始,请更换充电器.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -60,25 +61,29 @@
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
-        <source>Not enough power to charge</source>
-        <translation>没有足够的电量来充电</translation>
+        <source>Power input below charging threshold</source>
+        <oldsource>Not enough power to charge</oldsource>
+        <translation type="unfinished">没有足够的电量来充电</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
-        <source>Getting low with storage. Please check.</source>
-        <translation>储存空间不足,请检查.</translation>
+        <source>Storage space running out.</source>
+        <oldsource>Getting low with storage. Please check.</oldsource>
+        <translation type="unfinished">储存空间不足,请检查.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
-        <source>Device is getting hot. Close all apps.</source>
-        <translation>设备发热,关闭所有应用.</translation>
+        <source>Device getting hot. Close all apps.</source>
+        <oldsource>Device is getting hot. Close all apps.</oldsource>
+        <translation type="unfinished">设备发热,关闭所有应用.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
-        <source>Device is overheating. Turn it off.</source>
-        <translation>设备过热,请关闭设备.</translation>
+        <source>Device overheating. Turn it off.</source>
+        <oldsource>Device is overheating. Turn it off.</oldsource>
+        <translation type="unfinished">设备过热,请关闭设备.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -95,8 +100,9 @@
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
-        <source>USB cable plugged in. Unplug the USB cable to shutdown.</source>
-        <translation>USB线缆已接入,拔出以关闭电源.</translation>
+        <source>USB cable plugged in. Unplug it to shut down device.</source>
+        <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
+        <translation type="unfinished">USB线缆已接入,拔出以关闭电源.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -142,14 +148,16 @@
     <message id="qtn_usb_sync_active">
         <location filename="../src/usbmodeselector.cpp" line="144"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
-        <source>Sync and connect in use</source>
-        <translation>在使用中同步并连接</translation>
+        <source>Sync-and-connect in use</source>
+        <oldsource>Sync and connect in use</oldsource>
+        <translation type="unfinished">在使用中同步并连接</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="186"/>
-        <source>Adb mode in use</source>
-        <translation>Adb模式正在使用中</translation>
+        <source>ADB mode in use</source>
+        <oldsource>Adb mode in use</oldsource>
+        <translation type="unfinished">Adb模式正在使用中</translation>
     </message>
     <message id="qtn_usb_diag_active">
         <location filename="../src/usbmodeselector.cpp" line="150"/>
