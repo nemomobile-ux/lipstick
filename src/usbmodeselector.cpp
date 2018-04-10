@@ -143,7 +143,7 @@ void USBModeSelector::showNotification(QString mode)
             //% "Sync and connect in use"
             body = qtTrId("qtn_usb_sync_active");
         } else if (mode == QUsbModed::Mode::Adb) {
-            //% "Adb mode in use"
+            //% "ADB mode in use"
             body = qtTrId("qtn_usb_adb_active");
         } else if (mode == QUsbModed::Mode::Diag) {
             //% "Diag mode in use"
