@@ -173,12 +173,12 @@
     <message id="qtn_usb_filessystem_inuse">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="233"/>
         <source></source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_mount_failed">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="237"/>
         <source></source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

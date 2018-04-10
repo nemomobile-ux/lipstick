@@ -45,13 +45,13 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="205"/>
         <source>Entering power save mode</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="213"/>
         <source>Exiting power save mode</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_ener_lowbatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
@@ -95,7 +95,7 @@
         <location filename="../src/shutdownscreen.cpp" line="79"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="101"/>
         <source>Temperature too high. Device shutting down.</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
@@ -108,7 +108,7 @@
         <location filename="../src/shutdownscreen.cpp" line="89"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="115"/>
         <source>Battery empty. Device shutting down.</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
@@ -125,7 +125,7 @@
         <location filename="../src/usbmodeselector.cpp" line="132"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="189"/>
         <source>USB tethering in use</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_mtp_active">
         <location filename="../src/usbmodeselector.cpp" line="135"/>
@@ -137,7 +137,7 @@
         <location filename="../src/usbmodeselector.cpp" line="138"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="183"/>
         <source>Mass storage in use</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_sdk_active">
         <location filename="../src/usbmodeselector.cpp" line="141"/>
@@ -168,17 +168,17 @@
         <location filename="../src/usbmodeselector.cpp" line="153"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="188"/>
         <source>USB switched to host mode (OTG)</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_filessystem_inuse">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="233"/>
         <source></source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message id="qtn_usb_mount_failed">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="237"/>
         <source></source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
