@@ -30,11 +30,11 @@ void ThermalNotifier::applyThermalState(MeeGo::QmThermal::ThermalState state)
 {
     switch (state) {
     case MeeGo::QmThermal::Warning:
-        //% "Device is getting hot. Close all apps."
+        //% "Device getting hot. Close all apps."
         createAndPublishNotification("x-nemo.battery.temperature", qtTrId("qtn_shut_high_temp_warning"));
         break;
     case MeeGo::QmThermal::Alert:
-        //% "Device is overheating. Turn it off."
+        //% "Device overheating. Turn it off."
         createAndPublishNotification("x-nemo.battery.temperature", qtTrId("qtn_shut_high_temp_alert"));
         break;
     case MeeGo::QmThermal::LowTemperatureWarning:

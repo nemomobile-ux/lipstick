@@ -220,7 +220,7 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationID id)
          qtTrId("qtn_ener_remcha"),
          ""},
         {"x-nemo.battery.chargingnotstarted", // NotificationChargingNotStarted
-         //% "Charging not started. Replace charger."
+         //% "Not charging. Adjust or recycle charger."
          qtTrId("qtn_ener_repcharger"),
          ""},
         {"x-nemo.battery.recharge", // NotificationRechargeBattery
@@ -240,7 +240,7 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationID id)
          qtTrId("qtn_ener_lowbatt"),
          ""},
         {"x-nemo.battery.notenoughpower", // NotificationNoEnoughPower
-         //% "Not enough power to charge"
+         //% "Power input below charging threshold"
          qtTrId("qtn_ener_nopowcharge"),
          "icon-m-energy-management-insufficient-power"}
     };

@@ -52,7 +52,7 @@ void DiskSpaceNotifier::handleDiskSpaceChange(const QString &path, int percentag
     }
 
     if (notificationShouldBeVisible) {
-        //% "Getting low with storage. Please check."
+        //% "Storage space running out."
         const QString diskLowText = qtTrId("qtn_memu_memlow_notification_src");
 
         // Show a system notification

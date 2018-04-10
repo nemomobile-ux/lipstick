@@ -80,7 +80,7 @@ void ShutdownScreen::applySystemState(MeeGo::QmSystemState::StateIndication what
             break;
 
         case MeeGo::QmSystemState::ShutdownDeniedUSB:
-            //% "USB cable plugged in. Unplug the USB cable to shutdown."
+            //% "USB cable plugged in. Unplug it to shut down device."
             createAndPublishNotification("device.added", qtTrId("qtn_shut_unplug_usb"));
             break;
 
