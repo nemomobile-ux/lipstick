@@ -56,8 +56,9 @@
     <message id="qtn_ener_lowbatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
-        <source>Low battery</source>
-        <translation>Bateria baixa</translation>
+        <source>Low battery level</source>
+        <oldsource>Low battery</oldsource>
+        <translation type="unfinished">Bateria baixa</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
@@ -88,8 +89,9 @@
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
-        <source>Low temperature warning</source>
-        <translation>Aviso de temperatura baixa</translation>
+        <source>The device is too cold</source>
+        <oldsource>Low temperature warning</oldsource>
+        <translation type="unfinished">Aviso de temperatura baixa</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
