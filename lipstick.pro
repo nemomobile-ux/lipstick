@@ -17,3 +17,5 @@ QMAKE_DISTCLEAN += \
     configure-stamp \
     *.log.xml \
     *.log
+
+TRANSLATIONS = $$files(i18n/$$TARGET.*.ts)
