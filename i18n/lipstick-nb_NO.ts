@@ -6,7 +6,7 @@
     <message id="qtn_ap_lipstick">
         <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>System</translation>
     </message>
     <message id="qtn_ener_charging">
         <location filename="../src/notifications/batterynotifier.cpp" line="212"/>
@@ -57,7 +57,7 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
         <oldsource>Low battery</oldsource>
-        <translation type="unfinished">Lavt batterinivå</translation>
+        <translation>Lavt batterinivå</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
@@ -86,7 +86,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
         <oldsource>Low temperature warning</oldsource>
-        <translation type="unfinished">Enheten er i ferd med å bli for kald</translation>
+        <translation>Enheten er for kald</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
