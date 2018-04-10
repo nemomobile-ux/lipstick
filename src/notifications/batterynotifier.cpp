@@ -220,7 +220,7 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationID id)
          qtTrId("qtn_ener_remcha"),
          ""},
         {"x-nemo.battery.chargingnotstarted", // NotificationChargingNotStarted
-         //% "Charging not started. Replace charger."
+         //% "Not charging. Replace or recycle it."
          qtTrId("qtn_ener_repcharger"),
          ""},
         {"x-nemo.battery.recharge", // NotificationRechargeBattery
