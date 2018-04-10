@@ -156,8 +156,7 @@
         <location filename="../src/usbmodeselector.cpp" line="147"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="186"/>
         <source>ADB mode in use</source>
-        <oldsource>Adb mode in use</oldsource>
-        <translation type="unfinished">Σύνδεση σε ADB mode</translation>
+        <translation>Σύνδεση σε ADB mode</translation>
     </message>
     <message id="qtn_usb_diag_active">
         <location filename="../src/usbmodeselector.cpp" line="150"/>
