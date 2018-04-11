@@ -33,7 +33,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
         <oldsource>Charging not started. Replace charger.</oldsource>
-        <translation type="unfinished">Η φόρτιση δεν ξεκινάει. Αντικαταστήστε το φορτιστή.</translation>
+        <translation>Η φόρτιση δεν ξεκινάει. Αντικαταστήστε το φορτιστή.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -58,40 +58,40 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
         <oldsource>Low battery</oldsource>
-        <translation type="unfinished">Χαμηλή μπαταρία</translation>
+        <translation>Χαμηλή μπαταρία</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
         <oldsource>Not enough power to charge</oldsource>
-        <translation type="unfinished">Δεν υπάρχει αρκετή ισχύς για φόρτιση</translation>
+        <translation>Δεν υπάρχει αρκετή ισχύς για φόρτιση</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
         <oldsource>Getting low with storage. Please check.</oldsource>
-        <translation type="unfinished">Απομένει λίγος χώρος αποθήκευσης. Παρακαλώ ελέγξτε.</translation>
+        <translation>Ο χώρος αποθήκευσης εξαντλείται.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
         <oldsource>Device is getting hot. Close all apps.</oldsource>
-        <translation type="unfinished">Η συσκευή ζεσταίνεται. Κλείστε όλες τις εφαρμογές.</translation>
+        <translation>Η συσκευή ζεσταίνεται. Κλείστε όλες τις εφαρμογές.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation type="unfinished">Η συσκευή ζεστάθηκε υπερβολικά. Απενεργοποιήστε την.</translation>
+        <translation>Η συσκευή ζεστάθηκε υπερβολικά. Απενεργοποιήστε την.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
         <oldsource>Low temperature warning</oldsource>
-        <translation type="unfinished">Ειδοποίηση χαμηλής θερμοκρασίας</translation>
+        <translation>Η συσκευή έχει χαμηλή θερμοκρασία</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
@@ -104,7 +104,7 @@
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation type="unfinished">Συνδέθηκε καλώδιο USB. Αφαιρέστε το για απενεργοποίηση.</translation>
+        <translation>Συνδέθηκε καλώδιο USB. Αφαιρέστε το για απενεργοποίηση.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -152,7 +152,7 @@
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
         <oldsource>Sync and connect in use</oldsource>
-        <translation type="unfinished">Σύνδεση και συγχρονισμός</translation>
+        <translation>Σύνδεση και συγχρονισμός σε χρήση</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
