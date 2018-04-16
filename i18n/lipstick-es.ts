@@ -15,13 +15,13 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="181"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="258"/>
         <source>Charging</source>
-        <translation>cargando</translation>
+        <translation>Cargando</translation>
     </message>
     <message id="qtn_ener_charcomp">
         <location filename="../src/notifications/batterynotifier.cpp" line="216"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="114"/>
         <source>Charging complete</source>
-        <translation>carga completa</translation>
+        <translation>Carga completa</translation>
     </message>
     <message id="qtn_ener_remcha">
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
@@ -51,7 +51,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="213"/>
         <source>Exiting power save mode</source>
-        <translation>Saliendo modo ahorro de batería</translation>
+        <translation>Saliendo del modo ahorro de batería</translation>
     </message>
     <message id="qtn_ener_lowbatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
@@ -70,7 +70,7 @@
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
         <oldsource>Getting low with storage. Please check.</oldsource>
-        <translation>El espacio de almacenamiento se está acabando.</translation>
+        <translation>Casi sin espacio de almacenamiento.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
@@ -84,7 +84,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation>El dispositivo está sobrecalentado. Apágarlo.</translation>
+        <translation>El dispositivo está sobrecalentado. Apágalo.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -97,25 +97,25 @@
         <location filename="../src/shutdownscreen.cpp" line="79"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="101"/>
         <source>Temperature too high. Device shutting down.</source>
-        <translation>La temperatura es muy alta. Dispositivo apagándose.</translation>
+        <translation>La temperatura es muy alta. Apagando dispositivo.</translation>
     </message>
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation>Cable USB conectado. Desconectarlo para apagar el dispositivo.</translation>
+        <translation>Cable USB conectado. Desconéctalo para apagar el dispositivo.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="115"/>
         <source>Battery empty. Device shutting down.</source>
-        <translation>Batería vacía. Dispositivo apagándose</translation>
+        <translation>Batería vacía. Apagando dispositivo.</translation>
     </message>
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>Desbloquear el dispositivo primero</translation>
+        <translation>Desbloquea el dispositivo primero</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
