@@ -21,7 +21,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="216"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="114"/>
         <source>Charging complete</source>
-        <translation>Carica completa</translation>
+        <translation>Carica completata</translation>
     </message>
     <message id="qtn_ener_remcha">
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
@@ -33,7 +33,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
         <oldsource>Charging not started. Replace charger.</oldsource>
-        <translation type="unfinished">La carica non è cominciata. Sostituisci il caricabatterie.</translation>
+        <translation>Non in carica. Ripara o ricicla il caricabatterie.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -58,7 +58,7 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
         <oldsource>Low battery</oldsource>
-        <translation type="unfinished">Batteria scarica</translation>
+        <translation>Batteria quasi scarica</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
@@ -70,7 +70,7 @@
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
         <oldsource>Getting low with storage. Please check.</oldsource>
-        <translation type="unfinished">Lo spazio disponibile sta finendo. Per favore verifica.</translation>
+        <translation>Lo spazio disponibile sta finendo.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
@@ -91,7 +91,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
         <oldsource>Low temperature warning</oldsource>
-        <translation type="unfinished">Avvertimento di bassa temperatura</translation>
+        <translation>La temperatura del dispositivo è troppo bassa</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
@@ -152,7 +152,7 @@
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
         <oldsource>Sync and connect in use</oldsource>
-        <translation type="unfinished">Sync and connect in uso</translation>
+        <translation>Sync-and-connect in uso</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
