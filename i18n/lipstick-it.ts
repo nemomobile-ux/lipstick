@@ -64,7 +64,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
         <oldsource>Not enough power to charge</oldsource>
-        <translation type="unfinished">Non c&apos;è potenza sufficiente per ricaricare</translation>
+        <translation>Non c&apos;è potenza in ingresso sufficiente per la ricarica</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
@@ -77,14 +77,14 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
         <oldsource>Device is getting hot. Close all apps.</oldsource>
-        <translation type="unfinished">Il dispositivo si sta riscaldando. Chiudi tutte le applicazioni.</translation>
+        <translation>Il dispositivo si sta riscaldando. Chiudi tutte le applicazioni.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation type="unfinished">Il dispositivo si sta surriscaldando. Spegnilo.</translation>
+        <translation>Il dispositivo si sta surriscaldando. Spegnilo.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -104,7 +104,7 @@
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation type="unfinished">Il cavo USB è collegato. Scollega il cavo USB per spegnere.</translation>
+        <translation>Cavo USB collegato. Scollegalo per spegnere il dispositivo.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
