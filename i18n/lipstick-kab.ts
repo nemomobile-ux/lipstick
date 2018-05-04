@@ -152,7 +152,7 @@
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
         <oldsource>Sync and connect in use</oldsource>
-        <translation>Amtawi d tuqqna yerme</translation>
+        <translation>Amtawi d tuqqna yermed</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
