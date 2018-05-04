@@ -44,7 +44,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="205"/>
         <source>Entering power save mode</source>
-        <translation>Entrée en mode économie d&apos;énergie</translation>
+        <translation>Passage en mode économie d&apos;énergie</translation>
     </message>
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
@@ -56,7 +56,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
-        <translation>Niveau de batterie bas</translation>
+        <translation>Niveau de batterie faible</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
@@ -96,7 +96,7 @@
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <translation>Cable USB branché. Débranchez le pour éteindre l&apos;appareil.</translation>
+        <translation>Câble USB branché. Débranchez le pour éteindre l&apos;appareil.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -113,49 +113,49 @@
         <location filename="../src/usbmodeselector.cpp" line="127"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="180"/>
         <source>USB cable disconnected</source>
-        <translation>Cable USB déconnecté</translation>
+        <translation>Câble USB déconnecté</translation>
     </message>
     <message id="qtn_usb_connection_sharing_active">
         <location filename="../src/usbmodeselector.cpp" line="132"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="189"/>
         <source>USB tethering in use</source>
-        <translation>Partage de connexion USB utilisé</translation>
+        <translation>Partage de connexion USB en cours</translation>
     </message>
     <message id="qtn_usb_mtp_active">
         <location filename="../src/usbmodeselector.cpp" line="135"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="185"/>
         <source>MTP mode in use</source>
-        <translation>Mode MTP utilisé</translation>
+        <translation>Mode MTP activé</translation>
     </message>
     <message id="qtn_usb_storage_active">
         <location filename="../src/usbmodeselector.cpp" line="138"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="183"/>
         <source>Mass storage in use</source>
-        <translation>Mode Stockage de masse utilisé</translation>
+        <translation>Mode Stockage de masse activé</translation>
     </message>
     <message id="qtn_usb_sdk_active">
         <location filename="../src/usbmodeselector.cpp" line="141"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="184"/>
         <source>SDK mode in use</source>
-        <translation>Mode SDK utilisé</translation>
+        <translation>Mode SDK activé</translation>
     </message>
     <message id="qtn_usb_sync_active">
         <location filename="../src/usbmodeselector.cpp" line="144"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
-        <translation>Mode Sync-and-connect utilisé</translation>
+        <translation>Mode Sync-and-connect activé</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="186"/>
         <source>ADB mode in use</source>
-        <translation>Mode ADB utilisé</translation>
+        <translation>Mode ADB activé</translation>
     </message>
     <message id="qtn_usb_diag_active">
         <location filename="../src/usbmodeselector.cpp" line="150"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="187"/>
         <source>Diag mode in use</source>
-        <translation>Mode Diag utilisé</translation>
+        <translation>Mode Diag activé</translation>
     </message>
     <message id="qtn_usb_host_mode_active">
         <location filename="../src/usbmodeselector.cpp" line="153"/>
