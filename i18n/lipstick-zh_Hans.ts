@@ -33,7 +33,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
         <oldsource>Charging not started. Replace charger.</oldsource>
-        <translation type="unfinished">充电没有开始,请更换充电器.</translation>
+        <translation>没有充电,调整或回收充电器.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -58,40 +58,40 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
         <oldsource>Low battery</oldsource>
-        <translation type="unfinished">低电量</translation>
+        <translation>电池电量不足</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
         <oldsource>Not enough power to charge</oldsource>
-        <translation type="unfinished">没有足够的电量来充电</translation>
+        <translation>电源输入低于充电阈值</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
         <oldsource>Getting low with storage. Please check.</oldsource>
-        <translation type="unfinished">储存空间不足,请检查.</translation>
+        <translation>储存空间不足.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
         <oldsource>Device is getting hot. Close all apps.</oldsource>
-        <translation type="unfinished">设备发热,关闭所有应用.</translation>
+        <translation>设备发热,关闭所有应用.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation type="unfinished">设备过热,请关闭设备.</translation>
+        <translation>设备过热,请关闭设备.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
         <oldsource>Low temperature warning</oldsource>
-        <translation type="unfinished">低温警告</translation>
+        <translation>设备过冷</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
@@ -104,7 +104,7 @@
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation type="unfinished">USB线缆已接入,拔出以关闭电源.</translation>
+        <translation>USB线缆已接入,拔出以关闭设备.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -152,7 +152,7 @@
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
         <oldsource>Sync and connect in use</oldsource>
-        <translation type="unfinished">在使用中同步并连接</translation>
+        <translation>同步连接在使用中</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
