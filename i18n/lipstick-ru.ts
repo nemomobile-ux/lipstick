@@ -6,7 +6,7 @@
     <message id="qtn_ap_lipstick">
         <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
-        <translation>устройство</translation>
+        <translation>Устройство</translation>
     </message>
     <message id="qtn_ener_charging">
         <location filename="../src/notifications/batterynotifier.cpp" line="212"/>
@@ -15,19 +15,19 @@
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="181"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="258"/>
         <source>Charging</source>
-        <translation>зарядка</translation>
+        <translation>Зарядка</translation>
     </message>
     <message id="qtn_ener_charcomp">
         <location filename="../src/notifications/batterynotifier.cpp" line="216"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="114"/>
         <source>Charging complete</source>
-        <translation>зарядка завершена</translation>
+        <translation>Зарядка завершена</translation>
     </message>
     <message id="qtn_ener_remcha">
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>отключите зарядное устройство от источника питания для экономии энергии</translation>
+        <translation>Отсоедините з/у от источника питания для экономии энергии</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
@@ -44,7 +44,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="205"/>
         <source>Entering power save mode</source>
-        <translation>вход в режим энергосбережения</translation>
+        <translation>Вход в режим энергосбережения</translation>
     </message>
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
@@ -72,7 +72,7 @@
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
-        <translation>Устройство становится горячим. Закройте все приложения.</translation>
+        <translation>Устройство перегревается. Закройте все приложения.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
@@ -84,7 +84,7 @@
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
-        <translation>устройство слишком холодное</translation>
+        <translation>Устройство слишком холодное</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
@@ -107,25 +107,25 @@
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>сначала разблокируйте устройство</translation>
+        <translation>Для начала разблокируйте устройство</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="180"/>
         <source>USB cable disconnected</source>
-        <translation>отсоединен кабель USB</translation>
+        <translation>USB кабель отсоединен</translation>
     </message>
     <message id="qtn_usb_connection_sharing_active">
         <location filename="../src/usbmodeselector.cpp" line="132"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="189"/>
         <source>USB tethering in use</source>
-        <translation>режим использования USB-модема</translation>
+        <translation>Используется режим USB-модема</translation>
     </message>
     <message id="qtn_usb_mtp_active">
         <location filename="../src/usbmodeselector.cpp" line="135"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="185"/>
         <source>MTP mode in use</source>
-        <translation>способ МТП в использовании</translation>
+        <translation>MTP режим активирован</translation>
     </message>
     <message id="qtn_usb_storage_active">
         <location filename="../src/usbmodeselector.cpp" line="138"/>
