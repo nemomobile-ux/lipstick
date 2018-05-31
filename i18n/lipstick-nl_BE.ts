@@ -84,19 +84,19 @@
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
-        <translation>Het apparaat is te koud</translation>
+        <translation>’t Apparaat is te koud</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="101"/>
         <source>Temperature too high. Device shutting down.</source>
-        <translation>Temperatuur is te hoog, het apparaat word uitgeschakeld.</translation>
+        <translation>Temperatuur is te hoog, ’t apparaat word uitgeschakeld.</translation>
     </message>
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <translation>Verwijderd den USB-kabel voor het apparaat uit te schakelen.</translation>
+        <translation>Verwijderd den USB-kabel voor ’t apparaat uit te schakelen.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
