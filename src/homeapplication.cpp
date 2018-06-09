@@ -54,6 +54,7 @@
 #include "connmanvpnagent.h"
 #include "connmanvpnproxy.h"
 #include "connectivitymonitor.h"
+#include "screenshotservice.h"
 
 #include <nemo-devicelock/devicelock.h>
 
@@ -79,7 +80,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     , m_mainWindowInstance(0)
     , m_qmlPath(qmlPath)
     , m_homeReadySent(false)
-    , m_screenshotService(0)
     , m_connmanVpn(0)
     , m_online(false)
 {
@@ -118,6 +118,9 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_bluetoothAgent = new BluetoothAgent(this);
     m_usbModeSelector = new USBModeSelector(deviceLock, this);
 
+    m_screenshotService = new ScreenshotService(this);
+    new ScreenshotServiceAdaptor(m_screenshotService);
+
     m_shutdownScreen = new ShutdownScreen(this);
     m_localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(m_shutdownScreen);
@@ -127,14 +130,12 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     QDBusConnection systemBus = QDBusConnection::systemBus();
     registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, m_screenLock);
     registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
+
+
+
     if (!systemBus.registerService(LIPSTICK_DBUS_SERVICE_NAME)) {
         qWarning("Unable to register D-Bus service %s: %s", LIPSTICK_DBUS_SERVICE_NAME, systemBus.lastError().message().toUtf8().constData());
     }
-
-    m_screenshotService = new ScreenshotService(this);
-    new ScreenshotServiceAdaptor(m_screenshotService);
-    QDBusConnection sessionBus = QDBusConnection::sessionBus();
-    registerDBusObject(sessionBus, LIPSTICK_DBUS_SCREENSHOT_PATH, m_screenshotService);
 
     // Bring automatic VPNs up and down when connectivity state changes
     auto performUpDown = [this](const QList<QString> &activeTypes) {
@@ -417,9 +418,9 @@ void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
     }
 }
 
-void HomeApplication::takeScreenshot(const QString &path)
+bool HomeApplication::takeScreenshot(const QString &path)
 {
-    m_screenshotService->saveScreenshot(path);
+    return ScreenshotService::saveScreenshot(path);
 }
 
 LocaleManager *HomeApplication::localeManager()

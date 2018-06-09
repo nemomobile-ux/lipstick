@@ -20,11 +20,11 @@
 class ScreenshotService : public QObject
 {
     Q_OBJECT
+
 public:
     explicit ScreenshotService(QObject *parent = 0);
 
-public slots:
-    void saveScreenshot(const QString &path);
+    static bool saveScreenshot(const QString &path);
 };
 
 #endif // SCREENSHOTSERVICE_H
