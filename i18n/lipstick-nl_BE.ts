@@ -27,30 +27,30 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>Haald den oplader uit het stopcontact voor energie te besparen</translation>
+        <translation>Haalt den oplader uit het stopcontact voor energie te besparen</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
-        <translation>Apparaat word nie opgeladen. Steld den oplader bij of vervangd hem.</translation>
+        <translation>Apparaat wordt niet opgeladen. Stelt den oplader bij of vervangt hem.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="129"/>
         <source>Recharge battery</source>
-        <translation>Herlaad de batterij</translation>
+        <translation>Herlaadt de batterij</translation>
     </message>
     <message id="qtn_ener_ent_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="205"/>
         <source>Entering power save mode</source>
-        <translation>Energiebesparende modus word ingeschakeld</translation>
+        <translation>Energiebesparende modus wordt ingeschakeld</translation>
     </message>
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="213"/>
         <source>Exiting power save mode</source>
-        <translation>Energiebesparende modus word uitgeschakeld</translation>
+        <translation>Energiebesparende modus wordt uitgeschakeld</translation>
     </message>
     <message id="qtn_ener_lowbatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
@@ -61,7 +61,7 @@
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
-        <translation>Nie’ genoeg stroom voor op te laden</translation>
+        <translation>Niet genoeg stroom voor op te laden</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
@@ -72,42 +72,42 @@
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
-        <translation>Apparaat word te heet. Sluit alle apps.</translation>
+        <translation>Apparaat wordt te heet. Sluit alle apps.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
-        <translation>Apparaat geraakt oververhit. Schakeld het uit.</translation>
+        <translation>Apparaat geraakt oververhit. Schakelt het uit.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
-        <translation>’t Apparaat is te koud</translation>
+        <translation>Het apparaat is te koud</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="79"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="101"/>
         <source>Temperature too high. Device shutting down.</source>
-        <translation>Temperatuur is te hoog, ’t apparaat word uitgeschakeld.</translation>
+        <translation>Temperatuur is te hoog, het apparaat wordt uitgeschakeld.</translation>
     </message>
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <translation>Verwijderd den USB-kabel voor ’t apparaat uit te schakelen.</translation>
+        <translation>Verwijdert den USB-kabel voor het apparaat uit te schakelen.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="115"/>
         <source>Battery empty. Device shutting down.</source>
-        <translation>Batterij leeg, apparaat word zo dadelijk uitgeschakeld.</translation>
+        <translation>Batterij leeg, apparaat wordt zo dadelijk uitgeschakeld.</translation>
     </message>
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>Ontgrendeld eerst het apparaat</translation>
+        <translation>Ontgrendelt eerst het apparaat</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
