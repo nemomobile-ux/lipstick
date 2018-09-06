@@ -59,6 +59,8 @@ public slots:
 
 private:
     friend class LipstickCompositor;
+    friend class LipstickCompositorWindow;
+
     void setCompositor(LipstickCompositor *);
 
     void addItem(int);
