@@ -107,7 +107,7 @@ void USBModeSelector::applyUSBMode(QString mode)
                 hints.insert(LipstickNotification::HINT_CATEGORY, "x-nemo.device.locked");
                 //% "Unlock device first"
                 hints.insert(LipstickNotification::HINT_PREVIEW_BODY, qtTrId("qtn_usb_device_locked"));
-                manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
+                manager->Notify(manager->systemApplicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
                 emit showUnlockScreen();
             }
         }
@@ -168,7 +168,7 @@ void USBModeSelector::showNotification(QString mode)
     if (m_previousNotificationId != 0) {
         manager->CloseNotification(m_previousNotificationId);
     }
-    m_previousNotificationId = manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
+    m_previousNotificationId = manager->Notify(manager->systemApplicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
 }
 
 void USBModeSelector::showError(const QString &errorCode)
@@ -179,7 +179,7 @@ void USBModeSelector::showError(const QString &errorCode)
         hints.insert(LipstickNotification::HINT_CATEGORY, "device.error");
         //% "USB connection error occurred"
         hints.insert(LipstickNotification::HINT_PREVIEW_BODY, qtTrId(s_errorCodeToTranslationID.value(errorCode).toUtf8().constData()));
-        manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
+        manager->Notify(manager->systemApplicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
     }
 }
 
