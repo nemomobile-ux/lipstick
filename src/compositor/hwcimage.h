@@ -20,9 +20,11 @@
 #include <QImage>
 #include <QQuickItem>
 #include <QPointer>
+#include <QExplicitlySharedDataPointer>
 
 #include "lipstickglobal.h"
 
+class EglHybrisBuffer;
 class HwcImageNode;
 class HwcImageLoadRequest;
 
@@ -110,6 +112,7 @@ private:
     QQuickItem *m_rotationHandler;
 	QUrl m_source;
     QImage m_image;
+    QExplicitlySharedDataPointer<EglHybrisBuffer> m_hybrisBuffer;
     QSize m_textureSize;
     QString m_effect;
     Status m_status;
