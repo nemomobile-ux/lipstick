@@ -22,6 +22,8 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QSqlTableModel>
+#include <QFile>
+#include <QFileInfo>
 #include <mremoteaction.h>
 #include <mdesktopentry.h>
 #include <sys/statfs.h>
