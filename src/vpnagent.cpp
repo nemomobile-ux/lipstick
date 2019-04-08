@@ -144,14 +144,115 @@ QVariant extract(const QDBusArgument &arg)
     return QVariant::fromValue(rv);
 }
 
+// Extracts a boolean value and removes it from the map
+bool ExtractRequestBool(QVariantMap &extracted, const QString key, bool defaultValue) {
+    bool result = defaultValue;
+    QVariantMap::iterator it = extracted.find(key);
+    while (it != extracted.end()) {
+        bool found = false;
+        if (it.key() == key) {
+            QVariantMap field(it.value().value<QVariantMap>());
+            QString type = field.value(QStringLiteral("Type")).toString();
+            QString requirement = field.value(QStringLiteral("Requirement")).toString();
+            QString value = field.value(QStringLiteral("Value")).toString();
+
+            if ((type == QStringLiteral("string")) && (requirement == QStringLiteral("mandatory"))) {
+                qDebug() << "VPNUI extracted " << it.key() << ": " << value;
+                result = (value == QStringLiteral("1"));
+                it = extracted.erase(it);
+                found = true;
+            }
+        }
+        if (!found) {
+            it++;
+        }
+    }
+    return result;
+}
+
 }
 
 QVariantMap VpnAgent::RequestInput(const QDBusObjectPath &path, const QVariantMap &details)
 {
+    qWarning("storeCredentials not present into upstream connman");
+    Q_UNUSED(path);
+    Q_UNUSED(details);
+/*
     // Extract the details from DBus marshalling
     QVariantMap extracted(details);
     for (QVariantMap::iterator it = extracted.begin(), end = extracted.end(); it != end; ++it) {
         *it = extract<QVariantMap>(it.value().value<QDBusArgument>());
+    }
+
+    const bool allowCredentialStorage(ExtractRequestBool(extracted, "AllowStoreCredentials", true));
+    const bool allowCredentialRetrieval(ExtractRequestBool(extracted, "AllowRetrieveCredentials", true));
+
+    qDebug() << "VPNUI final AllowStoreCredentials: " << allowCredentialStorage;
+    qDebug() << "VPNUI final AllowRetrieveCredentials: " << allowCredentialRetrieval;
+
+    // Can we supply the requested data from stored credentials?
+    const QString objectPath(path.path());
+    //const bool storeCredentials(m_connections->connectionCredentialsEnabled(objectPath));
+    if (storeCredentials && allowCredentialRetrieval) {
+        const QVariantMap credentials(m_connections->connectionCredentials(objectPath));
+
+        bool satisfied(true);
+        QVariantMap response;
+
+        QList<QPair<QVariantMap::iterator, QString> > storedValues;
+        QVariantMap::iterator failureIt = extracted.end();
+
+        for (QVariantMap::iterator it = extracted.begin(), end = extracted.end(); it != end; ++it) {
+            QVariantMap field(it.value().value<QVariantMap>());
+
+            const QString &name(it.key());
+            const QString fieldRequirement = field.value(QStringLiteral("Requirement")).toString();
+            const bool mandatory(fieldRequirement == QStringLiteral("mandatory"));
+            if (fieldRequirement != QStringLiteral("informational")) {
+                auto cit = credentials.find(name);
+                const QString storedValue(cit == credentials.end() ? QString() : cit->toString());
+                if (storedValue.isEmpty()) {
+                    if (mandatory) {
+                        satisfied = false;
+                    }
+                } else {
+                    response.insert(name, storedValue);
+                    storedValues.append(qMakePair(it, storedValue));
+                }
+            } else {
+                if (name == "VpnAgent.AuthFailure") {
+                    // Our previous attempt failed, do not use the stored values
+                    // m_connections->setConnectionCredentials(objectPath, QVariantMap());
+                    qWarning("setConnectionCredentials NOT PRESENT IN UPSTREAM CONNMAN");
+                    failureIt = it;
+                    break;
+                }
+            }
+        }
+
+        if (failureIt != extracted.end()) {
+            // Hide this property from the user agent
+            extracted.erase(failureIt);
+        } else {
+            if (satisfied) {
+                // We can respond immediately
+                return response;
+            }
+
+            // Store the values we previously held
+            for (auto vit = storedValues.cbegin(), vend = storedValues.cend(); vit != vend; ++vit) {
+                QVariantMap::iterator it = vit->first;
+                QString storedValue = vit->second;
+
+                QVariantMap field(it.value().value<QVariantMap>());
+                field.insert(QStringLiteral("Value"), QVariant::fromValue(storedValue));
+                *it = QVariant::fromValue(field);
+            }
+        }
+    }
+
+    if (allowCredentialStorage) {
+        extracted.insert(QStringLiteral("storeCredentials"), QVariant::fromValue(storeCredentials));
     }
 
     // Inform the caller that the reponse will be asynchronous
@@ -164,7 +265,7 @@ QVariantMap VpnAgent::RequestInput(const QDBusObjectPath &path, const QVariantMa
         // No request was previously in progress
         emit inputRequested(newRequest.path, newRequest.details);
     }
-
+    */
     return QVariantMap();
 }
 
