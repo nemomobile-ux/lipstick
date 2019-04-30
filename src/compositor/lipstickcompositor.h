@@ -171,6 +171,8 @@ signals:
 
     void showUnlockScreen();
 
+    void openUrlRequested(const QUrl &url);
+
 private slots:
     void onHasContentChanged();
     void surfaceTitleChanged();
