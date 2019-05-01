@@ -33,7 +33,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
         <oldsource>Charging not started. Replace charger.</oldsource>
-        <translation>Lädt nicht. Ladegerät anpassen oder auswechseln.</translation>
+        <translation>Lädt nicht. Ladegerät einstellen oder austauschen.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
@@ -77,14 +77,14 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
         <oldsource>Device is getting hot. Close all apps.</oldsource>
-        <translation>Das Gerät wird heiß. Schließe alle Apps.</translation>
+        <translation>Das Gerät wird heiß. Alle Apps schließen.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation>Das Gerät überhitzt. Schalte es aus.</translation>
+        <translation>Das Gerät überhitzt. Bitte ausschalten.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -97,25 +97,25 @@
         <location filename="../src/shutdownscreen.cpp" line="79"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="101"/>
         <source>Temperature too high. Device shutting down.</source>
-        <translation>Die Temperatur ist zu hoch. Das Gerät fährt herunter.</translation>
+        <translation>Die Temperatur ist zu hoch. Gerät schaltet sich ab.</translation>
     </message>
     <message id="qtn_shut_unplug_usb">
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation>USB-Kabel verbunden. Entferne das USB-Kabel zum Herunterfahren.</translation>
+        <translation>Mit USB-Kabel verbunden. USB-Kabel zum Herunterfahren entfernen.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="115"/>
         <source>Battery empty. Device shutting down.</source>
-        <translation>Akku leer. Das Gerät fährt herunter.</translation>
+        <translation>Akku leer. Gerät schaltet sich aus.</translation>
     </message>
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>Entsperre das Gerät erst</translation>
+        <translation>Gerät zuerst entsperren</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
