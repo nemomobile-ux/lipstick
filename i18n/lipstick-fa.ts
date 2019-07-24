@@ -6,7 +6,7 @@
     <message id="qtn_ap_lipstick">
         <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
-        <translation>دستگاه</translation>
+        <translation>سامانه</translation>
     </message>
     <message id="qtn_ener_charging">
         <location filename="../src/notifications/batterynotifier.cpp" line="212"/>
@@ -27,7 +27,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>برای صرفه‌جویی در مصرف نیرو، شارژر را از برق قطع نمایید</translation>
+        <translation>برای ذخیرهٔ انرژی، شارژر را جدا کنید</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
@@ -44,41 +44,41 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="205"/>
         <source>Entering power save mode</source>
-        <translation>ورود به حالت ذخیره نیرو</translation>
+        <translation>در حال ورود به حالت ذخیرهٔ نیرو</translation>
     </message>
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="236"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="213"/>
         <source>Exiting power save mode</source>
-        <translation>خروج از حالت ذخیره نیرو</translation>
+        <translation>در حال خروج از حالت ذخیرهٔ نیرو</translation>
     </message>
     <message id="qtn_ener_lowbatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
-        <translation>سطح پایینِ باتری</translation>
+        <translation>سطح پایین باتری</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
-        <translation>اتصال شارژر در هنگام رسیدن به آستانه ی شارژ</translation>
+        <translation>نیروی ورودی، کم‌تر از آستانهٔ شارژ شدن است</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
-        <translation>حافظه در حال تمام شدن است.</translation>
+        <translation>فضای ذخیره در حال اتمام است.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
-        <translation>دستگاه دارد داغ می‌شود. همه‌ی برنامه‌ها را ببندید.</translation>
+        <translation>دستگاه دارد داغ می‌شود. تمامی کاره‌ها را ببندید.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
-        <translation>دستگاه بیش از حد داغ کرده است. خاموشش کنید.</translation>
+        <translation>دستگاه بیش از حد داغ شده است. خاموشش کنید.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -96,7 +96,7 @@
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <translation>کابل USB متصل است. برای خاموش کردن دستگاه آن را جدا کنید.</translation>
+        <translation>کابل یواس‌بی وصل است. برای خاموش کردن دستگاه، جدایش کنید.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -107,61 +107,61 @@
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>اول قفل دستگاه را باز کنید</translation>
+        <translation>نخست، قفل دستگاه را بگشایید</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="180"/>
         <source>USB cable disconnected</source>
-        <translation>کابل USB قطع شد</translation>
+        <translation>کابل یواس‌بی قطع شد</translation>
     </message>
     <message id="qtn_usb_connection_sharing_active">
         <location filename="../src/usbmodeselector.cpp" line="132"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="189"/>
         <source>USB tethering in use</source>
-        <translation>استفاده از اشتراک USB</translation>
+        <translation>در حال استفاده از اشتراک یواس‌بی</translation>
     </message>
     <message id="qtn_usb_mtp_active">
         <location filename="../src/usbmodeselector.cpp" line="135"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="185"/>
         <source>MTP mode in use</source>
-        <translation>استفاده از حالت انتقال رسانه</translation>
+        <translation>در حال استفاده از MTP</translation>
     </message>
     <message id="qtn_usb_storage_active">
         <location filename="../src/usbmodeselector.cpp" line="138"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="183"/>
         <source>Mass storage in use</source>
-        <translation>استفاده از حالت ذخیره انبوه</translation>
+        <translation>در حال استفاده از ذخیرهٔ انبوه</translation>
     </message>
     <message id="qtn_usb_sdk_active">
         <location filename="../src/usbmodeselector.cpp" line="141"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="184"/>
         <source>SDK mode in use</source>
-        <translation>استفاده از حالت توسعه (SDK)</translation>
+        <translation>در حال استفاده از SDK</translation>
     </message>
     <message id="qtn_usb_sync_active">
         <location filename="../src/usbmodeselector.cpp" line="144"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
-        <translation>استفاده از اتصال-و-ارتباط</translation>
+        <translation>در حال استفاده از اتصال-و-ارتباط</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="186"/>
         <source>ADB mode in use</source>
-        <translation>استفاده از حالت خطایابی اندروید (ADB)</translation>
+        <translation>در حال استفاده از ADB</translation>
     </message>
     <message id="qtn_usb_diag_active">
         <location filename="../src/usbmodeselector.cpp" line="150"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="187"/>
         <source>Diag mode in use</source>
-        <translation>استفاده از حالت عیب‌یابی</translation>
+        <translation>در حال استفاده از عیب‌یابی</translation>
     </message>
     <message id="qtn_usb_host_mode_active">
         <location filename="../src/usbmodeselector.cpp" line="153"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="188"/>
         <source>USB switched to host mode (OTG)</source>
-        <translation>اتصال USB، هاست شد (OTG)</translation>
+        <translation>یواس‌بی به حالت میزبان (OTG) تغییر کرد</translation>
     </message>
     <message id="qtn_usb_filessystem_inuse">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="233"/>
