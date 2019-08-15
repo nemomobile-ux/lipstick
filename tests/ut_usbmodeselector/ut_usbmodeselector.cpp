@@ -20,11 +20,13 @@
 #include <qusbmoded.h>
 
 #include "ut_usbmodeselector.h"
-#include "qmlocks_stub.h"
 #include "notificationmanager_stub.h"
+#include "lipsticknotification.h"
 #include "closeeventeater_stub.h"
 #include "homewindow.h"
 #include "lipstickqmlpath_stub.h"
+
+#include <nemo-devicelock/devicelock.h>
 
 HomeWindow::HomeWindow()
 {
@@ -96,8 +98,9 @@ void Ut_USBModeSelector::cleanupTestCase()
 
 void Ut_USBModeSelector::init()
 {
-    usbModeSelector = new USBModeSelector;
-    usbModeSelector->usbMode->setCurrentMode(QUsbModed::Mode::Undefined);
+    deviceLock = new NemoDeviceLock::DeviceLock(this);
+    usbModeSelector = new USBModeSelector(deviceLock);
+    usbModeSelector->m_usbMode->setCurrentMode(QUsbModed::Mode::Undefined);
 
     gNotificationManagerStub->stubReset();
     gNotificationManagerStub->stubSetReturnValue("Notify", (uint)1);
@@ -106,6 +109,7 @@ void Ut_USBModeSelector::init()
 void Ut_USBModeSelector::cleanup()
 {
     delete usbModeSelector;
+    delete deviceLock;
     homeWindows.clear();
     homeWindowVisible.clear();
     gNotificationManagerStub->stubReset();
@@ -113,8 +117,8 @@ void Ut_USBModeSelector::cleanup()
 
 void Ut_USBModeSelector::testConnections()
 {
-    QCOMPARE(disconnect(usbModeSelector->usbMode, SIGNAL(currentModeChanged()), usbModeSelector, SLOT(applyCurrentUSBMode())), true);
-    QCOMPARE(disconnect(usbModeSelector->usbMode, SIGNAL(supportedModesChanged()), usbModeSelector, SIGNAL(supportedUSBModesChanged())), true);
+    QCOMPARE(disconnect(usbModeSelector->m_usbMode, SIGNAL(currentModeChanged()), usbModeSelector, SLOT(applyCurrentUSBMode())), true);
+    QCOMPARE(disconnect(usbModeSelector->m_usbMode, SIGNAL(supportedModesChanged()), usbModeSelector, SIGNAL(supportedUSBModesChanged())), true);
 }
 
 void Ut_USBModeSelector::testShowDialog_data()
@@ -130,8 +134,8 @@ void Ut_USBModeSelector::testShowDialog()
     QFETCH(QString, mode);
 
     QSignalSpy spy(usbModeSelector, SIGNAL(dialogShown()));
-    usbModeSelector->usbMode->setConfigMode(mode);
-    usbModeSelector->applyUSBMode(mode);
+    usbModeSelector->m_usbMode->setConfigMode(mode);
+    usbModeSelector->handleUSBState();
 
     QCOMPARE(homeWindows.count(), 1);
 
@@ -165,9 +169,9 @@ void Ut_USBModeSelector::testHideDialog()
 {
     QFETCH(QString, mode);
 
-    usbModeSelector->usbMode->setConfigMode(QUsbModed::Mode::Ask);
-    usbModeSelector->applyUSBMode(QUsbModed::Mode::Ask);
-    usbModeSelector->applyUSBMode(mode);
+    usbModeSelector->m_usbMode->setConfigMode(QUsbModed::Mode::Ask);
+    usbModeSelector->m_usbMode->setCurrentMode(QUsbModed::Mode::Ask);
+    usbModeSelector->handleUSBState();
     QCOMPARE(homeWindowVisible[homeWindows.first()], false);
 }
 
@@ -195,31 +199,30 @@ void Ut_USBModeSelector::testUSBNotifications()
     QFETCH(QString, category);
     QFETCH(QString, body);
 
-    usbModeSelector->applyUSBMode(mode);
+    usbModeSelector->m_usbMode->setCurrentMode(QUsbModed::Mode::Ask);
+    usbModeSelector->handleUSBState();
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 1);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_CATEGORY).toString(), category);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), body);
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_CATEGORY).toString(), category);
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_PREVIEW_BODY).toString(), body);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
 }
 
-Q_DECLARE_METATYPE(MeeGo::QmLocks::State)
-
 void Ut_USBModeSelector::testConnectingUSBWhenDeviceIsLockedEmitsDialogShown_data()
 {
-    QTest::addColumn<MeeGo::QmLocks::State>("deviceLocked");
+    QTest::addColumn<NemoDeviceLock::DeviceLock::LockState>("deviceLocked");
     QTest::addColumn<int>("dialogShownCount");
-    QTest::newRow("Device locked") << MeeGo::QmLocks::Locked << 1;
-    QTest::newRow("Device not locked") << MeeGo::QmLocks::Unlocked << 0;
+    QTest::newRow("Device locked") << NemoDeviceLock::DeviceLock::Locked << 1;
+    QTest::newRow("Device not locked") << NemoDeviceLock::DeviceLock::Unlocked << 0;
 }
 
 void Ut_USBModeSelector::testConnectingUSBWhenDeviceIsLockedEmitsDialogShown()
 {
-    QFETCH(MeeGo::QmLocks::State, deviceLocked);
+    QFETCH(NemoDeviceLock::DeviceLock::LockState, deviceLocked);
     QFETCH(int, dialogShownCount);
 
     QSignalSpy spy(usbModeSelector, SIGNAL(dialogShown()));
-    gQmLocksStub->stubSetReturnValue("getState", deviceLocked);
-    usbModeSelector->applyUSBMode(QUsbModed::Mode::Connected);
+    deviceLock->setState(deviceLocked);
+    usbModeSelector->handleUSBEvent(QUsbModed::Mode::Connected);
     QCOMPARE(spy.count(), dialogShownCount);
 }
 
@@ -230,17 +233,17 @@ void Ut_USBModeSelector::testShowError()
 
     usbModeSelector->showError("qtn_usb_filessystem_inuse");
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 1);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_usb_filessystem_inuse"));
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_usb_filessystem_inuse"));
 
     usbModeSelector->showError("mount_failed");
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 2);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_usb_mount_failed"));
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_usb_mount_failed"));
 }
 
 void Ut_USBModeSelector::testSetUSBMode()
 {
-    usbModeSelector->setUSBMode(QUsbModed::Mode::Charging);
-    QCOMPARE(usbModeSelector->usbMode->currentMode(), QUsbModed::Mode::Charging);
+    usbModeSelector->setMode(QUsbModed::Mode::Charging);
+    QCOMPARE(usbModeSelector->m_usbMode->currentMode(), QUsbModed::Mode::Charging);
 }
 
 QTEST_MAIN (Ut_USBModeSelector)
