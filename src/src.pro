@@ -71,7 +71,6 @@ HEADERS += \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
-    notifications/lowbatterynotifier.h \
     notifications/diskspacenotifier.h \
     notifications/notificationfeedbackplayer.h \
     notifications/androidprioritystore.h \
@@ -115,7 +114,6 @@ SOURCES += \
     notifications/notificationlistmodel.cpp \
     notifications/notificationpreviewpresenter.cpp \
     notifications/batterynotifier.cpp \
-    notifications/lowbatterynotifier.cpp \
     notifications/diskspacenotifier.cpp \
     notifications/androidprioritystore.cpp \
     screenlock/screenlock.cpp \
@@ -144,9 +142,25 @@ SOURCES += \
 
 CONFIG += link_pkgconfig mobility qt warn_on depend_includepath qmake_cache target_qt
 CONFIG -= link_prl
-PKGCONFIG += mlite5 mce keepalive dbus-1 dbus-glib-1 libresourceqt5 ngf-qt5 Qt5SystemInfo libsystemd contextkit-statefs dsme_dbus_if thermalmanager_dbus_if usb-moded-qt5 egl
 
-LIBS += -lrt
+PKGCONFIG += \
+    dbus-1 \
+    dbus-glib-1 \
+    dsme_dbus_if \
+    keepalive \
+    libresourceqt5 \
+    libsystemd \
+    mlite5 \
+    mce \
+    mce-qt5 \
+    nemodevicelock \
+    ngf-qt5 \
+    Qt5SystemInfo \
+    systemsettings \
+    thermalmanager_dbus_if \
+    usb-moded-qt5
+
+LIBS += -lrt -lEGL
 
 packagesExist(contentaction5) {
     message("Using contentaction to launch applications")
@@ -154,13 +168,6 @@ packagesExist(contentaction5) {
     DEFINES += HAVE_CONTENTACTION
 } else {
     warning("contentaction doesn't exist; falling back to exec - this may not work so great")
-}
-
-packagesExist(contextkit-statefs) {
-    PKGCONFIG += contextkit-statefs
-    DEFINES += HAVE_CONTEXTSUBSCRIBER
-} else {
-    warning("Contextsubscriber not found")
 }
 
 QT += dbus xml qml quick sql gui gui-private sensors
