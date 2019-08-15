@@ -454,10 +454,9 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationType type)
     QVariantHash hints;
     hints.insert(LipstickNotification::HINT_CATEGORY, info.category);
     hints.insert(LipstickNotification::HINT_PREVIEW_BODY, info.message);
-
     QueuedNotification queuedNotification;
     queuedNotification.m_type = type;
-    queuedNotification.m_id = m_notificationManager->Notify(qApp->applicationName(),
+    queuedNotification.m_id = m_notificationManager->Notify(m_notificationManager->systemApplicationName(),
                                                             0,
                                                             info.icon,
                                                             QString(),

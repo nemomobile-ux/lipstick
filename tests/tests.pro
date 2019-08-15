@@ -1,6 +1,5 @@
 TEMPLATE = subdirs
 SUBDIRS = \
-          ut_categorydefinitionstore \
           ut_closeeventeater \
           ut_launchermodel \
           ut_lipsticksettings \

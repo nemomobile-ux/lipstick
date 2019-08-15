@@ -77,7 +77,6 @@ HEADERS += \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
-    notifications/lowbatterynotifier.h \
     notifications/notificationfeedbackplayer.h \
     notifications/androidprioritystore.h \
     screenlock/screenlock.h \
@@ -124,7 +123,6 @@ SOURCES += \
     notifications/notificationlistmodel.cpp \
     notifications/notificationpreviewpresenter.cpp \
     notifications/batterynotifier.cpp \
-    notifications/lowbatterynotifier.cpp \
     notifications/androidprioritystore.cpp \
     screenlock/screenlock.cpp \
     screenlock/screenlockadaptor.cpp \
