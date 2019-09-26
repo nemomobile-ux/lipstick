@@ -101,7 +101,7 @@ static QStringList defaultDirectories()
         flatpackAppsPath = QString();
     }
 
-    return QStringList() << QStringLiteral(LAUNCHER_APPS_PATH) << userLocalAppsPath << flatpackAppsPath;
+    return QStringList() << QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation) << userLocalAppsPath << flatpackAppsPath;
 }
 
 Q_GLOBAL_STATIC(LauncherDBus, _launcherDBus);
