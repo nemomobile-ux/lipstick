@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2016 - 2019 Jolla Ltd.
-** Copyright (C) 2019 Open Mobile Platform LLC.
+** Copyright (c) 2016 - 2019 Jolla Ltd.
+** Copyright (c) 2019 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -28,7 +28,8 @@
 
 VpnAgent::VpnAgent(QObject *parent) :
     QObject(parent),
-    m_window(0)
+    m_window(0),
+    m_connections(new SettingsVpnModel(this))
 {
     QTimer::singleShot(0, this, SLOT(createWindow()));
 }
