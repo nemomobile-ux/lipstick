@@ -27,7 +27,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>Desenchufa&apos;l cargador de la lletricidá p&apos;aforrar enerxía</translation>
+        <translation>Disconnect charger from power supply to save energy</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
@@ -96,7 +96,7 @@
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enchufóse&apos;l cable USB. Desenchúfalu p&apos;apagar el preséu.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
