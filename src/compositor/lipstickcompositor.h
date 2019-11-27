@@ -29,6 +29,9 @@
 #include <QPointer>
 #include <QTimer>
 #include <MGConfItem>
+#include <QDBusConnection>
+#include <QDBusContext>
+#include <QDBusMessage>
 
 #include <timed-qt5/interface>
 #include <timed-qt5/exception>
@@ -39,8 +42,25 @@ class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
 class LipstickRecorderManager;
+class QMceNameOwner;
 
-class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
+struct QueuedSetUpdatesEnabledCall
+{
+    QueuedSetUpdatesEnabledCall(const QDBusConnection &connection, const QDBusMessage &message, bool enable)
+    : m_connection(connection)
+    , m_message(message)
+    , m_enable(enable)
+    {
+    }
+
+    QDBusConnection m_connection;
+    QDBusMessage m_message;
+    bool m_enable;
+};
+
+class LIPSTICK_EXPORT LipstickCompositor
+        : public QWaylandQuickCompositor
+        , QDBusContext
 {
     Q_OBJECT
 
@@ -115,6 +135,7 @@ public:
     QWaylandSurface *surfaceForId(int) const;
 
     bool completed();
+    void setUpdatesEnabledNow(bool enabled, bool inAmbientMode = false);
 
     bool ambientSupported() const;
     void setAmbientEnabled(bool enabled);
@@ -188,6 +209,7 @@ private slots:
     void onVisibleChanged(bool visible);
     void onSurfaceDying();
     void initialize();
+    void processQueuedSetUpdatesEnabledCalls();
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
 
@@ -245,6 +267,9 @@ private:
 
     Maemo::Timed::Interface *m_timedDbus;
     bool m_ambientModeEnabled;
+
+    QList<QueuedSetUpdatesEnabledCall> m_queuedSetUpdatesEnabledCalls;
+    QMceNameOwner *m_mceNameOwner;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H

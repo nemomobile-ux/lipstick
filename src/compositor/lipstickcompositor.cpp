@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013-2019 Jolla Ltd.
+** Copyright (c) 2019 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -39,10 +39,10 @@
 
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
-
+#include <qmcenameowner.h>
+#include <dbus/dbus-protocol.h>
 
 #define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
-
 
 LipstickCompositor *LipstickCompositor::m_instance = 0;
 
@@ -63,6 +63,9 @@ LipstickCompositor::LipstickCompositor()
     , m_completed(false)
     , m_onUpdatesDisabledUnfocusedWindowId(0)
     , m_fakeRepaintTriggered(false)
+    , m_queuedSetUpdatesEnabledCalls()
+    , m_mceNameOwner(new QMceNameOwner(this))
+
 {
     m_window = new QQuickWindow();
     m_window->setColor(Qt::black);
@@ -122,6 +125,13 @@ LipstickCompositor::LipstickCompositor()
     }
 
     QTimer::singleShot(0, this, SLOT(initialize()));
+
+    QObject::connect(m_mceNameOwner, &QMceNameOwner::validChanged,
+                     this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
+    QObject::connect(m_mceNameOwner, &QMceNameOwner::nameOwnerChanged,
+                     this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
+
+    setUpdatesEnabledNow(false);
 }
 
 LipstickCompositor::~LipstickCompositor()
@@ -213,8 +223,8 @@ bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
                     url,
                     defaultAction,
                     isFile
-                        ? ContentAction::Action::actionsForFile(url)
-                        : ContentAction::Action::actionsForScheme(url.toString()));
+                    ? ContentAction::Action::actionsForFile(url)
+                    : ContentAction::Action::actionsForScheme(url.toString()));
         return true;
     } else if (defaultAction.isValid()) {
         defaultAction.trigger();
@@ -403,9 +413,9 @@ void LipstickCompositor::initialize()
      * to us -> use ReplaceExistingService to facilitate this.
      */
     QDBusReply<QDBusConnectionInterface::RegisterServiceReply> reply =
-        systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
-                                               QDBusConnectionInterface::ReplaceExistingService,
-                                               QDBusConnectionInterface::DontAllowReplacement);
+            systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
+                                                   QDBusConnectionInterface::ReplaceExistingService,
+                                                   QDBusConnectionInterface::DontAllowReplacement);
     if (!reply.isValid()) {
         qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s",
                  reply.error().message().toUtf8().constData());
@@ -835,7 +845,7 @@ bool LipstickCompositor::displayAmbient() const
     return touchScreen->currentDisplayState() == TouchScreen::DisplayOn;
 }
 
-void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
+void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)
 {
     if ((m_updatesEnabled != enabled) || inAmbientMode) {
         if (!inAmbientMode) {
@@ -877,6 +887,40 @@ void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
     if (enabled && !m_completed) {
         m_completed = true;
         emit completedChanged();
+    }
+}
+
+void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
+{
+    if (!calledFromDBus()) {
+        setUpdatesEnabledNow(enabled, inAmbientMode);
+    } else {
+        if (message().isReplyRequired())
+            setDelayedReply(true);
+        m_queuedSetUpdatesEnabledCalls.append(QueuedSetUpdatesEnabledCall(connection(), message(), enabled));
+        QMetaObject::invokeMethod(this, "processQueuedSetUpdatesEnabledCalls", Qt::QueuedConnection);
+    }
+}
+
+void LipstickCompositor::processQueuedSetUpdatesEnabledCalls()
+{
+    if (m_mceNameOwner->valid()) {
+        while (!m_queuedSetUpdatesEnabledCalls.isEmpty()) {
+            QueuedSetUpdatesEnabledCall queued(m_queuedSetUpdatesEnabledCalls.takeFirst());
+            if (queued.m_message.service() != m_mceNameOwner->nameOwner()) {
+                if (queued.m_message.isReplyRequired()) {
+                    QDBusMessage reply(queued.m_message.createErrorReply(DBUS_ERROR_ACCESS_DENIED,
+                                                                         "Only mce is allowed to call this method"));
+                    queued.m_connection.send(reply);
+                }
+            } else {
+                setUpdatesEnabledNow(queued.m_enable);
+                if (queued.m_message.isReplyRequired()) {
+                    QDBusMessage reply(queued.m_message.createReply());
+                    queued.m_connection.send(reply);
+                }
+            }
+        }
     }
 }
 
