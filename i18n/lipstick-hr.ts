@@ -72,7 +72,7 @@
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
-        <translation>Uređaj postaje vruć. Zatvori sve aplikacije.</translation>
+        <translation>Uređaj se zagrijava. Zatvori sve aplikacije.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
