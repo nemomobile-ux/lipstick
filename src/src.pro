@@ -16,6 +16,8 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
 
 DEFINES += LIPSTICK_BUILD_LIBRARY
 DEFINES += VERSION=\\\"$${VERSION}\\\"
+DEFINES += MESA_EGL_NO_X11_HEADERS
+DEFINES += EGL_NO_X11
 
 PKGCONFIG += timed-qt5
 
@@ -185,9 +187,9 @@ packagesExist(contentaction5) {
 QT += dbus xml qml quick sql gui gui-private sensors
 
 QMAKE_CXXFLAGS += \
-    -Werror \
     -Wno-error=format-security \
     -Wno-deprecated-copy \ 
+    -Wfatal-errors \
     -g \
     -std=c++0x \
     -fPIC \

@@ -56,10 +56,11 @@ private:
     Status m_status = Writing;
 };
 
-class ScreenshotService
-{
-public:
-    static ScreenshotResult *saveScreenshot(const QString &path);
+class ScreenshotService : public QObject
+{    Q_OBJECT
+ public:
+     explicit ScreenshotService(QObject *parent = 0);
+     static ScreenshotResult *saveScreenshot(const QString &path);
 };
 
 #endif // SCREENSHOTSERVICE_H

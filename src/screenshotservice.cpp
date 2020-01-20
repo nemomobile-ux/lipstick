@@ -151,6 +151,11 @@ void ScreenshotWriter::run()
     Q_UNUSED(unused);
 }
 
+ScreenshotService::ScreenshotService(QObject *parent)
+{
+    Q_UNUSED(parent)
+}
+
 ScreenshotResult *ScreenshotService::saveScreenshot(const QString &path)
 {
     LipstickCompositor *compositor = LipstickCompositor::instance();
