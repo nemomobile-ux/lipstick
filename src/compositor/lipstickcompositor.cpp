@@ -96,13 +96,13 @@ LipstickCompositor::LipstickCompositor()
     QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
 
     m_orientationSensor = new QOrientationSensor(this);
-    QObject::connect(m_orientationSensor, SIGNAL(readingChanged()), this, SLOT(setScreenOrientationFromSensor()));
+    /*QObject::connect(m_orientationSensor, SIGNAL(readingChanged()), this, SLOT(setScreenOrientationFromSensor()));
     if (!m_orientationSensor->connectToBackend()) {
         qWarning() << "Could not connect to the orientation sensor backend";
     } else {
         if (!m_orientationSensor->start())
             qWarning() << "Could not start the orientation sensor";
-    }
+    }*/
     emit HomeApplication::instance()->homeActiveChanged();
 
     QDesktopServices::setUrlHandler("http", this, "openUrl");
