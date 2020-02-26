@@ -39,7 +39,7 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="129"/>
         <source>Recharge battery</source>
-        <translation>Batterie aufladen</translation>
+        <translation>Akku aufladen</translation>
     </message>
     <message id="qtn_ener_ent_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
@@ -77,7 +77,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
         <oldsource>Device is getting hot. Close all apps.</oldsource>
-        <translation>Das Gerät wird heiß. Alle Apps schließen.</translation>
+        <translation>Das Gerät wird heiß. Alle Anwendungen schließen.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
@@ -152,7 +152,7 @@
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
         <oldsource>Sync and connect in use</oldsource>
-        <translation>Sync-and-Connect in Nutzung</translation>
+        <translation>Synchronisieren-und-Verbinden in Nutzung</translation>
     </message>
     <message id="qtn_usb_adb_active">
         <location filename="../src/usbmodeselector.cpp" line="147"/>
@@ -164,7 +164,7 @@
         <location filename="../src/usbmodeselector.cpp" line="150"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="187"/>
         <source>Diag mode in use</source>
-        <translation>Diag-Modus in Nutzung</translation>
+        <translation>Diagnose-Modus in Nutzung</translation>
     </message>
     <message id="qtn_usb_host_mode_active">
         <location filename="../src/usbmodeselector.cpp" line="153"/>
