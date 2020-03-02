@@ -44,6 +44,7 @@ BuildRequires:  pkgconfig(ssu-sysinfo)
 BuildRequires:  qt5-qttools-linguist
 BuildRequires:  qt5-qtgui-devel >= 5.2.1+git24
 BuildRequires:  qt5-qtwayland-compositor-devel >= 5.9.5
+BuildRequires:  qt5-qtwayland-client-devel >= 5.9.5
 BuildRequires:  doxygen
 BuildRequires:  qt5-qttools-qthelp-devel
 BuildRequires:  nemo-qml-plugin-systemsettings >= 0.5.27
@@ -62,14 +63,6 @@ Requires:   qt5-qtwayland-compositor-devel >= 5.9.5
 %description devel
 Files useful for building homescreens.
 
-%package tests
-Summary:    Tests for lipstick
-License:    LGPLv2.1
-Requires:   %{name} = %{version}-%{release}
-
-%description tests
-Unit tests for the lipstick package.
-
 %package tools
 Summary:    Tools for lipstick
 License:    LGPLv2.1
@@ -77,24 +70,6 @@ Requires:   %{name} = %{version}-%{release}
 
 %description tools
 Tools for the lipstick package (warning: these tools installed by default).
-
-%package doc
-Summary:    Documentation for lipstick
-License:    LGPLv2.1
-Group:      Documentation
-BuildArch:  noarch
-
-%description doc
-Documentation for the lipstick package.
-
-%package notification-doc
-Summary:    Documentation for lipstick notification services
-License:    LGPLv2.1
-Group:      Documentation
-BuildArch:  noarch
-
-%description notification-doc
-Documentation for the lipstick notification services.
 
 %package ts-devel
 Summary:    Translation files for lipstick
@@ -113,7 +88,6 @@ Translation files for the lipstick package.
 %qmake5 VERSION=%{version}
 
 make %{?_smp_mflags}
-make -C doc lipstick_doc notification_doc
 
 %install
 rm -rf %{buildroot}
@@ -144,21 +118,9 @@ install -m 644 -p %{SOURCE1} %{buildroot}%{_datadir}/mapplauncherd/privileges.d/
 %{_libdir}/lib%{name}.prl
 %{_libdir}/pkgconfig/%{name}.pc
 
-%files tests
-%defattr(-,root,root,-)
-/opt/tests/lipstick-tests
-
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/notificationtool
-
-%files doc
-%defattr(-,root,root,-)
-%{_datadir}/doc/lipstick
-
-%files notification-doc
-%defattr(-,root,root,-)
-%{_datadir}/doc/lipstick-notification
 
 %files ts-devel
 %defattr(-,root,root,-)

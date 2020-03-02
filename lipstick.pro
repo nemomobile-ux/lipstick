@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-SUBDIRS += src plugin tools tests doc
+SUBDIRS += src plugin tools
 
 plugin.depends = src
 tools.depends = src
