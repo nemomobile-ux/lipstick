@@ -23,6 +23,7 @@ BuildRequires:  pkgconfig(Qt5Xml)
 BuildRequires:  pkgconfig(Qt5Sql)
 BuildRequires:  pkgconfig(Qt5Test)
 BuildRequires:  pkgconfig(Qt5Sensors)
+BuildRequires:  pkgconfig(Qt5SystemInfo)
 BuildRequires:  pkgconfig(contentaction5)
 BuildRequires:  pkgconfig(mlite5) >= 0.2.19
 BuildRequires:  pkgconfig(mce) >= 1.22.0

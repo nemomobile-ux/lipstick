@@ -130,13 +130,8 @@ LipstickCompositor::LipstickCompositor()
     QObject::connect(m_mceNameOwner, &QMceNameOwner::nameOwnerChanged,
                      this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
 
-    setUpdatesEnabledNow(false);
-    QTimer::singleShot(0, this, SLOT(initialize()));
-
-    setClientFullScreenHint(true);
-
+    //setUpdatesEnabledNow(false);
     QTimer::singleShot(0, this, &LipstickCompositor::initialize);
-
 }
 
 static inline bool displayStateIsDimmed(TouchScreen::DisplayState state)
@@ -782,11 +777,6 @@ void LipstickCompositor::processQueuedSetUpdatesEnabledCalls()
             }
         }
     }
-}
-
-void LipstickCompositor::readContent()
-{
-    m_recorder->recordFrame(this);
 }
 
 void LipstickCompositor::surfaceCommitted()

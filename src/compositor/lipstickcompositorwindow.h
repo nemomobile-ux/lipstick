@@ -104,10 +104,6 @@ public:
 
     bool focusOnTouch() const;
     void setFocusOnTouch(bool focusOnTouch);
-
-    Q_INVOKABLE void resize(const QSize &size);
-    QVariantMap windowProperties();
-
     bool isAlien() const;
 
     WindowPropertyMap *windowProperties();

@@ -650,14 +650,13 @@ HwcImageNode *HwcImage::updateActualPaintNode(QSGNode *old)
         tn = new HwcImageNode();
 
     if (m_updateImage) {
-        tn->releaseTexture();
-        QSGTexture *t = HwcImageTexture::create(m_image, window());
-        if (t) {
-            tn->setTexture(t);
-        } else {
-            auto tx = window()->createTextureFromImage(m_image);
-            tn->setTexture(tx);
-        }
+        tn->setTexture(m_hybrisBuffer
+                    ? new HwcImageTexture(
+                            m_hybrisBuffer,
+                            HwcRenderStage::isHwcEnabled()
+                                ? static_cast<HwcRenderStage *>(QQuickWindowPrivate::get(window())->customRenderStage)
+                                : nullptr)
+                    : window()->createTextureFromImage(m_image));
         m_image = QImage();
         m_hybrisBuffer = EglHybrisBuffer::Pointer();
         m_updateImage = false;
@@ -774,7 +773,6 @@ void HwcImageTexture::bind()
     if (!m_bound) {
         m_bound = true;
         m_buffer->bindToTexture();
-        glEGLImageTargetTexture2DOESlipstick(GL_TEXTURE_2D, m_image);
     }
 }
 

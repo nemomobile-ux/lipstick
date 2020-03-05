@@ -253,11 +253,11 @@ void HomeApplication::restoreSignalHandlers()
 
 void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 {
-
+    qDebug() << "sendHomeReadySignalIfNotAlreadySent";
     if (!m_homeReadySent) {
         m_homeReadySent = true;
-        disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
-
+        disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(afterRendering()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        qDebug() << "Home ready";
         emit homeReady();
     }
 }
@@ -389,11 +389,13 @@ void HomeApplication::setCompositorPath(const QString &path)
         qWarning() << "HomeApplication:" << path << "is not a a compositor" << object.data();
     }
 
-    if (compositor) {
+    if (compositor && window) {
         compositor->setQuickWindow(window);
 
         connect(m_usbModeSelector, &USBModeSelector::showUnlockScreen,
                 compositor, &LipstickCompositor::showUnlockScreen);
+    } else {
+        qDebug() << "======================= bad compositor and/or window";
     }
 
     if (!m_qmlEngine->incubationController()) {
@@ -430,7 +432,7 @@ QQmlEngine *HomeApplication::engine() const
 void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
 {
     if (!m_homeReadySent && mainWindowVisible) {
-        connect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        connect(LipstickCompositor::instance()->quickWindow(), SIGNAL(afterRendering()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
     }
 }
 

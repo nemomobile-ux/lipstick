@@ -949,14 +949,6 @@ void LipstickCompositorWindow::setFocusOnTouch(bool focusOnTouch)
     emit focusOnTouchChanged();
 }
 
-void LipstickCompositorWindow::resize(const QSize &size)
-{
-    if (surface()->size() != size) {
-        surface()->requestSize(size);
-        emit resized();
-    }
-}
-
 static bool hwc_windowsurface_is_enabled()
 {
     if (!HwcRenderStage::isHwcEnabled())

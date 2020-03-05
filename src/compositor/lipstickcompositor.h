@@ -59,7 +59,6 @@ class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
 class LipstickRecorderManager;
-<<<<<<< HEAD
 class LipstickKeymap;
 class QMceNameOwner;
 
@@ -81,7 +80,9 @@ struct QueuedSetUpdatesEnabledCall
     bool m_enable;
 };
 
-class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
+class LIPSTICK_EXPORT LipstickCompositor 
+	: public QWaylandQuickCompositor
+	, public QDBusContext
 {
     Q_OBJECT
 
@@ -212,11 +213,6 @@ signals:
             const QList<ContentAction::Action> &candidateActions);
 
 private slots:
-    void onHasContentChanged();
-    void surfaceSizeChanged();
-    void surfaceTitleChanged();
-    void surfaceSetTransient(QWaylandSurface *transientParent, const QPoint &relativeToParent, bool inactive);
-    void surfaceSetFullScreen(QWaylandWlShellSurface::FullScreenMethod method, uint framerate, QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     bool openUrl(const QUrl &);
@@ -233,6 +229,7 @@ private slots:
     void onAlienSurfaceCreated(AlienSurface *alienSurface, QWaylandSurface *surface);
     void onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface);
 
+private:
     friend class AlienClient;
     friend class LipstickCompositorWindow;
     friend class LipstickCompositorProcWindow;
@@ -248,6 +245,7 @@ private slots:
     void windowAdded(int);
     void windowRemoved(int);
     void windowDestroyed(LipstickCompositorWindow *item);
+    void readContent();
     void surfaceCommitted();
 
     QQmlComponent *shaderEffectComponent();
@@ -291,7 +289,6 @@ private slots:
     bool m_updatesEnabled;
     bool m_completed;
     int m_onUpdatesDisabledUnfocusedWindowId;
-    LipstickRecorderManager *m_recorder;
     LipstickKeymap *m_keymap;
     int m_fakeRepaintTimerId;
 
