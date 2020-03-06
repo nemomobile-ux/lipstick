@@ -55,14 +55,6 @@ Requires:   %{name} = %{version}-%{release}
 %description devel
 Files useful for building homescreens.
 
-%package tests
-Summary:    Tests for lipstick
-License:    LGPLv2.1
-Requires:   %{name} = %{version}-%{release}
-
-%description tests
-Unit tests for the lipstick package.
-
 %package tools
 Summary:    Tools for lipstick
 License:    LGPLv2.1
@@ -81,33 +73,6 @@ Provides:   lipstick-qt5-tools-ui
 
 %description screenshot
 Screenshot tool for the lipstick package.
-
-%package simplecompositor
-Summary:    Lipstick Simple Compositor
-License:    LGPLv2.1
-Requires:   %{name} = %{version}-%{release}
-
-%description simplecompositor
-Debugging tool to debug the compositor logic without pulling in all of the
-homescreen and all the other app logic lipstick has.
-
-%package doc
-Summary:    Documentation for lipstick
-License:    LGPLv2.1
-Group:      Documentation
-BuildArch:  noarch
-
-%description doc
-Documentation for the lipstick package.
-
-%package notification-doc
-Summary:    Documentation for lipstick notification services
-License:    LGPLv2.1
-Group:      Documentation
-BuildArch:  noarch
-
-%description notification-doc
-Documentation for the lipstick notification services.
 
 %package ts-devel
 Summary:    Translation files for lipstick
@@ -158,10 +123,6 @@ mkdir -p %{buildroot}/%{icondirectory}
 %{_libdir}/liblipstick-qt5.prl
 %{_libdir}/pkgconfig/lipstick-qt5.pc
 
-%files tests
-%defattr(-,root,root,-)
-/opt/tests/lipstick-tests/*
-
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/notificationtool
@@ -169,20 +130,6 @@ mkdir -p %{buildroot}/%{icondirectory}
 %files screenshot
 %defattr(-,root,root,-)
 %{_bindir}/screenshottool
-%{_datadir}/applications/screenshottool.desktop
-
-%files simplecompositor
-%defattr(-,root,root,-)
-%{_bindir}/simplecompositor
-%{_datadir}/lipstick/simplecompositor/*
-
-%files doc
-%defattr(-,root,root,-)
-%{_datadir}/doc/lipstick/*
-
-%files notification-doc
-%defattr(-,root,root,-)
-%{_datadir}/doc/lipstick-notification/*
 
 %files ts-devel
 %defattr(-,root,root,-)
