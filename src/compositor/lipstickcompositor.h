@@ -38,12 +38,6 @@
 
 QT_BEGIN_NAMESPACE
 
-namespace QtWayland {
-    class SurfaceExtensionGlobal;
-    class ExtendedSurface;
-    class QtKeyExtensionGlobal;
-}
-
 class QWaylandXdgShellV5;
 class QWaylandXdgSurfaceV5;
 class QWaylandOutput;
@@ -227,7 +221,6 @@ private slots:
     void onShellSurfaceCreated(QWaylandWlShellSurface *wlShellSurface);
     void onXdgSurfaceCreated(QWaylandXdgSurfaceV5 *xdgSurface);
     void onAlienSurfaceCreated(AlienSurface *alienSurface, QWaylandSurface *surface);
-    void onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface);
 
 private:
     friend class AlienClient;
@@ -273,8 +266,6 @@ private:
     QScopedPointer<QWaylandWlShell> m_wlShell;
     QScopedPointer<QWaylandXdgShellV5> m_xdgShell;
     QScopedPointer<AlienManager> m_alienManager;
-    QScopedPointer<QtWayland::SurfaceExtensionGlobal> m_surfExtGlob;
-    QScopedPointer<QtWayland::QtKeyExtensionGlobal> m_keyExtension;
     QQmlComponent *m_shaderEffect;
     QPointer<QWaylandSurface> m_fullscreenSurface;
     bool m_directRenderingActive;

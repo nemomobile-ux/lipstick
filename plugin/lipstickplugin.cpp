@@ -17,6 +17,7 @@
 #include "lipstickplugin.h"
 
 #include <QtQml>
+#include <QQmlEngine>
 #include <components/launcheritem.h>
 #include <components/launcherwatchermodel.h>
 #include <notifications/notificationpreviewpresenter.h>

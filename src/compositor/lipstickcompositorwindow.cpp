@@ -17,6 +17,7 @@
 #include <QWaylandCompositor>
 #include <QWaylandSeat>
 #include <QTimer>
+#include <QEvent>
 #include <sys/types.h>
 #include <signal.h>
 #include "lipstickcompositor.h"
@@ -28,8 +29,6 @@
 #include "hwcrenderstage.h"
 #include <EGL/egl.h>
 #include <private/qquickwindow_p.h>
-#include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
-#include <QtWaylandCompositor/private/qwlqtkey_p.h>
 
 #include <QQmlEngine>
 #include <QWaylandXdgSurfaceV5>
@@ -90,9 +89,6 @@ LipstickCompositorWindow::LipstickCompositorWindow(
                 m_compositor->surfaceUnmapped(this, surface);
             } else if (!m_mapped) {
                 m_mapped = true;
-                if (m_extSurface) {
-                    m_category = m_extSurface->windowProperty(QStringLiteral("CATEGORY")).toString();
-                }
                 setSize(surface->size());
                 setTouchEventsEnabled(true);
 
@@ -254,28 +250,6 @@ QString LipstickCompositorWindow::category() const
     return m_category;
 }
 
-QtWayland::ExtendedSurface *LipstickCompositorWindow::extendedSurface()
-{
-    return m_extSurface.data();
-}
-
-void LipstickCompositorWindow::setExtendedSurface(QtWayland::ExtendedSurface *extSurface)
-{
-    m_extSurface = extSurface;
-    connect(m_extSurface.data(), &QtWayland::ExtendedSurface::windowFlagsChanged,
-            this, &LipstickCompositorWindow::windowFlagsChanged);
-
-    connect(m_extSurface.data(), &QtWayland::ExtendedSurface::windowPropertyChanged,
-            this, [this](const QString &key, const QVariant &value) {
-        if (key == QLatin1String("MOUSE_REGION")) {
-            updateMouseRegion(value);
-        }
-        if (key == QLatin1String("GRABBED_KEYS")) {
-            updateGrabbedKeys(value);
-        }
-    });
-}
-
 LipstickCompositorWindow *LipstickCompositorWindow::transientParent() const
 {
     return m_transientParent.data();
@@ -308,11 +282,7 @@ void LipstickCompositorWindow::ping()
 
 void LipstickCompositorWindow::close()
 {
-    if (m_extSurface) {
-        // Qt extension, will only work with Qt applications, difficult to find as it's a
-        // code generated member of an undocumented class. Definition is in surface-extension.xml
-        m_extSurface->send_close();
-    } else if (m_xdgSurface) {
+    if (m_xdgSurface) {
         // Works with applications that support xdg-shell-v5. Qt applications don't by default
         // but can if QT_WAYLAND_SHELL_INTEGRATION=xdg-shell-v5 is exported.
         m_xdgSurface->sendClose();
@@ -332,8 +302,6 @@ void LipstickCompositorWindow::closePopup()
         m_wlShellSurface->sendPopupDone();
     } else if (m_xdgSurface) {
         m_xdgSurface->sendClose();
-    } else if (m_extSurface) {
-        m_extSurface->send_close();
     } else if (m_alienSurface) {
         m_alienSurface->close();
     }
@@ -364,8 +332,6 @@ void LipstickCompositorWindow::setExposed(bool exposed)
             } else {
                 m_alienSurface->hide();
             }
-        } else if (m_extSurface && !m_exposedAsCover) {
-            m_extSurface->sendOnScreenVisibilityChange(m_exposed);
         }
 
         emit exposedChanged();
@@ -390,8 +356,6 @@ void LipstickCompositorWindow::setExposedAsCover(bool exposed)
             } else {
                 m_alienSurface->hide();
             }
-        } else if (m_extSurface) {
-            m_extSurface->sendOnScreenVisibilityChange(m_exposedAsCover);
         }
 
         emit exposedAsCoverChanged();
@@ -401,25 +365,20 @@ void LipstickCompositorWindow::setExposedAsCover(bool exposed)
 
 qint16 LipstickCompositorWindow::windowFlags()
 {
-    if (m_extSurface) {
-        return m_extSurface->windowFlags();
-    }
     return 0;
 }
 
 WindowPropertyMap *LipstickCompositorWindow::windowProperties()
 {
     if (!m_windowProperties) {
-        m_windowProperties.reset(new WindowPropertyMap(m_extSurface.data(), surface()));
+        m_windowProperties.reset(new WindowPropertyMap(surface()));
     }
     return m_windowProperties.data();
 }
 
 QVariant LipstickCompositorWindow::windowProperty(const QString &key)
 {
-    return m_extSurface
-            ? WindowPropertyMap::fixupWindowProperty(m_compositor, surface(), m_extSurface->windowProperty(key))
-            : QVariant();
+    return QVariant();
 }
 
 void LipstickCompositorWindow::setTitle(const QString &title)
@@ -549,43 +508,6 @@ bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
         return false;
     }
 
-    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
-        QWaylandSurface *m_surface = surface();
-        if (QtWayland::QtKeyExtensionGlobal *ext = m_surface
-                    && (m_grabbedKeys.contains(ke->key()) || m_pressedGrabbedKeys.contains(ke->key()))
-                    && !ke->isAutoRepeat()
-                ? QtWayland::QtKeyExtensionGlobal::findIn(compositor())
-                : nullptr) {
-            if (event->type() == QEvent::KeyPress) {
-                m_pressedGrabbedKeys << ke->key();
-            }
-
-            ext->postQtKeyEvent(ke, m_surface);
-
-            if (event->type() == QEvent::KeyRelease) {
-                m_pressedGrabbedKeys.removeOne(ke->key());
-                if (m_grabbedKeys.isEmpty()) {
-                    qApp->removeEventFilter(this);
-                }
-            }
-            return true;
-        }
-    }
-
-    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
-        QWaylandSurface *m_surface = surface();
-        if (m_surface) {
-            QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(ke);
-            if (event->type() == QEvent::KeyPress)
-                inputDevice->setKeyboardFocus(m_surface);
-            inputDevice->sendFullKeyEvent(ke);
-            if (event->type() == QEvent::KeyRelease)
-                qApp->removeEventFilter(this);
-            return true;
-        }
-    }
     return false;
 }
 

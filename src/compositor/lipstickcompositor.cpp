@@ -38,8 +38,6 @@
 #include <qmcenameowner.h>
 #include <dbus/dbus-protocol.h>
 #include <QWaylandQuickShellSurfaceItem>
-#include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
-#include <QtWaylandCompositor/private/qwlqtkey_p.h>
 
 #include <QWaylandXdgShellV5>
 
@@ -78,11 +76,6 @@ LipstickCompositor::LipstickCompositor()
     connect(m_xdgShell.data(), &QWaylandXdgShellV5::xdgSurfaceCreated, this, &LipstickCompositor::onXdgSurfaceCreated);
 
     m_alienManager.reset(new AlienManager(this));
-
-    m_surfExtGlob.reset(new QtWayland::SurfaceExtensionGlobal(this));
-    connect(m_surfExtGlob.data(), &QtWayland::SurfaceExtensionGlobal::extendedSurfaceReady, this, &LipstickCompositor::onExtendedSurfaceReady);
-
-    m_keyExtension.reset(new QtWayland::QtKeyExtensionGlobal(this));
 
     setRetainedSelectionEnabled(true);
 
@@ -270,20 +263,6 @@ void LipstickCompositor::onXdgSurfaceCreated(QWaylandXdgSurfaceV5 *xdgSurface)
 
     connect(surface, &QWaylandSurface::damaged, this, &LipstickCompositor::surfaceDamaged);
     connect(surface, &QWaylandSurface::redraw, this, &LipstickCompositor::windowSwapped);
-}
-
-void LipstickCompositor::onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface)
-{
-    LipstickCompositorWindow *window = surfaceWindow(surface);
-    if(window)
-        window->setExtendedSurface(extSurface);
-
-    connect(extSurface, &QtWayland::ExtendedSurface::raiseRequested, this, [this, window]() {
-        windowRaised(window);
-    });
-    connect(extSurface, &QtWayland::ExtendedSurface::lowerRequested, this, [this, window]() {
-        windowLowered(window);
-    });
 }
 
 void LipstickCompositor::onAlienSurfaceCreated(AlienSurface *alienSurface, QWaylandSurface *surface)

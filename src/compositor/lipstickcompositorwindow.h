@@ -26,10 +26,6 @@
 
 QT_BEGIN_NAMESPACE
 
-namespace QtWayland {
-    class ExtendedSurface;
-}
-
 class QWaylandXdgSurfaceV5;
 
 QT_END_NAMESPACE
@@ -120,8 +116,6 @@ public:
 
     void sendOomScore(int score);
 
-    QtWayland::ExtendedSurface *extendedSurface();
-
     Q_INVOKABLE void resize(const QSize &size);
     Q_INVOKABLE void ping();
     Q_INVOKABLE void close();
@@ -172,8 +166,6 @@ private:
     void tryRemove();
     void handleTouchEvent(QTouchEvent *e);
 
-    void setExtendedSurface(QtWayland::ExtendedSurface *extSurface);
-
     inline void updateMouseRegion(const QVariant &value);
     inline void updateGrabbedKeys(const QVariant &value);
 
@@ -182,7 +174,6 @@ private:
     QVariant m_data;
 
     QVector<QQuickItem *> m_refs;
-    QPointer<QtWayland::ExtendedSurface> m_extSurface;
     QPointer<QWaylandWlShellSurface> m_wlShellSurface;
     QPointer<QWaylandXdgSurfaceV5> m_xdgSurface;
     QPointer<AlienSurface> m_alienSurface;

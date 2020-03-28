@@ -18,24 +18,11 @@
 #include "lipstickcompositorwindow.h"
 #include "lipstickcompositor.h"
 
-#include <private/qwlextendedsurface_p.h>
-
-WindowPropertyMap::WindowPropertyMap(
-        QtWayland::ExtendedSurface *surface, QWaylandSurface *waylandSurface, QObject *parent)
+WindowPropertyMap::WindowPropertyMap(QWaylandSurface *waylandSurface, QObject *parent)
     : QQmlPropertyMap(parent)
-    , m_surface(surface)
     , m_waylandSurface(waylandSurface)
 {
-    if (m_surface) {
-        // this must use a queued connection in order to avoid QTBUG-32859
-        connect(m_surface.data(), &QtWayland::ExtendedSurface::windowPropertyChanged,
-                this, &WindowPropertyMap::insertWindowProperty, Qt::QueuedConnection);
-
-        const auto windowProperties = m_surface->windowProperties();
-        for (auto it = windowProperties.begin(); it != windowProperties.end(); ++it) {
-            insertWindowProperty(it.key(), it.value());
-        }
-    }
+    
 }
 
 WindowPropertyMap::~WindowPropertyMap()
@@ -61,9 +48,6 @@ QVariant WindowPropertyMap::fixupWindowProperty(
 
 QVariant WindowPropertyMap::updateValue(const QString &key, const QVariant &input)
 {
-    if (m_surface) {
-        m_surface->setWindowProperty(key, input);
-    }
     return QQmlPropertyMap::updateValue(key, input);
 }
 

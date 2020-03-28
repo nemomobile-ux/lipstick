@@ -29,7 +29,7 @@ class LIPSTICK_EXPORT WindowPropertyMap : public QQmlPropertyMap
 {
     Q_OBJECT
 public:
-    WindowPropertyMap(QtWayland::ExtendedSurface *surface, QWaylandSurface *waylandSurface, QObject *parent = nullptr);
+    WindowPropertyMap(QWaylandSurface *waylandSurface, QObject *parent = nullptr);
     ~WindowPropertyMap();
 
     static QVariant fixupWindowProperty(
@@ -41,7 +41,6 @@ protected:
 private:
     inline void insertWindowProperty(const QString &key, const QVariant &value);
 
-    QPointer<QtWayland::ExtendedSurface> m_surface;
     QPointer<QWaylandSurface> m_waylandSurface;
 };
 
