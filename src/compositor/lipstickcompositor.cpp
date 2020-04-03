@@ -67,7 +67,13 @@ LipstickCompositor::LipstickCompositor()
     , m_mceNameOwner(new QMceNameOwner(this))
     , m_fakeRepaintTriggered(false)
 {
-    m_output.reset(new QWaylandQuickOutput);
+    m_window.reset(new QQuickWindow);
+    m_window.data()->setColor(Qt::black);
+    m_window.data()->QObject::setParent(this);
+    m_window.data()->setGeometry(QRect(QPoint(0, 0), QGuiApplication::primaryScreen()->size()));
+    m_window.data()->setVisible(true);
+
+    m_output.reset(new QWaylandQuickOutput(this,m_window.data()));
 
     m_wlShell.reset(new QWaylandWlShell(this));
     connect(m_wlShell.data(), &QWaylandWlShell::wlShellSurfaceCreated, this, &LipstickCompositor::onShellSurfaceCreated);
@@ -96,7 +102,7 @@ LipstickCompositor::LipstickCompositor()
         legacySettings.remove(legacyOrientationKey);
     }
 
-    connect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
+    connect(m_window.data(), SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
     QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
 
     m_orientationSensor = new QOrientationSensor(this);
@@ -193,13 +199,13 @@ QWaylandKeymap *LipstickCompositor::keymap()
 void LipstickCompositor::setQuickWindow(QQuickWindow *window)
 {
     if (!m_window && window) {
-        m_window = window;
+        m_window.data() < window;
 
         m_output->setCompositor(this);
         m_output->setWindow(m_window.data());
         m_output->setSizeFollowsWindow(true);
 
-        if (QScreen *screen = m_window->screen()) {
+        if (QScreen *screen = m_window.data()->screen()) {
             m_output->setPhysicalSize(screen->physicalSize().toSize());
         }
 

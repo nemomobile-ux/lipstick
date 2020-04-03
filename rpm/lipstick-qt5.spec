@@ -14,6 +14,7 @@ Source0:    %{name}-%{version}.tar.bz2
 Source1:    %{name}.privileges
 Requires:   mce >= 1.87.0
 Requires:   pulseaudio-modules-nemo-mainvolume >= 6.0.19
+Requires:   qt5-qtwayland-plugin-shell-integration
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires:  pkgconfig(Qt5Core)

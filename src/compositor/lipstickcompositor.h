@@ -60,6 +60,11 @@ namespace ContentAction {
 class Action;
 }
 
+namespace QtWayland {
+    class SurfaceExtensionGlobal;
+    class ExtendedSurface;
+}
+
 struct QueuedSetUpdatesEnabledCall
 {
     QueuedSetUpdatesEnabledCall(const QDBusConnection &connection, const QDBusMessage &message, bool enable)
@@ -261,7 +266,7 @@ private:
     bool m_homeActive;
 
     QVector<QObject *> m_data;
-    QPointer<QQuickWindow> m_window;
+    QScopedPointer<QQuickWindow> m_window;
     QScopedPointer<QWaylandOutput> m_output;
     QScopedPointer<QWaylandWlShell> m_wlShell;
     QScopedPointer<QWaylandXdgShellV5> m_xdgShell;
