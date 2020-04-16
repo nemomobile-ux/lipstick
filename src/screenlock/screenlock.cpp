@@ -35,8 +35,19 @@ ScreenLock::ScreenLock(TouchScreen *touch, QObject* parent) :
     m_shuttingDown(false),
     m_lockscreenVisible(false),
     m_lowPowerMode(false),
-    m_mceBlankingPolicy("default")
+    m_mceBlankingPolicy("default"),
+    m_interactionExpectedTimer(0),
+    m_interactionExpectedCurrent(false),
+    m_interactionExpectedEmitted(-1)
+
 {
+    /* Setup idle timer for signaling interaction expected changes on D-Bus */
+    m_interactionExpectedTimer = new QTimer(this);
+    m_interactionExpectedTimer->setSingleShot(true);
+    m_interactionExpectedTimer->setInterval(0);
+    connect(m_interactionExpectedTimer, &QTimer::timeout,
+            this, &ScreenLock::interactionExpectedBroadcast);
+
     connect(m_touchScreen, SIGNAL(touchBlockedChanged()), this, SIGNAL(touchBlockedChanged()));
 
     auto systemBus = QDBusConnection::systemBus();
@@ -115,6 +126,29 @@ int ScreenLock::tklock_close(bool)
     return TkLockReplyOk;
 }
 
+void ScreenLock::interactionExpectedBroadcast()
+{
+    if (m_interactionExpectedEmitted != m_interactionExpectedCurrent) {
+        m_interactionExpectedEmitted = m_interactionExpectedCurrent;
+        emit interaction_expected(m_interactionExpectedEmitted);
+    }
+}
+
+void ScreenLock::setInteractionExpected(bool expected)
+{
+    /* The qml side property evaluation produces some jitter.
+     * To avoid duplicating it at dbus level, delay signal
+     * broadcasting until we settle on some value. */
+
+    m_interactionExpectedCurrent = expected;
+
+    if (m_interactionExpectedEmitted != m_interactionExpectedCurrent) {
+        m_interactionExpectedTimer->start();
+    } else {
+        m_interactionExpectedTimer->stop();
+    }
+}
+
 void ScreenLock::lockScreen(bool immediate)
 {
     QDBusMessage message = QDBusMessage::createMethodCall("com.nokia.mce", "/com/nokia/mce/request", "com.nokia.mce.request", "req_tklock_mode_change");
@@ -135,56 +169,56 @@ void ScreenLock::unlockScreen()
 
 void ScreenLock::showScreenLock()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::showLowPowerMode()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::setDisplayOffMode()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::hideScreenLock()
 {
-    toggleScreenLockUI(false);
+    setScreenLocked(false);
 }
 
 void ScreenLock::hideScreenLockAndEventEater()
 {
-    toggleScreenLockUI(false);
-    toggleEventEater(false);
+    setScreenLocked(false);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::showEventEater()
 {
-    toggleEventEater(true);
+    setEventEaterEnabled(true);
 }
 
 void ScreenLock::hideEventEater()
 {
-    toggleEventEater(false);
+    setEventEaterEnabled(false);
 }
 
-void ScreenLock::toggleScreenLockUI(bool toggle)
+void ScreenLock::setScreenLocked(bool value)
 {
     // TODO Make the view a lock screen view (title? stacking layer?)
-    if (m_lockscreenVisible != toggle) {
-        m_lockscreenVisible = toggle;
-        emit screenIsLocked(toggle);
+    if (m_lockscreenVisible != value) {
+        m_lockscreenVisible = value;
+        emit screenLockedChanged(value);
     }
 }
 
-void ScreenLock::toggleEventEater(bool toggle)
+void ScreenLock::setEventEaterEnabled(bool value)
 {
     Q_ASSERT(m_touchScreen);
-    m_touchScreen->setEnabled(!toggle);
+    m_touchScreen->setEnabled(!value);
 }
 
 bool ScreenLock::isScreenLocked() const

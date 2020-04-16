@@ -29,13 +29,14 @@ QMAKE_STRIP = echo
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
-INCLUDEPATH += utilities touchscreen components xtools 3rdparty qmsystem2
+INCLUDEPATH += utilities touchscreen components xtools 3rdparty devicestate
 
 include(compositor/compositor.pri)
 
 PUBLICHEADERS += \
     utilities/qobjectlistmodel.h \
     utilities/closeeventeater.h \
+    touchscreen/touchscreen.h \
     homeapplication.h \
     homewindow.h \
     lipstickglobal.h \
@@ -56,13 +57,10 @@ PUBLICHEADERS += \
     bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
-    touchscreen/touchscreen.h \
-    qmsystem2/qmactivity.h \
-    qmsystem2/qmdisplaystate.h \
-    qmsystem2/qmlocks.h \
-    qmsystem2/qmsystemstate.h \
-    qmsystem2/qmthermal.h \
-    qmsystem2/system_global.h \
+    devicestate/displaystate.h \
+    devicestate/devicestate.h \
+    devicestate/thermal.h \
+    devicestate/system_global.h \
     vpnagent.h \
     connectivitymonitor.h \
     connectionselector.h
@@ -97,12 +95,10 @@ HEADERS += \
     connmanmanagerproxy.h \
     connmanserviceproxy.h \
     notifications/thermalnotifier.h \
-    qmsystem2/qmsystemstate_p.h \
-    qmsystem2/qmdisplaystate_p.h \
-    qmsystem2/qmlocks_p.h \
-    qmsystem2/qmactivity_p.h \
-    qmsystem2/qmipcinterface_p.h \
-    qmsystem2/qmthermal_p.h \
+    devicestate/devicestate_p.h \
+    devicestate/displaystate_p.h \
+    devicestate/ipcinterface_p.h \
+    devicestate/thermal_p.h \
     logging.h \
 
 SOURCES += \
@@ -148,12 +144,10 @@ SOURCES += \
     screenshotservice.cpp \
     screenshotserviceadaptor.cpp \
     notifications/thermalnotifier.cpp \
-    qmsystem2/qmactivity.cpp \
-    qmsystem2/qmdisplaystate.cpp \
-    qmsystem2/qmlocks.cpp \
-    qmsystem2/qmsystemstate.cpp \
-    qmsystem2/qmthermal.cpp \
-    qmsystem2/qmipcinterface.cpp \
+    devicestate/displaystate.cpp \
+    devicestate/devicestate.cpp \
+    devicestate/thermal.cpp \
+    devicestate/ipcinterface.cpp \
     logging.cpp \
 
 CONFIG += link_pkgconfig mobility qt warn_on depend_includepath qmake_cache target_qt

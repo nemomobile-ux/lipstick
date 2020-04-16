@@ -20,6 +20,7 @@
 
 class TouchScreenPrivate;
 class QTimerEvent;
+class QDBusPendingCallWatcher;
 
 class LIPSTICK_EXPORT TouchScreen : public QObject
 {
@@ -29,10 +30,10 @@ class LIPSTICK_EXPORT TouchScreen : public QObject
 
 public:
     enum DisplayState {
-        DisplayOff = -1,   // MeeGo::QmDisplayState::Off
-        DisplayDimmed = 0, // MeeGo::QmDisplayState::Dimmed
-        DisplayOn = 1,     // MeeGo::QmDisplayState::On
-        DisplayUnknown     // MeeGo::QmDisplayState::Unknown
+        DisplayOff = -1,   // DeviceState::DisplayStateMonitor::Off
+        DisplayDimmed = 0, // DeviceState::DisplayStateMonitor::Dimmed
+        DisplayOn = 1,     // DeviceState::DisplayStateMonitor::On
+        DisplayUnknown     // DeviceState::DisplayStateMonitor::Unknown
     };
 
     explicit TouchScreen(QObject *parent = 0);
@@ -51,6 +52,10 @@ public:
 
     DisplayState currentDisplayState() const;
 
+private slots:
+  void inputPolicyChanged(const QString &status);
+  void inputPolicyReply(QDBusPendingCallWatcher *watcher);
+
 signals:
     //! Emitted when touch blocking changes. Touch is blocked when display is off.
     void touchBlockedChanged();
@@ -64,7 +69,6 @@ protected:
     bool eventFilter(QObject *, QEvent *);
     void timerEvent(QTimerEvent *);
 
-
 private:
     TouchScreenPrivate *d_ptr;
     Q_DISABLE_COPY(TouchScreen)
@@ -72,6 +76,7 @@ private:
 
 #ifdef UNIT_TEST
     friend class Ut_ScreenLock;
+    friend class Ut_TouchScreen;
 #endif
 };
 

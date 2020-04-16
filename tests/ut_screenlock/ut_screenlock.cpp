@@ -27,7 +27,7 @@
 #include "touchscreen/touchscreen.h"
 #include "homeapplication.h"
 #include "closeeventeater_stub.h"
-#include "qmdisplaystate_stub.h"
+#include "displaystate_stub.h"
 #include "lipsticktest.h"
 
 TouchScreen *gTouchScreen = 0;
@@ -228,95 +228,17 @@ void Ut_ScreenLock::testTkLockClose()
     QCOMPARE(touchScreen->eventFilter(0, &event), true);
 }
 
-void Ut_ScreenLock::testTouchBlocking()
+void Ut_ScreenLock::updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState)
 {
-    // Hide event eater
-    screenLock->hideEventEater();
-
-    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    updateDisplayState(MeeGo::QmDisplayState::Unknown, MeeGo::QmDisplayState::Off);
-    QVERIFY(screenLock->touchBlocked());
-
-    QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseButtonDblClick, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    QTouchEvent touch(QEvent::TouchBegin);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    // Do not filter TouchCancel.
-    touch = QTouchEvent(QEvent::TouchCancel);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
-
-    updateDisplayState(MeeGo::QmDisplayState::Off, MeeGo::QmDisplayState::On);
-    QVERIFY(screenLock->touchBlocked());
-    QSignalSpy touchBlockingSpy(screenLock, SIGNAL(touchBlockedChanged()));
-    touchBlockingSpy.wait();
-    QVERIFY(!screenLock->touchBlocked());
-
-    event = QMouseEvent(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    event = QMouseEvent(QEvent::MouseButtonDblClick, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    // New touch sequence starts after turning display on.
-    touch = QTouchEvent(QEvent::TouchBegin);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
-
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
-
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
-
-    event = QMouseEvent(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
-
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
-
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
-}
-
-void Ut_ScreenLock::updateDisplayState(MeeGo::QmDisplayState::DisplayState oldState, MeeGo::QmDisplayState::DisplayState newState)
-{
-    emit gQmDisplayStateStub->displayState->displayStateChanged(oldState);
-    emit gQmDisplayStateStub->displayState->displayStateChanged(newState);
+    emit gDisplayStateMonitorStub->displayState->displayStateChanged(oldState);
+    emit gDisplayStateMonitorStub->displayState->displayStateChanged(newState);
 }
 
 void Ut_ScreenLock::fakeDisplayOnAndReady()
 {
     // Fake display state change.
     TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    updateDisplayState(MeeGo::QmDisplayState::Off, MeeGo::QmDisplayState::On);
+    updateDisplayState(DeviceState::DisplayStateMonitor::Off, DeviceState::DisplayStateMonitor::On);
     QSignalSpy touchBlockingSpy(screenLock, SIGNAL(touchBlockedChanged()));
     touchBlockingSpy.wait();
 

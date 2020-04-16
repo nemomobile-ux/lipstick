@@ -15,7 +15,7 @@
 #define UT_CATEGORYDEFINITIONSTORE_H
 
 #include <QObject>
-#include <QMetaType>
+#include <displaystate.h>
 
 class CategoryDefinitionStore;
 
@@ -32,7 +32,8 @@ private slots:
     void testCategoryDefinitionUninstalling();
 
 private:
-    CategoryDefinitionStore *store;
+    void updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState);
+    void fakeDisplayOnAndReady();
 
 signals:
     void directoryChanged(const QString &path);
