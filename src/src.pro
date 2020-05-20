@@ -62,8 +62,7 @@ PUBLICHEADERS += \
     devicestate/thermal.h \
     devicestate/system_global.h \
     vpnagent.h \
-    connectivitymonitor.h \
-    connectionselector.h
+    connectivitymonitor.h
 
 INSTALLS += publicheaderfiles dbus_policy
 publicheaderfiles.files = $$PUBLICHEADERS
@@ -139,7 +138,6 @@ SOURCES += \
     connmanvpnproxy.cpp \
     connmanmanagerproxy.cpp \
     connmanserviceproxy.cpp \
-    connectionselector.cpp \
     lipstickapi.cpp \
     screenshotservice.cpp \
     screenshotserviceadaptor.cpp \

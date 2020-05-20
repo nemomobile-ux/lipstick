@@ -47,7 +47,6 @@
 #include "localemanager.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
-#include "connectionselector.h"
 #include "screenshotservice.h"
 #include "screenshotserviceadaptor.h"
 #include "vpnagent.h"
@@ -124,7 +123,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_shutdownScreen = new ShutdownScreen(this);
     m_localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(m_shutdownScreen);
-    m_connectionSelector = new ConnectionSelector(this);
 
     // MCE and usb-moded expect services to be registered on the system bus
     QDBusConnection systemBus = QDBusConnection::systemBus();

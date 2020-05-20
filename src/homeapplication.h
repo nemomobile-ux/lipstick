@@ -193,9 +193,6 @@ private:
     //! Logic for showing the shutdown screen and related notifications
     ShutdownScreen *m_shutdownScreen;
 
-    //! Login for showing the connection selector
-    ConnectionSelector *m_connectionSelector;
-
     //! Whether the home ready signal has been sent or not
     bool m_homeReadySent;
 
