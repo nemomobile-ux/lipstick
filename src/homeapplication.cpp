@@ -117,7 +117,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_usbModeSelector = new USBModeSelector(deviceLock, this);
     m_shutdownScreen = new ShutdownScreen(this);
     new ShutdownScreenAdaptor(m_shutdownScreen);
-    m_connectionSelector = new ConnectionSelector(this);
 
     // MCE and usb-moded expect services to be registered on the system bus
     QDBusConnection systemBus = QDBusConnection::systemBus();
