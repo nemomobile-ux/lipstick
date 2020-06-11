@@ -41,7 +41,6 @@
 
 #include "volume/volumecontrol.h"
 #include "usbmodeselector.h"
-#include "bluetoothagent.h"
 #include "localemanager.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
@@ -101,7 +100,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
     usbModeSelector = new USBModeSelector(this);
-    bluetoothAgent = new BluetoothAgent(this);
     shutdownScreen = new ShutdownScreen(this);
     localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(shutdownScreen);

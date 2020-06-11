@@ -26,7 +26,6 @@ class USBModeSelector;
 class ShutdownScreen;
 class ConnectionSelector;
 class ScreenshotService;
-class BluetoothAgent;
 class LocaleManager;
 
 /*!
@@ -165,9 +164,6 @@ private:
 
     //! Logic for showing the USB mode selection dialog
     USBModeSelector *usbModeSelector;
-
-    //! Logic for showing the Bluetooth pairing dialog
-    BluetoothAgent *bluetoothAgent;
 
     //! Logic for showing the Bluetooth pairing dialog
     LocaleManager *localeMngr;

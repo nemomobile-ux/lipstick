@@ -46,7 +46,6 @@ PUBLICHEADERS += \
     notifications/notificationlistmodel.h \
     notifications/notificationpreviewpresenter.h \
     usbmodeselector.h \
-    bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
     qmsystem2/qmactivity.h \
@@ -122,7 +121,6 @@ SOURCES += \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
     usbmodeselector.cpp \
-    bluetoothagent.cpp \
     localemanager.cpp \
     shutdownscreen.cpp \
     shutdownscreenadaptor.cpp \
