@@ -19,7 +19,6 @@
 #include <QStringList>
 #include <QTimer>
 #include "notificationmanager.h"
-#include "lipsticknotification.h"
 #include "batterynotifier.h"
 #include <time.h>
 #include <keepalive/backgroundactivity.h>
@@ -452,11 +451,11 @@ void BatteryNotifier::sendNotification(BatteryNotifier::NotificationType type)
 
     /* Add fresh notification item */
     QVariantHash hints;
-    hints.insert(LipstickNotification::HINT_CATEGORY, info.category);
-    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, info.message);
+    hints.insert(NotificationManager::HINT_CATEGORY, info.category);
+    hints.insert(NotificationManager::HINT_PREVIEW_BODY, info.message);
     QueuedNotification queuedNotification;
     queuedNotification.m_type = type;
-    queuedNotification.m_id = m_notificationManager->Notify(m_notificationManager->systemApplicationName(),
+    queuedNotification.m_id = m_notificationManager->Notify(qApp->applicationName(),
                                                             0,
                                                             info.icon,
                                                             QString(),
