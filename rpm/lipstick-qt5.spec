@@ -73,15 +73,6 @@ Requires:   %{name} = %{version}-%{release}
 %description tools
 Tools for the lipstick package (warning: these tools installed by default).
 
-%package simplecompositor
-Summary:    Lipstick Simple Compositor
-License:    LGPLv2.1
-Requires:   %{name} = %{version}-%{release}
-
-%description simplecompositor
-Debugging tool to debug the compositor logic without pulling in all of the
-homescreen and all the other app logic lipstick has.
-
 %package doc
 Summary:    Documentation for lipstick
 License:    LGPLv2.1
@@ -156,11 +147,6 @@ mkdir -p %{buildroot}/%{icondirectory}
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/notificationtool
-
-%files simplecompositor
-%defattr(-,root,root,-)
-%{_bindir}/simplecompositor
-%{_datadir}/lipstick/simplecompositor/*
 
 %files doc
 %defattr(-,root,root,-)
