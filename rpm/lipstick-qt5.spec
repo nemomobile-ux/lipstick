@@ -73,17 +73,6 @@ Requires:   %{name} = %{version}-%{release}
 %description tools
 Tools for the lipstick package (warning: these tools installed by default).
 
-%package screenshot
-Summary:    Screenshot tool for lipstick
-License:    LGPLv2.1
-Requires:   %{name} = %{version}-%{release}
-Requires:   %{name}-tools = %{version}-%{release}
-Obsoletes:  lipstick-qt5-tools-ui
-Provides:   lipstick-qt5-tools-ui
-
-%description screenshot
-Screenshot tool for the lipstick package.
-
 %package simplecompositor
 Summary:    Lipstick Simple Compositor
 License:    LGPLv2.1
@@ -167,11 +156,6 @@ mkdir -p %{buildroot}/%{icondirectory}
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/notificationtool
-
-%files screenshot
-%defattr(-,root,root,-)
-%{_bindir}/screenshottool
-%{_datadir}/applications/screenshottool.desktop
 
 %files simplecompositor
 %defattr(-,root,root,-)
