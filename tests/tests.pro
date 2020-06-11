@@ -7,15 +7,12 @@ SUBDIRS = \
           ut_launchermodel \
           ut_lipsticksettings \
           ut_lipsticknotification \
-          ut_notificationfeedbackplayer \
           ut_notificationlistmodel \
           ut_notificationmanager \
-          ut_notificationpreviewpresenter \
           ut_qobjectlistmodel \
           ut_screenlock \
           ut_shutdownscreen \
           ut_thermalnotifier \
-          ut_usbmodeselector \
           ut_volumecontrol \
 
 support_files.commands += $$PWD/gen-tests-xml.sh > $$OUT_PWD/tests.xml
