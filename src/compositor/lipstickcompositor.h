@@ -266,7 +266,7 @@ private:
     bool m_homeActive;
 
     QVector<QObject *> m_data;
-    QScopedPointer<QQuickWindow> m_window;
+    QPointer<QQuickWindow> m_window;
     QScopedPointer<QWaylandOutput> m_output;
     QScopedPointer<QWaylandWlShell> m_wlShell;
     QScopedPointer<QWaylandXdgShellV5> m_xdgShell;
