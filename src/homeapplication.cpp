@@ -48,6 +48,8 @@
 #include "screenshotservice.h"
 #include "screenshotserviceadaptor.h"
 
+#include <nemo-devicelock/devicelock.h>
+
 void HomeApplication::quitSignalHandler(int)
 {
     qApp->quit();
@@ -92,14 +94,14 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     LipstickSettings::instance()->setScreenLock(screenLock);
     new ScreenLockAdaptor(screenLock);
 
-    deviceLock = new DeviceLock(this);
-    new DeviceLockAdaptor(deviceLock);
+    NemoDeviceLock::DeviceLock *deviceLock = new NemoDeviceLock::DeviceLock(this);
 
     volumeControl = new VolumeControl;
     new BatteryNotifier(this);
     new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
-    usbModeSelector = new USBModeSelector(this);
+
+    usbModeSelector = new USBModeSelector(deviceLock, this);
     shutdownScreen = new ShutdownScreen(this);
     localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(shutdownScreen);
