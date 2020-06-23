@@ -189,15 +189,20 @@ void DeviceState::connectUserManager()
 #ifdef HAVE_SAILFISHUSERMANAGER
     Q_D(DeviceState);
     QDBusConnection::systemBus().connect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
-                                             SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
-                                             SAILFISH_USERMANAGER_DBUS_INTERFACE,
-                                             "aboutToChangeCurrentUser",
-                                             d,
-                                             SLOT(emitUserSwitching(uint)));
+                                         SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
+                                         SAILFISH_USERMANAGER_DBUS_INTERFACE,
+                                         "aboutToChangeCurrentUser",
+                                         d,
+                                         SLOT(emitUserSwitching(uint)));
+    QDBusConnection::systemBus().connect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
+                                         SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
+                                         SAILFISH_USERMANAGER_DBUS_INTERFACE,
+                                         "currentUserChangeFailed",
+                                         d,
+                                         SLOT(emitUserSwitchingFailed(uint)));
 #else
     qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
 #endif
-
 }
 
 void DeviceState::disconnectUserManager()
@@ -209,7 +214,13 @@ void DeviceState::disconnectUserManager()
                                             SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                             "aboutToChangeCurrentUser",
                                             d,
-                                            SLOT(emitUserChanging(uint)));
+                                            SLOT(emitUserSwitching(uint)));
+    QDBusConnection::systemBus().disconnect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
+                                            SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
+                                            SAILFISH_USERMANAGER_DBUS_INTERFACE,
+                                            "currentUserChangeFailed",
+                                            d,
+                                            SLOT(emitUserSwitchingFailed(uint)));
 #else
     qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
 #endif
