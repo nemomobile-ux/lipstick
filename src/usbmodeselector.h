@@ -1,9 +1,7 @@
 /***************************************************************************
 **
 ** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012-2019 Jolla Ltd.
-** Copyright (c) 2019 Open Mobile Platform LLC.
-**
+** Copyright (C) 2012-2015 Jolla Ltd.
 ** Contact: Robin Burchell <robin.burchell@jollamobile.com>
 **
 ** This file is part of lipstick.
@@ -19,49 +17,31 @@
 #define USBMODESELECTOR_H
 
 #include <QObject>
+#include <QMap>
 #include <QStringList>
 #include "lipstickglobal.h"
 
 class HomeWindow;
 class QUsbModed;
 
-namespace NemoDeviceLock {
-class DeviceLock;
+namespace MeeGo {
+class QmLocks;
 }
 
 class LIPSTICK_EXPORT USBModeSelector : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
-    Q_PROPERTY(QStringList supportedModes READ supportedModes NOTIFY supportedModesChanged)
-    Q_PROPERTY(QStringList availableModes READ availableModes NOTIFY availableModesChanged)
-    Q_PROPERTY(QString preparingMode READ preparingMode NOTIFY preparingModeChanged)
+    Q_PROPERTY(QStringList supportedUSBModes READ supportedUSBModes NOTIFY supportedUSBModesChanged)
 
 public:
-    /*! Notifiation enum used to indicate which notification should be
-     * presented to the user.
-     */
-    enum Notification {
-        Invalid = -1,
-        Disconnected,
-        Charging,
-        ConnectionSharing,
-        MTP,
-        MassStorage,
-        Developer,
-        PCSuite,
-        Adb,
-        Diag,
-        Host,
-        Locked
-    };
 
-    explicit USBModeSelector(NemoDeviceLock::DeviceLock *deviceLock, QObject *parent = 0);
-
+    explicit USBModeSelector(QObject *parent = 0);
+    
     /*!
-     * Returns whether the window should be visible or not.
+     * Returns whether the window is visible or not.
      *
-     * \return \c true if the window should be visible, \c false otherwise
+     * \return \c true if the window is visible, \c false otherwise
      */
     bool windowVisible() const;
 
@@ -77,133 +57,69 @@ public:
      *
      * \return a list of numbers of the supported USB modes
      */
-    QStringList supportedModes() const;
-
-    /*!
-     * Returns the available USB modes.
-     *
-     * \return a list of numbers of the available USB modes
-     */
-    QStringList availableModes() const;
+    QStringList supportedUSBModes() const;
 
     /*!
      * Sets the USB mode to the given mode.
      *
      * \param mode the mode to set
      */
-    Q_INVOKABLE void setMode(const QString &mode);
-
-    /*!
-     * Returns an empty string if no node is being prepared, or the target mode
-     * otherwise.
-     *
-     * \return an empty string if no mode is being prespared, target mode o/w.
-     */
-    QString preparingMode() const;
-
-    /*!
-     * Returns the \c USBModeSelector object's \c QUsbModed instance, providing
-     * access to the class constants and object methods.
-     *
-     * \return The \c USBModeSelector object's \c QUsbModed instance
-     */
-    QUsbModed * getUsbModed();
+    Q_INVOKABLE void setUSBMode(QString mode);
 
 signals:
     //! Signaled when the USB mode dialog is shown.
     void dialogShown();
 
-    //! Sent when the visibility of the window should change.
+    //! Sent when the visibility of the window has changed.
     void windowVisibleChanged();
 
     //! Sent when the supported USB modes have changed.
-    void supportedModesChanged();
+    void supportedUSBModesChanged();
 
-    //! Sent when the available USB modes have changed.
-    void availableModesChanged();
-
-    //! Sent to request the unlock screen to be unlocked by the user.
     void showUnlockScreen();
 
-    //! Sent when the preparing state changes.
-    void preparingModeChanged(const QString &preparing);
+private slots:
+    /*!
+     * Shows the USB dialog/banners based on the given USB mode.
+     *
+     * \param mode the USB mode to show UI elements for
+     */
+    void applyUSBMode(QString mode);
 
-    //! Sent to request a mode notification be shown to the user.
-    void showNotification(Notification type);
-
-    //! Sent to request an error be displayed to the user.
+    /*!
+     * Shows an error string matching the given error code, if any.
+     *
+     * \param errorCode the error code of the error to be shown
+     */
     void showError(const QString &errorCode);
 
-private:
     /*!
-     * Given a mode, returns whether or not the mode could potentially
-     * spend a user-relevant delay before the mode becomes avialable.
-     * For example, MTP must scan some elements of the filesystem, which
-     * can take some minutes depending on the number of files.
-     *
-     * \param mode the USB mode to check
-     * \return \c true if starting the mode may be delayed, \c false otherwise
+     * Shows the USB dialog/banners based on the current USB mode.
      */
-    bool modeRequiresInitialisation(const QString &mode) const;
-
-    /*!
-     * Set the target state that the USB mode is preparing for.
-     *
-     * \param the target mode being prepared for.
-     */
-    void setPreparingMode(const QString &preparing);
-
-    /*!
-     * Clear the target state that the USB mode is preparing for. This must
-     * be called when there are no longer ongoing preparations.
-     */
-    void clearPreparingMode();
-
-    /*!
-     * Handle a USB event arriving from QUsbModed. Triggers notification
-     * and dialogue signals.
-     *
-     * \param mode the USB mode to show UI elements for
-     */
-    void handleUSBEvent(const QString &event);
-
-    /*!
-     * Handle a USB state change in QUsbModed. Triggers notification
-     * and dialogue signals.
-     *
-     * \param mode the USB mode to show UI elements for
-     */
-    void handleUSBState();
-
-    /*!
-     * Convert the USB mode into an appropriate notification enum value. The
-     * notification enum value is used to choose an appropriate notirication
-     * to display to the user.
-     *
-     * \param mode the USB mode to convert.
-     * \return The notification enum value associated with the mode.
-     */
-    Notification convertModeToNotification(const QString &mode) const;
-
-    /*!
-     * Updates the modePreparing property based on the current USB mode
-     * and the target USB mode. The values for the mode are taken from
-     * from QUsbModed.
-     */
-    void updateModePreparing();
+    void applyCurrentUSBMode();
 
 private:
+
+    /*!
+     * Shows a notification.
+     *
+     * \param mode the USB mode for the notification
+     */
+    void showNotification(QString mode);
+
+private:
+
+    //! Error code to translation ID mapping
+    static QMap<QString, QString> errorCodeToTranslationID;
+
+    //! The volume control window
+    HomeWindow *window;
+
     //! For getting and setting the USB mode
-    QUsbModed *m_usbMode;
+    QUsbModed *usbMode;
 
     //! For getting information about the device lock state
-    NemoDeviceLock::DeviceLock *m_deviceLock;
-
-    //! Whether or not the USB mode selection dialog is currently visible
-    bool m_windowVisible;
-
-    //! State indicating whether the device is preparing a USB mode or not
-    QString m_preparingMode;
+    MeeGo::QmLocks *locks;
 
 #ifdef UNIT_TEST
     friend class Ut_USBModeSelector;
