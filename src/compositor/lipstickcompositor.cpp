@@ -37,6 +37,13 @@
 #include <QWaylandQuickShellSurfaceItem>
 #include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
 
+#include <mce/dbus-names.h>
+#include <mce/mode-names.h>
+
+
+#define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
+
+
 LipstickCompositor *LipstickCompositor::m_instance = 0;
 
 LipstickCompositor::LipstickCompositor()
@@ -113,6 +120,12 @@ LipstickCompositor::LipstickCompositor()
 
     HwcRenderStage::initialize(this);
 
+    m_timedDbus = new Maemo::Timed::Interface();
+    if( !m_timedDbus->isValid() )
+    {
+      qWarning() << "invalid dbus interface:" << m_timedDbus->lastError();
+    }
+
     QTimer::singleShot(0, this, SLOT(initialize()));
 }
 
@@ -122,6 +135,7 @@ LipstickCompositor::~LipstickCompositor()
     // are destroyed, so disconnect it.
     disconnect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
 
+    delete m_timedDbus;
     delete m_shaderEffect;
 }
 
@@ -400,6 +414,9 @@ void LipstickCompositor::initialize()
     if (!systemBus.registerObject("/", this)) {
         qWarning("Unable to register object at path /: %s", systemBus.lastError().message().toUtf8().constData());
     }
+    QDBusMessage message = QDBusMessage::createMethodCall(MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_DISPLAY_LPM_SET_SUPPORTED);
+    message.setArguments(QVariantList() << ambientSupported());
+    QDBusConnection::systemBus().asyncCall(message);
 }
 
 void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)
@@ -651,10 +668,24 @@ void LipstickCompositor::reactOnDisplayStateChanges(MeeGo::QmDisplayState::Displ
 
     bool changeInDimming = (state == MeeGo::QmDisplayState::Dimmed) != (m_currentDisplayState == MeeGo::QmDisplayState::Dimmed);
 
+    bool changeInAmbient = ((state == MeeGo::QmDisplayState::Off) != (m_currentDisplayState == MeeGo::QmDisplayState::Off)) && ambientEnabled();
+
+    bool enterAmbient = changeInAmbient && (state == MeeGo::QmDisplayState::Off);
+    bool leaveAmbient = changeInAmbient && (state != MeeGo::QmDisplayState::Off);
+
     m_currentDisplayState = state;
 
     if (changeInDimming) {
         emit displayDimmedChanged();
+    }
+    if (changeInAmbient) {
+        emit displayAmbientChanged();
+    }
+    if (enterAmbient) {
+        emit displayAmbientEntered();
+    }
+    if (leaveAmbient) {
+        emit displayAmbientLeft();
     }
 }
 
@@ -702,11 +733,124 @@ void LipstickCompositor::clipboardDataChanged()
         overrideSelection(const_cast<QMimeData *>(mimeData));
 }
 
-void LipstickCompositor::setUpdatesEnabled(bool enabled)
+bool LipstickCompositor::ambientSupported() const
 {
-    if (m_updatesEnabled != enabled) {
-        m_updatesEnabled = enabled;
-        if (!m_updatesEnabled) {
+    void* ambientMode = QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientSupported");
+    if (ambientMode) {
+        return true;
+    }
+    return false;
+}
+
+void LipstickCompositor::setAmbientEnabled(bool enabled)
+{
+    if (!ambientSupported()) {
+        return;
+    }
+
+    if (m_ambientModeEnabled == enabled) {
+        return;
+    }
+
+    m_ambientModeEnabled = enabled;
+    if (m_ambientModeEnabled) {
+        QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientEnable");
+    } else {
+        QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientDisable");
+    }
+    emit ambientEnabledChanged();
+}
+
+void LipstickCompositor::scheduleAmbientUpdate()
+{
+    if (!ambientEnabled()) {
+        return;
+    }
+    QMap<QString,QVariant> match;
+    match.insert("type", QVariant(QString("wakeup")));
+    QDBusReply< QList<QVariant> > reply = m_timedDbus->query_sync(match);
+
+    if( !reply.isValid() ) {
+        qWarning() << "'query' call failed:" << m_timedDbus->lastError();
+        return;
+    }
+
+    uint cookie = 0;
+    QList<QVariant> cookies = reply.value();
+    // Cancel all wakeup cookies except one.
+    while (!cookies.isEmpty()) {
+        bool ok = true;
+        cookie = cookies.takeFirst().toUInt(&ok);
+        if (!ok) {
+            cookie = 0;
+            continue;
+        }
+        // If the current cookie isn't the last one in the list.
+        if (!cookies.isEmpty()) {
+            QDBusReply<bool> res = m_timedDbus->cancel_sync(cookie);
+            if (!res.isValid()) {
+                qWarning() << "'cancel' call failed:" << m_timedDbus->lastError();
+            } else {
+                qWarning() << "cookie " << cookie << " deleted " << res.value();
+            }
+        }
+    }
+
+    // Add new wakeup event
+    Maemo::Timed::Event wakeupEvent;
+
+    time_t currentTime;
+    struct tm* timeinfo;
+    time(&currentTime);
+    // We don't want to update the screen 60 seconds after the screen is off.
+    // The screen should be updated when the minute digit changes.
+    timeinfo = localtime(&currentTime);
+    timeinfo->tm_sec = 0;
+
+    time_t wakeupTime = mktime(timeinfo);
+    if (wakeupTime == -1) {
+        wakeupTime = currentTime;
+    }
+    wakeupTime += 60;
+    wakeupEvent.setTicker(wakeupTime);
+    wakeupEvent.setAttribute(QLatin1String("APPLICATION"), QLatin1String("wakup_alarm"));
+    wakeupEvent.setAttribute(QLatin1String("type"), QLatin1String("wakeup"));
+    wakeupEvent.setBootFlag();
+    wakeupEvent.setKeepAliveFlag();
+    wakeupEvent.setReminderFlag();
+    wakeupEvent.setAlarmFlag();
+    wakeupEvent.setSingleShotFlag();
+
+    if (cookie) {
+        QDBusReply<uint> res = m_timedDbus->replace_event_sync(wakeupEvent, cookie);
+    } else {
+        QDBusReply<uint> res = m_timedDbus->add_event_sync(wakeupEvent);
+    }
+}
+
+void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
+{
+    if (enabled) {
+        if (m_currentDisplayState == MeeGo::QmDisplayState::On) {
+            return;
+        }
+        if (!ambientEnabled()) {
+            return;
+        }
+    }
+    setUpdatesEnabled(enabled, true);;
+    if (enabled) {
+        emit displayAmbientUpdate();
+    }
+}
+
+void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
+{
+    if ((m_updatesEnabled != enabled) || inAmbientMode) {
+        if (!inAmbientMode) {
+            m_updatesEnabled = enabled;
+        }
+        if (!enabled) {
             emit displayAboutToBeOff();
             LipstickCompositorWindow *topmostWindow = qobject_cast<LipstickCompositorWindow *>(windowForId(topmostWindowId()));
             if (topmostWindow != 0 && topmostWindow->hasFocus()) {
@@ -714,13 +858,15 @@ void LipstickCompositor::setUpdatesEnabled(bool enabled)
                 clearKeyboardFocus();
             }
             m_window->hide();
-            if (m_window->handle()) {
+            if (m_window->handle() && !inAmbientMode) {
                 QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("DisplayOff");
             }
             // trigger frame callbacks which are pending already at this time
             surfaceCommitted();
+
+            scheduleAmbientUpdate();
         } else {
-            if (m_window->handle()) {
+            if (m_window->handle() && !inAmbientMode) {
                 QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("DisplayOn");
             }
             emit displayAboutToBeOn();
@@ -737,7 +883,7 @@ void LipstickCompositor::setUpdatesEnabled(bool enabled)
         }
     }
 
-    if (m_updatesEnabled && !m_completed) {
+    if (enabled && !m_completed) {
         m_completed = true;
         emit completedChanged();
     }

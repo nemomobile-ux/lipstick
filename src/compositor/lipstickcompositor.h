@@ -29,6 +29,10 @@
 #include <MGConfItem>
 #include <qmdisplaystate.h>
 
+#include <timed-qt5/interface>
+#include <timed-qt5/exception>
+#include <timed-qt5/event-declarations.h>
+
 namespace QtWayland {
     class SurfaceExtensionGlobal;
     class ExtendedSurface;
@@ -59,6 +63,9 @@ class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
     Q_PROPERTY(bool displayDimmed READ displayDimmed NOTIFY displayDimmedChanged)
     Q_PROPERTY(bool completed READ completed NOTIFY completedChanged)
     Q_PROPERTY(QQuickWindow *quickWindow READ quickWindow CONSTANT)
+    Q_PROPERTY(bool ambientSupported READ ambientSupported CONSTANT)
+    Q_PROPERTY(bool ambientEnabled READ ambientEnabled WRITE setAmbientEnabled NOTIFY ambientEnabledChanged)
+    Q_PROPERTY(bool displayAmbient READ displayAmbient NOTIFY displayAmbientChanged)
 
 public:
     LipstickCompositor();
@@ -113,7 +120,13 @@ public:
 
     bool completed();
 
-    void setUpdatesEnabled(bool enabled);
+    bool ambientSupported() const;
+    void setAmbientEnabled(bool enabled);
+    bool ambientEnabled() const { return m_ambientModeEnabled; }
+    Q_INVOKABLE void setAmbientUpdatesEnabled(bool enabled);
+
+    bool displayAmbient() const { return (m_currentDisplayState == MeeGo::QmDisplayState::Off) && ambientEnabled(); }
+    Q_INVOKABLE void setUpdatesEnabled(bool enabled, bool inAmbientMode = false);
     LipstickCompositorWindow *createView(QWaylandSurface *surf);
 
     QQuickWindow *quickWindow() { return m_window; }
@@ -144,10 +157,19 @@ signals:
     void orientationLockChanged();
     void displayDimmedChanged();
 
+    void displayAmbientEntered();
+    void displayAmbientLeft();
+    // Display entered/left ambient mode.
+    void displayAmbientChanged();
+    // Update the screen in ambient mode.
+    void displayAmbientUpdate();
+
     void displayOn();
     void displayOff();
     void displayAboutToBeOn();
     void displayAboutToBeOff();
+
+    void ambientEnabledChanged();
 
     void completedChanged();
 
@@ -193,6 +215,8 @@ private:
 
     QQmlComponent *shaderEffectComponent();
 
+    void scheduleAmbientUpdate();
+
     static LipstickCompositor *m_instance;
 
     int m_totalWindowCount;
@@ -226,6 +250,9 @@ private:
     QWaylandWlShell *m_wlShell;
     QtWayland::SurfaceExtensionGlobal *m_surfExtGlob;
     QWaylandQtWindowManager *m_wm;
+
+    Maemo::Timed::Interface *m_timedDbus;
+    bool m_ambientModeEnabled;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H
