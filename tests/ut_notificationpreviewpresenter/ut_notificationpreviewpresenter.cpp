@@ -392,29 +392,6 @@ void Ut_NotificationPreviewPresenter::testNotificationNotShownIfNoSummaryOrBody(
     }
 }
 
-void Ut_NotificationPreviewPresenter::testNotificationNotShownIfHidden()
-{
-    NotificationPreviewPresenter presenter(screenLock, deviceLock);
-    QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
-    QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
-
-    // Create notification
-    QVariantHash hints;
-    hints.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, "previewSummary");
-    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, "previewBody");
-    hints.insert(LipstickNotification::HINT_HIDDEN, true);
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", "", 1, "", "", "", QStringList(), hints, -1);
-    notificationManagerNotification.insert(1, notification);
-    presenter.updateNotification(1);
-
-    QCOMPARE(changedSpy.count(), 0);
-    QCOMPARE(homeWindowVisible.isEmpty(), true);
-
-    // The notification should be considered presented
-    QCOMPARE(presentedSpy.count(), 1);
-    QCOMPARE(presentedSpy.last().at(0).toUInt(), (uint)1);
-}
-
 void Ut_NotificationPreviewPresenter::testNotificationNotShownIfRestored()
 {
     NotificationPreviewPresenter presenter(screenLock, deviceLock);
