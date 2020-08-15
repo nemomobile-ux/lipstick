@@ -735,11 +735,7 @@ void LipstickCompositor::clipboardDataChanged()
 
 bool LipstickCompositor::ambientSupported() const
 {
-    void* ambientMode = QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientSupported");
-    if (ambientMode) {
-        return true;
-    }
-    return false;
+    return QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientSupported");
 }
 
 void LipstickCompositor::setAmbientEnabled(bool enabled)
