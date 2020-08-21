@@ -70,8 +70,10 @@ NotificationFeedbackPlayerStub* gNotificationFeedbackPlayerStub = &gDefaultNotif
 
 
 // 4. CREATE A PROXY WHICH CALLS THE STUB
-NotificationFeedbackPlayer::NotificationFeedbackPlayer(QObject *parent) {
-  gNotificationFeedbackPlayerStub->NotificationFeedbackPlayerConstructor(parent);
+NotificationFeedbackPlayer::NotificationFeedbackPlayer(QObject *parent)
+    : m_doNotDisturbSetting("/lipstick/do_not_disturb")
+{
+    gNotificationFeedbackPlayerStub->NotificationFeedbackPlayerConstructor(parent);
 }
 
 int NotificationFeedbackPlayer::minimumPriority() const {
@@ -94,5 +96,9 @@ void NotificationFeedbackPlayer::removeNotification(uint id) {
   gNotificationFeedbackPlayerStub->removeNotification(id);
 }
 
+bool NotificationFeedbackPlayer::doNotDisturbMode() const
+{
+    return false;
+}
 
 #endif
