@@ -39,9 +39,15 @@ BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(usb-moded-qt5) >= 1.1
 BuildRequires:  pkgconfig(systemsettings) >= 0.5.28
 BuildRequires:  pkgconfig(nemodevicelock)
+%if 0%{?fedora}
+BuildRequires:  qt5-linguist
+BuildRequires:  pkgconfig(Qt5Gui)
+BuildRequires:  qt5-qtwayland-devel >= 5.9.5
+%else
 BuildRequires:  qt5-qttools-linguist
 BuildRequires:  qt5-qtgui-devel >= 5.2.1+git24
 BuildRequires:  qt5-qtwayland-wayland_egl-devel >= 5.4.0+git26
+%endif
 BuildRequires:  doxygen
 Conflicts:   meegotouch-systemui < 1.5.7
 Obsoletes:   libnotificationsystem0
