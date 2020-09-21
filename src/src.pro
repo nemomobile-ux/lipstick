@@ -73,6 +73,7 @@ dbus_policy.path = /etc/dbus-1/system.d
 HEADERS += \
     $$PUBLICHEADERS \
     3rdparty/synchronizelists.h \
+    3rdparty/dbus-gmain/dbus-gmain.h \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
@@ -101,6 +102,7 @@ HEADERS += \
     logging.h \
 
 SOURCES += \
+    3rdparty/dbus-gmain/dbus-gmain.c \
     homeapplication.cpp \
     homewindow.cpp \
     lipsticksettings.cpp \
@@ -153,7 +155,6 @@ CONFIG -= link_prl
 
 PKGCONFIG += \
     dbus-1 \
-    dbus-glib-1 \
     dsme_dbus_if \
     keepalive \
     libresourceqt5 \
