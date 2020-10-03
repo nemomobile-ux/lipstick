@@ -35,7 +35,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
 : QWaylandQuickItem(), m_windowId(windowId), m_category(category),
   m_delayRemove(false), m_windowClosed(false), m_removePosted(false),
   m_interceptingTouch(false), m_mapped(false), m_noHardwareComposition(false),
-  m_focusOnTouch(false), m_hasVisibleReferences(false)
+  m_focusOnTouch(false), m_hasVisibleReferences(false), m_extSurface(nullptr)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 

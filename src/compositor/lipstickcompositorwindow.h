@@ -18,7 +18,6 @@
 
 #include <QWaylandQuickItem>
 #include <QWaylandBufferRef>
-#include <QWaylandWlShellSurface>
 #include "lipstickglobal.h"
 
 namespace QtWayland {
@@ -126,7 +125,6 @@ private:
     QList<QMetaObject::Connection> m_surfaceConnections;
     QVector<QQuickItem *> m_refs;
     QtWayland::ExtendedSurface *m_extSurface;
-    QWaylandWlShellSurface *m_wlShellSurface;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H
