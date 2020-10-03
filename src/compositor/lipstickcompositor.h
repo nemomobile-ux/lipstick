@@ -206,7 +206,6 @@ private:
     void surfaceUnmapped(QWaylandSurface *surface);
     void surfaceUnmapped(LipstickCompositorWindow *item);
 
-    int windowIdForLink(QWaylandSurface *, uint) const;
     void windowAdded(int);
     void windowRemoved(int);
     void windowDestroyed(LipstickCompositorWindow *item);

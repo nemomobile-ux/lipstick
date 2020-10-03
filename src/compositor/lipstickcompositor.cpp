@@ -294,23 +294,6 @@ bool LipstickCompositor::completed()
     return m_completed;
 }
 
-int LipstickCompositor::windowIdForLink(QWaylandSurface *s, uint link) const
-{
-    for (QHash<int, LipstickCompositorWindow *>::ConstIterator iter = m_windows.begin();
-        iter != m_windows.end(); ++iter) {
-
-        QWaylandSurface *windowSurface = iter.value()->surface();
-        LipstickCompositorWindow *window = surfaceWindow(windowSurface);
-
-        if (windowSurface && windowSurface->client() && s->client() && window &&
-            windowSurface->client()->processId() == s->client()->processId() &&
-            window->windowProperties().value("WINID", uint(0)).toUInt() == link)
-            return iter.value()->windowId();
-    }
-
-    return 0;
-}
-
 void LipstickCompositor::clearKeyboardFocus()
 {
 //    defaultInputDevice()->setKeyboardFocus(NULL);
