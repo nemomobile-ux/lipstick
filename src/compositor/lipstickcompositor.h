@@ -20,7 +20,7 @@
 #include "lipstickglobal.h"
 #include <QWaylandQuickCompositor>
 #include <QWaylandQuickOutput>
-#include <QWaylandWlShellSurface>
+#include <QWaylandXdgShell>
 #include <QWaylandQtWindowManager>
 #include <QQmlComponent>
 #include <QWaylandClient>
@@ -179,8 +179,7 @@ private slots:
     void onHasContentChanged();
     void surfaceSizeChanged();
     void surfaceTitleChanged();
-    void surfaceSetTransient(QWaylandSurface *transientParent, const QPoint &relativeToParent, bool inactive);
-    void surfaceSetFullScreen(QWaylandWlShellSurface::FullScreenMethod method, uint framerate, QWaylandOutput *output);
+    void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
@@ -192,7 +191,7 @@ private slots:
     void onSurfaceDying();
     void initialize();
 
-    void onShellSurfaceCreated(QWaylandWlShellSurface *wlShellSurface);
+    void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
     void onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface);
 
 private:
@@ -246,7 +245,7 @@ private:
     bool m_fakeRepaintTriggered;
     QQuickWindow *m_window;
     QWaylandOutput *m_output;
-    QWaylandWlShell *m_wlShell;
+    QWaylandXdgShell *m_xdgShell;
     QtWayland::SurfaceExtensionGlobal *m_surfExtGlob;
     QWaylandQtWindowManager *m_wm;
 

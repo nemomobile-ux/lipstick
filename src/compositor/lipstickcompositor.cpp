@@ -74,8 +74,8 @@ LipstickCompositor::LipstickCompositor()
     m_output->setSizeFollowsWindow(true);
     connect(this, &QWaylandCompositor::surfaceCreated, this, &LipstickCompositor::onSurfaceCreated);
 
-    m_wlShell = new QWaylandWlShell(this);
-    connect(m_wlShell, &QWaylandWlShell::wlShellSurfaceCreated, this, &LipstickCompositor::onShellSurfaceCreated);
+    m_xdgShell = new QWaylandXdgShell(this);
+    connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
 
     m_surfExtGlob = new QtWayland::SurfaceExtensionGlobal(this);
     connect(m_surfExtGlob, &QtWayland::SurfaceExtensionGlobal::extendedSurfaceReady, this, &LipstickCompositor::onExtendedSurfaceReady);
@@ -174,15 +174,13 @@ static LipstickCompositorWindow *surfaceWindow(QWaylandSurface *surface)
     return surface->views().isEmpty() ? 0 : static_cast<LipstickCompositorWindow *>(surface->views().first()->renderObject());
 }
 
-void LipstickCompositor::onShellSurfaceCreated(QWaylandWlShellSurface *shellSurface)
+void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface)
 {
     QWaylandSurface *surface = shellSurface->surface();
     LipstickCompositorWindow *window = surfaceWindow(surface);
     if(window) {
-//        window->setWlShellSurface(shellSurface);
-        connect(shellSurface, &QWaylandWlShellSurface::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
-        connect(shellSurface, &QWaylandWlShellSurface::setTransient, this, &LipstickCompositor::surfaceSetTransient);
-        connect(shellSurface, &QWaylandWlShellSurface::setFullScreen, this, &LipstickCompositor::surfaceSetFullScreen);
+        connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
+        connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
     }
 }
 
@@ -470,10 +468,10 @@ void LipstickCompositor::surfaceSizeChanged()
 
 void LipstickCompositor::surfaceTitleChanged()
 {
-    QWaylandWlShellSurface *wlShellSurface = qobject_cast<QWaylandWlShellSurface*>(sender());
-    LipstickCompositorWindow *window = surfaceWindow(wlShellSurface->surface());
+    QWaylandXdgToplevel *xdgShellSurface = qobject_cast<QWaylandXdgToplevel*>(sender());
+    LipstickCompositorWindow *window = surfaceWindow(xdgShellSurface->xdgSurface()->surface());
     if (window) {
-        window->setTitle(wlShellSurface->title());
+        window->setTitle(xdgShellSurface->title());
         emit window->titleChanged();
 
         int windowId = window->windowId();
@@ -483,34 +481,15 @@ void LipstickCompositor::surfaceTitleChanged()
     }
 }
 
-void LipstickCompositor::surfaceSetTransient(QWaylandSurface *transientParent, const QPoint &relativeToParent, bool inactive)
+void LipstickCompositor::surfaceSetFullScreen(QWaylandOutput *output)
 {
-    Q_UNUSED(inactive)
-    QWaylandWlShellSurface *wlShellSurface = qobject_cast<QWaylandWlShellSurface*>(sender());
-    LipstickCompositorWindow *window = surfaceWindow(wlShellSurface->surface());
-    if (window && transientParent) {
-        LipstickCompositorWindow *transientParentItem = surfaceWindow(transientParent);
-        if (transientParentItem) {
-            window->setParentItem(transientParentItem);
-            window->setX(relativeToParent.x());
-            window->setY(relativeToParent.y());
-        } else {
-            qWarning("Surface was mapped without visible transient parent");
-        }
-    }
-}
-
-void LipstickCompositor::surfaceSetFullScreen(QWaylandWlShellSurface::FullScreenMethod method, uint framerate, QWaylandOutput *output)
-{
-    Q_UNUSED(method)
-    Q_UNUSED(framerate)
-    QWaylandWlShellSurface *wlShellSurface = qobject_cast<QWaylandWlShellSurface*>(sender());
+    QWaylandXdgToplevel *xdgShellSurface = qobject_cast<QWaylandXdgToplevel*>(sender());
 
     QWaylandOutput *designatedOutput = output ? output : m_output;
     if (!designatedOutput)
         return;
 
-    wlShellSurface->sendConfigure(designatedOutput->geometry().size(), QWaylandWlShellSurface::NoneEdge);
+    xdgShellSurface->sendFullscreen(designatedOutput->geometry().size() / designatedOutput->scaleFactor());
 }
 
 void LipstickCompositor::windowSwapped()
