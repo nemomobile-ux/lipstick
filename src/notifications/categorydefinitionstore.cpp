@@ -17,6 +17,7 @@
 #include "categorydefinitionstore.h"
 #include <QFileInfo>
 #include <QDir>
+#include <QDebug>
 
 //! The file extension for the category definition files
 static const char *FILE_EXTENSION = ".conf";
@@ -24,11 +25,17 @@ static const char *FILE_EXTENSION = ".conf";
 //! The maximum size of the category definition file
 static const uint FILE_MAX_SIZE = 32768;
 
-CategoryDefinitionStore::CategoryDefinitionStore(const QString &categoryDefinitionsPath, uint maxStoredCategoryDefinitions, QObject *parent) :
-    QObject(parent),
-    m_categoryDefinitionsPath(categoryDefinitionsPath),
-    m_maxStoredCategoryDefinitions(maxStoredCategoryDefinitions)
+CategoryDefinitionStore::CategoryDefinitionStore(const QString &categoryDefinitionsPath,
+                                                 uint maxStoredCategoryDefinitions, QObject *parent)
+    : QObject(parent),
+      m_categoryDefinitionsPath(categoryDefinitionsPath),
+      m_maxStoredCategoryDefinitions(maxStoredCategoryDefinitions)
 {
+    if (m_categoryDefinitionsPath.isEmpty()) {
+        qWarning() << "CategoryDefinitionStore instantiated without a path";
+        return;
+    }
+
     if (!this->m_categoryDefinitionsPath.endsWith('/')) {
         this->m_categoryDefinitionsPath.append('/');
     }
@@ -44,7 +51,7 @@ void CategoryDefinitionStore::updateCategoryDefinitionFileList()
 {
     QDir categoryDefinitionsDir(m_categoryDefinitionsPath);
 
-    if(categoryDefinitionsDir.exists()) {
+    if (categoryDefinitionsDir.exists()) {
         QStringList filter("*" + QString(FILE_EXTENSION));
 
         QStringList filteredEntries = categoryDefinitionsDir.entryList(filter, QDir::Files);
