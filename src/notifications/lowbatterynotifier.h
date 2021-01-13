@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QTime>
+#include <QElapsedTimer>
 #include <qmdisplaystate.h>
 
 #ifdef HAVE_CONTEXTSUBSCRIBER
@@ -79,7 +80,7 @@ private:
     QTimer *notificationTimer;
 
     //! Time of the previous notification
-    QTime previousNotificationTime;
+    QElapsedTimer previousNotificationTime;
 
     //! Notification interval in milliseconds based on the device and call state
     int notificationInterval;

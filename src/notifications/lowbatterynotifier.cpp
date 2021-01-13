@@ -30,12 +30,12 @@ LowBatteryNotifier::LowBatteryNotifier(QObject *parent) :
     callContextItem("Phone.Call"),
 #endif
     notificationTimer(new QTimer(this)),
-    previousNotificationTime(QTime::currentTime()),
     notificationInterval(DEVICE_ACTIVE_NOTIFICATION_INTERVAL),
     deviceInactive(false),
     touchScreenLockActive(false),
     callActive(false)
 {
+    previousNotificationTime.start();
     connect(notificationTimer, SIGNAL(timeout()), this, SLOT(sendLowBatteryAlert()));
 
     setNotificationInterval();
@@ -84,12 +84,14 @@ void LowBatteryNotifier::setNotificationInterval()
             notificationInterval = deviceInactive ? DEVICE_INACTIVE_NOTIFICATION_INTERVAL : DEVICE_ACTIVE_NOTIFICATION_INTERVAL;
         }
 
-        if (previousNotificationTime.elapsed() < notificationInterval) {
-            // Elapsed time has not reached the notification interval so just set the new interval
-            notificationTimer->setInterval(notificationInterval - previousNotificationTime.elapsed());
-        } else {
-            // Elapsed time has reached the notification interval, so send the notification immediately (which will also set the new interval)
-            sendLowBatteryAlert();
+        if (previousNotificationTime.isValid()) {
+            if (previousNotificationTime.elapsed() < notificationInterval) {
+                // Elapsed time has not reached the notification interval so just set the new interval
+                notificationTimer->setInterval(notificationInterval - previousNotificationTime.elapsed());
+            } else {
+                // Elapsed time has reached the notification interval, so send the notification immediately (which will also set the new interval)
+                sendLowBatteryAlert();
+            }
         }
     }
 }
