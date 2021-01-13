@@ -69,9 +69,6 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterType<WindowPixmapItem>("org.nemomobile.lipstick", 0, 1, "WindowPixmapItem");
     qmlRegisterSingletonType<LipstickApi>("org.nemomobile.lipstick", 0, 1, "Lipstick", lipstickApi_callback);
 
-    qmlRegisterType<LipstickCompositorWindow>();
-    qmlRegisterType<QObjectListModel>();
-
     qmlRegisterRevision<QQuickWindow,1>("org.nemomobile.lipstick", 0, 1);
 
     qmlRegisterUncreatableType<BluetoothAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothAgent", "This type is created by lipstick");
