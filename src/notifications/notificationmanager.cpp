@@ -380,7 +380,7 @@ void NotificationManager::CloseNotification(uint id, NotificationClosedReason cl
 
 void NotificationManager::CloseNotifications(const QList<uint> &ids, NotificationClosedReason closeReason)
 {
-    QSet<uint> uniqueIds = QSet<uint>::fromList(ids);
+    QSet<uint> uniqueIds(ids.begin(), ids.end());
     QList<uint> removedIds;
 
     foreach (uint id, uniqueIds) {

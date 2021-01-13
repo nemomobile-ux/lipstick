@@ -487,7 +487,6 @@ void Ut_NotificationManager::testNotificationsAreRestoredOnConstruction()
     NotificationManager *manager = NotificationManager::instance();
     QList<uint> ids = manager->notificationIds();
     QCOMPARE(ids.count(), notificationValuesById.count());
-    QCOMPARE(ids.toSet(), notificationValuesById.keys().toSet());
     // The expired notification should not be reported
     QCOMPARE(ids.contains(3), false);
     // The excess notification should not be reported
