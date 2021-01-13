@@ -242,8 +242,9 @@ void LauncherItem::launchApplication()
     // DETAILS: http://standards.freedesktop.org/desktop-entry-spec/latest/index.html
     // DETAILS: http://standards.freedesktop.org/desktop-entry-spec/latest/ar01s06.html
 
+    QStringList commandTokens = QProcess::splitCommand(QStringView(commandText));
     // Launch the application
-    QProcess::startDetached(commandText);
+    QProcess::startDetached(commandTokens.takeFirst(), commandTokens);
 #endif
 
     setIsLaunching(true);
