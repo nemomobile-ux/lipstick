@@ -52,8 +52,8 @@ BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
 void BluetoothAgent::serviceRegistered(const QString&)
 {
     QDBusInterface agentManager("org.bluez", "/org/bluez", "org.bluez.AgentManager1", QDBusConnection::systemBus());
-    agentManager.call("RegisterAgent", qVariantFromValue(getPath()), AGENT_CAPABILITY);
-		agentManager.asyncCall("RequestDefaultAgent", qVariantFromValue(getPath()));
+    agentManager.call("RegisterAgent", QVariant::fromValue(getPath()), AGENT_CAPABILITY);
+    agentManager.asyncCall("RequestDefaultAgent", QVariant::fromValue(getPath()));
 }
 
 void BluetoothAgent::serviceUnregistered(const QString&)
