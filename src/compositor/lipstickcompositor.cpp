@@ -190,7 +190,6 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
     if (!item)
         item = createView(surface);
     connect(surface, SIGNAL(hasContentChanged()), this, SLOT(onHasContentChanged()));
-    connect(surface, SIGNAL(sizeChanged()), this, SLOT(surfaceSizeChanged()));
     connect(surface, SIGNAL(damaged(QRegion)), this, SLOT(surfaceDamaged(QRegion)));
     connect(surface, SIGNAL(redraw()), this, SLOT(windowSwapped()));
 }
@@ -441,7 +440,6 @@ void LipstickCompositor::surfaceMapped(QWaylandSurface *surface)
         item->setParentItem(m_window->contentItem());
     }
 
-    item->setSize(surface->size());
     QObject::connect(surface, &QWaylandSurface::surfaceDestroyed, this, &LipstickCompositor::onSurfaceDying);
 
     m_totalWindowCount++;
@@ -455,15 +453,6 @@ void LipstickCompositor::surfaceMapped(QWaylandSurface *surface)
     windowAdded(item->windowId());
 
     emit availableWinIdsChanged();
-}
-
-void LipstickCompositor::surfaceSizeChanged()
-{
-    QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
-
-    LipstickCompositorWindow *window = surfaceWindow(surface);
-    if (window)
-        window->setSize(surface->size());
 }
 
 void LipstickCompositor::surfaceTitleChanged()

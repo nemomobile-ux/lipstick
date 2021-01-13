@@ -177,7 +177,6 @@ signals:
 
 private slots:
     void onHasContentChanged();
-    void surfaceSizeChanged();
     void surfaceTitleChanged();
     void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
