@@ -1073,7 +1073,7 @@ void NotificationManager::reportModifications()
     if (modifiedIds.count() == 1) {
         emit notificationModified(*modifiedIds.begin());
     } else if (!modifiedIds.isEmpty()) {
-        emit notificationsModified(modifiedIds.toList());
+        emit notificationsModified(modifiedIds.values());
     }
     modifiedIds.clear();
 }
