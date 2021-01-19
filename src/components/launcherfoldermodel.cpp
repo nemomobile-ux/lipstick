@@ -384,6 +384,8 @@ void LauncherFolderModel::initialize()
     connect(mLauncherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::notifyLaunching,
             this, &LauncherFolderModel::notifyLaunching);
     connect(&mSaveTimer, SIGNAL(timeout()), this, SLOT(save()));
+    connect(mLauncherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::canceledNotifyLaunching,
+            this, &LauncherFolderModel::canceledNotifyLaunching);
 
     QDir config;
     config.mkpath(configDir());

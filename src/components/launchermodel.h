@@ -88,6 +88,7 @@ public:
     void updatingProgress(const QString &packageName, int progress, const QString &serviceName);
     void updatingFinished(const QString &packageName, const QString &serviceName);
     void notifyLaunching(const QString &desktopFile);
+    void cancelNotifyLaunching(const QString &desktopFile);
 
     void requestLaunch(const QString &packageName);
     LauncherItem *itemInModel(const QString &path);
@@ -103,6 +104,7 @@ signals:
     void categoriesChanged();
     void scopeChanged();
     void notifyLaunching(LauncherItem *item);
+    void canceledNotifyLaunching(LauncherItem *item);
 
 protected:
     enum InitializationMode {

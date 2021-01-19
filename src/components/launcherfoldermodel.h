@@ -128,6 +128,8 @@ signals:
     void iconDirectoriesChanged();
     void categoriesChanged();
     void notifyLaunching(LauncherItem *item);
+    void canceledNotifyLaunching(LauncherItem *item);
+    void applicationRemoved(LauncherItem *item);
 
 protected:
     enum InitializationMode {
