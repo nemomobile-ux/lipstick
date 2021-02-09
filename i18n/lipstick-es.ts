@@ -27,19 +27,19 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="220"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="172"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>Desconectar el cargador de fuente para ahorrar energía</translation>
+        <translation>Desconecte el cargador de la corriente para ahorrar energía</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
         <oldsource>Charging not started. Replace charger.</oldsource>
-        <translation>La carga no inicia. Reemplazar el cargador.</translation>
+        <translation>No se está cargando. Arregle o recambie el cargador.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="228"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="129"/>
         <source>Recharge battery</source>
-        <translation>Recargar la batería</translation>
+        <translation>Recargue la batería</translation>
     </message>
     <message id="qtn_ener_ent_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="232"/>
@@ -84,7 +84,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
         <oldsource>Device is overheating. Turn it off.</oldsource>
-        <translation>El dispositivo está sobrecalentado. Apágalo.</translation>
+        <translation>El dispositivo está sobrecalentádose. Apáguelo.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
@@ -104,7 +104,7 @@
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
         <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
-        <translation>Cable USB conectado. Desconéctalo para apagar el dispositivo.</translation>
+        <translation>Cable USB conectado. Desconéctelo para apagar el dispositivo.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
         <location filename="../src/shutdownscreen.cpp" line="89"/>
@@ -115,7 +115,7 @@
     <message id="qtn_usb_device_locked">
         <location filename="../src/usbmodeselector.cpp" line="103"/>
         <source>Unlock device first</source>
-        <translation>Desbloquea el dispositivo primero</translation>
+        <translation>Desbloquee el dispositivo primero</translation>
     </message>
     <message id="qtn_usb_disconnected">
         <location filename="../src/usbmodeselector.cpp" line="127"/>
