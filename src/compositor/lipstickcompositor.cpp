@@ -228,8 +228,8 @@ bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
                     url,
                     defaultAction,
                     isFile
-                    ? ContentAction::Action::actionsForFile(url)
-                    : ContentAction::Action::actionsForScheme(url.toString()));
+                        ? ContentAction::Action::actionsForFile(url)
+                        : ContentAction::Action::actionsForUrl(url.toString()));
         return true;
     } else if (defaultAction.isValid()) {
         defaultAction.trigger();
