@@ -30,6 +30,7 @@
 #include "lipstickcompositorprocwindow.h"
 #include "lipstickcompositor.h"
 #include "lipstickcompositoradaptor.h"
+#include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
 #include <qpa/qwindowsysteminterface.h>
 #include "hwcrenderstage.h"
@@ -498,9 +499,15 @@ void LipstickCompositor::initialize()
                  "Did not get primary name ownership");
     }
 
+
     QDBusMessage message = QDBusMessage::createMethodCall(MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_DISPLAY_LPM_SET_SUPPORTED);
     message.setArguments(QVariantList() << ambientSupported());
     QDBusConnection::systemBus().asyncCall(message);
+
+    new FileServiceAdaptor(this);
+    QDBusConnection sessionBus = QDBusConnection::sessionBus();
+    sessionBus.registerObject(QLatin1String("/"), this);
+    sessionBus.registerService(QLatin1String("org.nemomobile.fileservice"));
 }
 
 void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)

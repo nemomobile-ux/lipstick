@@ -1,4 +1,5 @@
 system(qdbusxml2cpp compositor.xml -a lipstickcompositoradaptor -c LipstickCompositorAdaptor -l LipstickCompositor -i lipstickcompositor.h)
+system(qdbusxml2cpp fileservice.xml -a fileserviceadaptor -c FileServiceAdaptor)
 
 INCLUDEPATH += $$PWD
 
@@ -7,6 +8,7 @@ PUBLICHEADERS += \
     $$PWD/lipstickcompositorwindow.h \
     $$PWD/lipstickcompositorprocwindow.h \
     $$PWD/lipstickcompositoradaptor.h \
+    $$PWD/fileserviceadaptor.h \
     $$PWD/windowmodel.h \
 
 HEADERS += \
@@ -22,6 +24,7 @@ SOURCES += \
     $$PWD/lipstickcompositorwindow.cpp \
     $$PWD/lipstickcompositorprocwindow.cpp \
     $$PWD/lipstickcompositoradaptor.cpp \
+    $$PWD/fileserviceadaptor.cpp \
     $$PWD/windowmodel.cpp \
     $$PWD/windowpixmapitem.cpp \
     $$PWD/hwcrenderstage.cpp \
@@ -35,3 +38,7 @@ QT += waylandcompositor
 
 # needed for hardware compositor
 QT += quick-private gui-private core-private waylandcompositor-private qml-private
+
+WAYLANDSERVERSOURCES += ../protocol/lipstick-recorder.xml \
+
+OTHER_FILES += $$PWD/compositor.xml $$PWD/fileservice.xml
