@@ -71,10 +71,10 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterSingletonType<LipstickApi>("org.nemomobile.lipstick", 0, 1, "Lipstick", lipstickApi_callback);
     qmlRegisterUncreatableType<ScreenshotResult>("org.nemomobile.lipstick", 0, 1, "ScreenshotResult", "This type is initialized by LipstickApi");
 
-    qmlRegisterType<LipstickCompositorWindow>();
-    qmlRegisterType<QObjectListModel>();
-    qmlRegisterType<WindowPropertyMap>();
-    qmlRegisterType<QWaylandKeymap>();
+    qmlRegisterAnonymousType<LipstickCompositorWindow>("org.nemomobile.lipstick", 0);
+    qmlRegisterAnonymousType<QObjectListModel>("org.nemomobile.lipstick", 0);
+    qmlRegisterAnonymousType<WindowPropertyMap>("org.nemomobile.lipstick", 0);
+    qmlRegisterAnonymousType<QWaylandKeymap>("org.nemomobile.lipstick", 0);
 
     qmlRegisterRevision<QQuickWindow,1>("org.nemomobile.lipstick", 0, 1);
 }
