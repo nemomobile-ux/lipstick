@@ -28,7 +28,7 @@
 
 #include <nemo-devicelock/devicelock.h>
 
-USBModeSelector::USBModeSelector(NemoDeviceLock::DeviceLock *deviceLock, QObject *parent) :
+USBModeSelector::USBModeSelector(DeviceLock *deviceLock, QObject *parent) :
     QObject(parent),
     m_usbMode(new QUsbModed(this)),
     m_deviceLock(deviceLock),
@@ -85,7 +85,7 @@ void USBModeSelector::handleUSBEvent(const QString &event)
     // ReMountFailed, ModeSettingFailed, ChargerConnected, ChargerDisconnected
 
     if (event == QUsbModed::Mode::Connected) {
-        if (m_deviceLock->state() >= NemoDeviceLock::DeviceLock::Locked) {
+        if (m_deviceLock->state() >= DeviceLock::Locked) {
             // When the device lock is on and USB is connected, always pretend that the USB mode selection dialog is shown to unlock the touch screen lock
             emit dialogShown();
             emit showNotification(Notification::Locked);

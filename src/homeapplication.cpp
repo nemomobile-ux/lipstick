@@ -100,7 +100,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     new BatteryNotifier(this);
     new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
-    usbModeSelector = new USBModeSelector(this);
+    usbModeSelector = new USBModeSelector(deviceLock ,this);
     bluetoothAgent = new BluetoothAgent(this);
     shutdownScreen = new ShutdownScreen(this);
     localeMngr = new LocaleManager(this);
