@@ -17,6 +17,7 @@
 #include <QWaylandCompositor>
 #include <QWaylandSeat>
 #include <QTimer>
+#include <QEvent>
 #include <sys/types.h>
 #include <signal.h>
 #include "lipstickcompositor.h"
@@ -28,14 +29,13 @@
 #include <EGL/egl.h>
 #include <private/qwaylandsurface_p.h>
 #include <private/qquickwindow_p.h>
-#include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
 
 LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &category,
                                                    QWaylandSurface *surface, QQuickItem *parent)
 : QWaylandQuickItem(), m_windowId(windowId), m_category(category),
   m_delayRemove(false), m_windowClosed(false), m_removePosted(false),
   m_interceptingTouch(false), m_mapped(false), m_noHardwareComposition(false),
-  m_focusOnTouch(false), m_hasVisibleReferences(false), m_extSurface(nullptr)
+  m_focusOnTouch(false), m_hasVisibleReferences(false)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 
@@ -111,29 +111,14 @@ QString LipstickCompositorWindow::category() const
     return m_category;
 }
 
-QtWayland::ExtendedSurface *LipstickCompositorWindow::extendedSurface()
-{
-    return m_extSurface;
-}
-
-void LipstickCompositorWindow::setExtendedSurface(QtWayland::ExtendedSurface *extSurface)
-{
-    m_extSurface = extSurface;
-    connect(m_extSurface, SIGNAL(windowFlagsChanged()), this, SIGNAL(windowFlagsChanged()));
-}
 
 qint16 LipstickCompositorWindow::windowFlags()
 {
-    if (m_extSurface) {
-        return m_extSurface->windowFlags();
-    }
     return 0;
 }
 
 QVariantMap LipstickCompositorWindow::windowProperties()
 {
-    if (m_extSurface)
-        return m_extSurface->windowProperties();
     return QVariantMap();
 }
 
@@ -198,15 +183,15 @@ bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
         }
         return false;
     }
-    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
+    if (event->type() == 6 || event->type() == 7) {
         QKeyEvent *ke = static_cast<QKeyEvent *>(event);
         QWaylandSurface *m_surface = surface();
         if (m_surface) {
             QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(ke);
-            if (event->type() == QEvent::KeyPress)
+            if (event->type() == 6) //KeyPress
                 inputDevice->setKeyboardFocus(m_surface);
             inputDevice->sendFullKeyEvent(ke);
-            if (event->type() == QEvent::KeyRelease)
+            if (event->type() == 7) //KeyRelease
                 qApp->removeEventFilter(this);
             return true;
         }

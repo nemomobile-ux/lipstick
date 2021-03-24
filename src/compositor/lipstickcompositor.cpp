@@ -35,7 +35,6 @@
 #include <private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
 #include <QWaylandQuickShellSurfaceItem>
-#include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
 
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
@@ -76,9 +75,6 @@ LipstickCompositor::LipstickCompositor()
 
     m_xdgShell = new QWaylandXdgShell(this);
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
-
-    m_surfExtGlob = new QtWayland::SurfaceExtensionGlobal(this);
-    connect(m_surfExtGlob, &QtWayland::SurfaceExtensionGlobal::extendedSurfaceReady, this, &LipstickCompositor::onExtendedSurfaceReady);
 
     m_wm = new QWaylandQtWindowManager(this);
     connect(m_wm, &QWaylandQtWindowManager::openUrl, this, &LipstickCompositor::openUrl);
@@ -192,13 +188,6 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
     connect(surface, SIGNAL(hasContentChanged()), this, SLOT(onHasContentChanged()));
     connect(surface, SIGNAL(damaged(QRegion)), this, SLOT(surfaceDamaged(QRegion)));
     connect(surface, SIGNAL(redraw()), this, SLOT(windowSwapped()));
-}
-
-void LipstickCompositor::onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface)
-{
-    LipstickCompositorWindow *window = surfaceWindow(surface);
-    if(window)
-        window->setExtendedSurface(extSurface);
 }
 
 bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)

@@ -20,9 +20,6 @@
 #include <QWaylandBufferRef>
 #include "lipstickglobal.h"
 
-namespace QtWayland {
-    class ExtendedSurface;
-}
 class LipstickCompositorWindowHwcNode;
 
 class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
@@ -106,8 +103,6 @@ private:
     void tryRemove();
     void handleTouchEvent(QTouchEvent *e);
 
-    void setExtendedSurface(QtWayland::ExtendedSurface *extSurface);
-    QtWayland::ExtendedSurface *extendedSurface();
     void setTitle(QString title);
     QString m_title;
 
@@ -124,7 +119,6 @@ private:
     QVariant m_data;
     QList<QMetaObject::Connection> m_surfaceConnections;
     QVector<QQuickItem *> m_refs;
-    QtWayland::ExtendedSurface *m_extSurface;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H

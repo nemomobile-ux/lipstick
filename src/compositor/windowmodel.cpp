@@ -14,7 +14,6 @@
 ****************************************************************************/
 
 #include <QDBusConnection>
-#include <QtWaylandCompositor/private/qwlextendedsurface_p.h>
 #include "lipstickcompositorwindow.h"
 #include "lipstickcompositor.h"
 #include "windowmodel.h"
@@ -201,27 +200,6 @@ void WindowModel::launchProcess(const QString &binaryName)
             if (part.size() > 0) {
                 proc << part;
             }
-        }
-
-        // Cannot match, as the cmdline has less arguments than then binary part
-        if (binaryParts.size() > proc.size()) {
-            continue;
-        }
-
-        bool match = true;
-
-        // All parts of binaryName must be contained in this order in the
-        // process command line to match the given process
-        for (int i=0; i<binaryParts.count(); i++) {
-            if (proc[i] != binaryParts[i]) {
-                match = false;
-                break;
-            }
-        }
-
-        if (match) {
-            emit win->extendedSurface()->raiseRequested();
-            break;
         }
     }
 }

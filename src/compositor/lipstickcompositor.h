@@ -33,11 +33,6 @@
 #include <timed-qt5/exception>
 #include <timed-qt5/event-declarations.h>
 
-namespace QtWayland {
-    class SurfaceExtensionGlobal;
-    class ExtendedSurface;
-}
-
 class WindowModel;
 class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
@@ -191,7 +186,6 @@ private slots:
     void initialize();
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
-    void onExtendedSurfaceReady(QtWayland::ExtendedSurface *extSurface, QWaylandSurface *surface);
 
 private:
     friend class LipstickCompositorWindow;
@@ -245,7 +239,6 @@ private:
     QQuickWindow *m_window;
     QWaylandOutput *m_output;
     QWaylandXdgShell *m_xdgShell;
-    QtWayland::SurfaceExtensionGlobal *m_surfExtGlob;
     QWaylandQtWindowManager *m_wm;
 
     Maemo::Timed::Interface *m_timedDbus;
