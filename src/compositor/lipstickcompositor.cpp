@@ -174,6 +174,12 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
 {
     QWaylandSurface *surface = shellSurface->surface();
     LipstickCompositorWindow *window = surfaceWindow(surface);
+
+    if(!topLevel->fullscreen()) {
+        qDebug() << "Make window fullscreen force";
+        topLevel->sendFullscreen(QGuiApplication::primaryScreen()->size());
+    }
+
     if(window) {
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
         connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
