@@ -201,7 +201,7 @@ private slots:
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
-    void windowPropertyChanged(const QString &property);
+    void windowPropertyChanged(const QString &);
     void reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState);
     void homeApplicationAboutToDestroy();
     void setScreenOrientationFromSensor();

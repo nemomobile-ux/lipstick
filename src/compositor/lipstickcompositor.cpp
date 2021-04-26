@@ -13,9 +13,6 @@
 **
 ****************************************************************************/
 
-#ifdef HAVE_CONTENTACTION
-#include <contentaction.h>
-#endif
 
 #include <QWaylandSeat>
 #include <QDesktopServices>
@@ -215,32 +212,9 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
 
 bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
 {
-    Q_UNUSED(client)
-#if defined(HAVE_CONTENTACTION)
-    const bool isFile = url.scheme() == QLatin1String("file");
-    ContentAction::Action defaultAction = isFile
-            ? ContentAction::Action::defaultActionForFile(url)
-            : ContentAction::Action::defaultActionForScheme(url.toString());
+    openUrlRequested(url);
 
-    static const QMetaMethod requestSignal = QMetaMethod::fromSignal(
-                &LipstickCompositor::openUrlRequested);
-    if (isSignalConnected(requestSignal)) {
-        openUrlRequested(
-                    url,
-                    defaultAction,
-                    isFile
-                        ? ContentAction::Action::actionsForFile(url)
-                        : ContentAction::Action::actionsForUrl(url.toString()));
-        return true;
-    } else if (defaultAction.isValid()) {
-        defaultAction.trigger();
-    }
-
-    return defaultAction.isValid();
-#else
-    Q_UNUSED(url)
-    return false;
-#endif
+    return true;
 }
 
 void LipstickCompositor::retainedSelectionReceived(QMimeData *mimeData)

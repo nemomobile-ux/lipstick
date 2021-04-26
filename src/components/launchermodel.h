@@ -84,6 +84,10 @@ public:
     LauncherItem *itemInModel(const QString &path);
     int indexInModel(const QString &path);
 
+    QList<LauncherItem *> itemsForMimeType(const QString &mimeType);
+
+    LauncherItem *itemForService(const QString &name);
+
 public slots:
     void savePositions();
     void removeTemporaryLaunchers();
@@ -115,10 +119,13 @@ private:
     QVariant launcherPos(const QString &path);
     LauncherItem *addItemIfValid(const QString &path);
     void updateItemsWithIcon(const QString &filename, bool existing);
+    LauncherItem *addItemIfValid(LauncherItem *item);
     void updateWatchedDBusServices();
     void setTemporary(LauncherItem *item);
     void unsetTemporary(LauncherItem *item);
     LauncherItem *temporaryItemToReplace();
+
+    LauncherItem *takeHiddenItem(const QString &path);
 
     QStringList m_directories;
     QStringList m_iconDirectories;
@@ -134,6 +141,7 @@ private:
     QDBusServiceWatcher m_dbusWatcher;
     QMap<QString, QString> m_packageNameToDBusService;
     QList<LauncherItem *> m_temporaryLaunchers;
+    QList<LauncherItem *> m_hiddenLaunchers;
     bool m_initialized;
 
     friend class Ut_LauncherModel;
