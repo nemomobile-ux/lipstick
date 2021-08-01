@@ -87,7 +87,13 @@ static QStringList defaultDirectories()
         userLocalLauncherDir.mkpath(userLocalAppsPath);
     }
 
-    return QStringList() << QStringLiteral(LAUNCHER_APPS_PATH) << userLocalAppsPath;
+    QString flatpackAppsPath = "/var/lib/flatpak/exports/share/applications";
+    QDir flatpackAppsDir(flatpackAppsPath);
+    if(!flatpackAppsDir.exists()) {
+        flatpackAppsPath = QString();
+    }
+
+    return QStringList() << QStringLiteral(LAUNCHER_APPS_PATH) << userLocalAppsPath << flatpackAppsPath;
 }
 
 Q_GLOBAL_STATIC(LauncherDBus, _launcherDBus);
