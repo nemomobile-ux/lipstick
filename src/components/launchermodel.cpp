@@ -35,6 +35,8 @@
         "/usr/share/icons/hicolor/86x86/apps/",
         "/usr/share/icons/hicolor/128x128/apps/",
         "/usr/share/icons/hicolor/256x256/apps/",
+        "/var/lib/flatpak/exports/share/icons/hicolor/86x86/apps",
+        "/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps",
         "/var/lib/flatpak/exports/share/icons/hicolor/512x512/apps"
     };
 
