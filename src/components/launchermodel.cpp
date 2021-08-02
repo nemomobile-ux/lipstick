@@ -31,7 +31,13 @@
 // Make sure to also update this in the .spec file, so it gets
 // created whenever lipstick is installed, otherwise monitoring
 // will fail and newly-installed icons will not be detected
-#define LAUNCHER_ICONS_PATH "/usr/share/icons/hicolor/86x86/apps/"
+    static const QStringList LAUNCHER_ICONS_PATH = {
+        "/usr/share/icons/hicolor/86x86/apps/",
+        "/usr/share/icons/hicolor/128x128/apps/",
+        "/usr/share/icons/hicolor/256x256/apps/",
+        "/var/lib/flatpak/exports/share/icons/hicolor/512x512/apps"
+    };
+
 
 // Time in millseconds to wait before removing temporary launchers
 #define LAUNCHER_UPDATING_REMOVAL_HOLDBACK_MS 3000
@@ -138,8 +144,11 @@ void LauncherModel::initialize()
     _launcherDBus()->registerModel(this);
 
     QStringList iconDirectories = _iconDirectories;
-    if (!iconDirectories.contains(LAUNCHER_ICONS_PATH))
-        iconDirectories << LAUNCHER_ICONS_PATH;
+    for ( const auto& lip : LAUNCHER_ICONS_PATH  ){
+        if (!iconDirectories.contains(lip)) {
+            iconDirectories << lip;
+        }
+    }
 
     _launcherMonitor.setDirectories(_directories);
     _launcherMonitor.setIconDirectories(iconDirectories);
@@ -429,8 +438,11 @@ void LauncherModel::setIconDirectories(QStringList newDirectories)
 
         if (_initialized) {
             newDirectories = _iconDirectories;
-            if (!newDirectories.contains(LAUNCHER_ICONS_PATH))
-                newDirectories << LAUNCHER_ICONS_PATH;
+            for ( const auto& lip : LAUNCHER_ICONS_PATH  ){
+                if (!newDirectories.contains(lip)) {
+                    newDirectories << lip;
+                }
+            }
             _launcherMonitor.setIconDirectories(newDirectories);
         }
     }
