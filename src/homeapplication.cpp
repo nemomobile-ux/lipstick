@@ -63,11 +63,11 @@ static void registerDBusObject(QDBusConnection &bus, const char *path, QObject *
 
 HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     : QGuiApplication(argc, argv)
-    , _mainWindowInstance(0)
-    , _qmlPath(qmlPath)
-    , originalSigIntHandler(signal(SIGINT, quitSignalHandler))
-    , originalSigTermHandler(signal(SIGTERM, quitSignalHandler))
-    , homeReadySent(false)
+    , m_mainWindowInstance(0)
+    , m_qmlPath(qmlPath)
+    , m_originalSigIntHandler(signal(SIGINT, quitSignalHandler))
+    , m_originalSigTermHandler(signal(SIGTERM, quitSignalHandler))
+    , m_homeReadySent(false)
 {
     QTranslator *engineeringEnglish = new QTranslator(this);
     engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
@@ -79,7 +79,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     setApplicationVersion(VERSION);
 
     // Initialize the QML engine
-    qmlEngine = new QQmlEngine(this);
+    m_qmlEngine = new QQmlEngine(this);
 
     // Initialize the notification manager
     NotificationManager::instance();
@@ -89,23 +89,23 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     LipstickSettings::instance()->exportScreenSize();
 
     // Create screen lock logic - not parented to "this" since destruction happens too late in that case
-    screenLock = new ScreenLock;
-    LipstickSettings::instance()->setScreenLock(screenLock);
-    new ScreenLockAdaptor(screenLock);
+    m_screenLock = new ScreenLock;
+    LipstickSettings::instance()->setScreenLock(m_screenLock);
+    new ScreenLockAdaptor(m_screenLock);
 
-    deviceLock = new DeviceLock(this);
-    new DeviceLockAdaptor(deviceLock);
+    m_deviceLock = new DeviceLock(this);
+    new DeviceLockAdaptor(m_deviceLock);
 
-    volumeControl = new VolumeControl;
+    m_volumeControl = new VolumeControl;
     new BatteryNotifier(this);
     new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
-    usbModeSelector = new USBModeSelector(deviceLock ,this);
-    bluetoothAgent = new BluetoothAgent(this);
-    shutdownScreen = new ShutdownScreen(this);
-    localeMngr = new LocaleManager(this);
-    new ShutdownScreenAdaptor(shutdownScreen);
-    connectionSelector = new ConnectionSelector(this);
+    m_usbModeSelector = new USBModeSelector(m_deviceLock ,this);
+    m_bluetoothAgent = new BluetoothAgent(this);
+    m_shutdownScreen = new ShutdownScreen(this);
+    m_localeMngr = new LocaleManager(this);
+    new ShutdownScreenAdaptor(m_shutdownScreen);
+    m_connectionSelector = new ConnectionSelector(this);
 
     // MCE and usb-moded expect services to be registered on the system bus
     QDBusConnection systemBus = QDBusConnection::systemBus();
@@ -113,9 +113,9 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
         qWarning("Unable to register D-Bus service %s: %s", LIPSTICK_DBUS_SERVICE_NAME, systemBus.lastError().message().toUtf8().constData());
     }
 
-    registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, screenLock);
-    registerDBusObject(systemBus, LIPSTICK_DBUS_DEVICELOCK_PATH, deviceLock);
-    registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, shutdownScreen);
+    registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, m_screenLock);
+    registerDBusObject(systemBus, LIPSTICK_DBUS_DEVICELOCK_PATH, m_deviceLock);
+    registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
 
     m_screenshotService = new ScreenshotService(this);
     new ScreenshotServiceAdaptor(m_screenshotService);
@@ -124,12 +124,12 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     registerDBusObject(sessionBus, LIPSTICK_DBUS_SCREENSHOT_PATH, m_screenshotService);
 
     // Setting up the context and engine things
-    qmlEngine->rootContext()->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
-    qmlEngine->rootContext()->setContextProperty("lipstickSettings", LipstickSettings::instance());
-    qmlEngine->rootContext()->setContextProperty("LipstickSettings", LipstickSettings::instance());
-    qmlEngine->rootContext()->setContextProperty("deviceLock", deviceLock);
-    qmlEngine->rootContext()->setContextProperty("volumeControl", volumeControl);
-    qmlEngine->rootContext()->setContextProperty("localeManager", localeMngr);
+    m_qmlEngine->rootContext()->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
+    m_qmlEngine->rootContext()->setContextProperty("lipstickSettings", LipstickSettings::instance());
+    m_qmlEngine->rootContext()->setContextProperty("LipstickSettings", LipstickSettings::instance());
+    m_qmlEngine->rootContext()->setContextProperty("deviceLock", m_deviceLock);
+    m_qmlEngine->rootContext()->setContextProperty("volumeControl", m_volumeControl);
+    m_qmlEngine->rootContext()->setContextProperty("localeManager", m_localeMngr);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }
@@ -138,10 +138,10 @@ HomeApplication::~HomeApplication()
 {
     emit aboutToDestroy();
 
-    delete volumeControl;
-    delete screenLock;
-    delete _mainWindowInstance;
-    delete qmlEngine;
+    delete m_volumeControl;
+    delete m_screenLock;
+    delete m_mainWindowInstance;
+    delete m_qmlEngine;
 }
 
 HomeApplication *HomeApplication::instance()
@@ -151,14 +151,14 @@ HomeApplication *HomeApplication::instance()
 
 void HomeApplication::restoreSignalHandlers()
 {
-    signal(SIGINT, originalSigIntHandler);
-    signal(SIGTERM, originalSigTermHandler);
+    signal(SIGINT, m_originalSigIntHandler);
+    signal(SIGTERM, m_originalSigTermHandler);
 }
 
 void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 {
-    if (!homeReadySent) {
-        homeReadySent = true;
+    if (!m_homeReadySent) {
+        m_homeReadySent = true;
         disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
 
         emit homeReady();
@@ -201,25 +201,25 @@ bool HomeApplication::event(QEvent *e)
 
 const QString &HomeApplication::qmlPath() const
 {
-    return _qmlPath;
+    return m_qmlPath;
 }
 
 void HomeApplication::setQmlPath(const QString &path)
 {
-    _qmlPath = path;
+    m_qmlPath = path;
 
-    if (_mainWindowInstance) {
-        _mainWindowInstance->setSource(path);
-        if (_mainWindowInstance->hasErrors()) {
+    if (m_mainWindowInstance) {
+        m_mainWindowInstance->setSource(path);
+        if (m_mainWindowInstance->hasErrors()) {
             qWarning() << "HomeApplication: Errors while loading" << path;
-            qWarning() << _mainWindowInstance->errors();
+            qWarning() << m_mainWindowInstance->errors();
         }
     }
 }
 
 const QString &HomeApplication::compositorPath() const
 {
-    return _compositorPath;
+    return m_compositorPath;
 }
 
 void HomeApplication::setCompositorPath(const QString &path)
@@ -229,35 +229,35 @@ void HomeApplication::setCompositorPath(const QString &path)
         return;
     }
 
-    if (!_compositorPath.isEmpty()) {
+    if (!m_compositorPath.isEmpty()) {
         qWarning() << "HomeApplication: Compositor already set";
         return;
     }
 
-    _compositorPath = path;
-    QQmlComponent component(qmlEngine, QUrl(path));
+    m_compositorPath = path;
+    QQmlComponent component(m_qmlEngine, QUrl(path));
     if (component.isError()) {
         qWarning() << "HomeApplication: Errors while loading compositor from" << path;
         qWarning() << component.errors();
         return;
     } 
 
-    QQuickItem *compositor = qobject_cast<QQuickItem*>(component.beginCreate(qmlEngine->rootContext()));
+    QQuickItem *compositor = qobject_cast<QQuickItem*>(component.beginCreate(m_qmlEngine->rootContext()));
     if (compositor) {
         compositor->setParent(this);
 
         if (LipstickCompositor::instance()) {
             LipstickCompositor::instance()->quickWindow()->setGeometry(QRect(QPoint(0, 0), QGuiApplication::primaryScreen()->size()));
-            connect(usbModeSelector, SIGNAL(showUnlockScreen()),
+            connect(m_usbModeSelector, SIGNAL(showUnlockScreen()),
                     LipstickCompositor::instance(), SIGNAL(showUnlockScreen()));
             compositor->setParentItem(LipstickCompositor::instance()->quickWindow()->contentItem());
         }
 
         component.completeCreate();
 
-        if (!qmlEngine->incubationController() && LipstickCompositor::instance()) {
+        if (!m_qmlEngine->incubationController() && LipstickCompositor::instance()) {
             // install default incubation controller
-            qmlEngine->setIncubationController(LipstickCompositor::instance()->quickWindow()->incubationController());
+            m_qmlEngine->setIncubationController(LipstickCompositor::instance()->quickWindow()->incubationController());
         }
     } else {
         qWarning() << "HomeApplication: Error creating compositor from" << path;
@@ -267,30 +267,30 @@ void HomeApplication::setCompositorPath(const QString &path)
 
 HomeWindow *HomeApplication::mainWindowInstance()
 {
-    if (_mainWindowInstance)
-        return _mainWindowInstance;
+    if (m_mainWindowInstance)
+        return m_mainWindowInstance;
 
-    _mainWindowInstance = new HomeWindow();
-    _mainWindowInstance->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
-    _mainWindowInstance->setWindowTitle("Home");
-    QObject::connect(_mainWindowInstance->engine(), SIGNAL(quit()), qApp, SLOT(quit()));
-    QObject::connect(_mainWindowInstance, SIGNAL(visibleChanged(bool)), this, SLOT(connectFrameSwappedSignal(bool)));
+    m_mainWindowInstance = new HomeWindow();
+    m_mainWindowInstance->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
+    m_mainWindowInstance->setWindowTitle("Home");
+    QObject::connect(m_mainWindowInstance->engine(), SIGNAL(quit()), qApp, SLOT(quit()));
+    QObject::connect(m_mainWindowInstance, SIGNAL(visibleChanged(bool)), this, SLOT(connectFrameSwappedSignal(bool)));
 
     // Setting the source, if present
-    if (!_qmlPath.isEmpty())
-        _mainWindowInstance->setSource(_qmlPath);
+    if (!m_qmlPath.isEmpty())
+        m_mainWindowInstance->setSource(m_qmlPath);
 
-    return _mainWindowInstance;
+    return m_mainWindowInstance;
 }
 
 QQmlEngine *HomeApplication::engine() const
 {
-    return qmlEngine;
+    return m_qmlEngine;
 }
 
 void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
 {
-    if (!homeReadySent && mainWindowVisible) {
+    if (!m_homeReadySent && mainWindowVisible) {
         connect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
     }
 }
@@ -302,5 +302,5 @@ void HomeApplication::takeScreenshot(const QString &path)
 
 LocaleManager *HomeApplication::localeManager()
 {
-    return localeMngr;
+    return m_localeMngr;
 }

@@ -148,10 +148,10 @@ private slots:
 private:
     void saveFolder(QXmlStreamWriter &xml, LauncherFolderItem *folder);
 
-    DeferredLauncherModel *mLauncherModel;
-    QTimer mSaveTimer;
-    bool mLoading;
-    bool mInitialized;
+    DeferredLauncherModel *m_LauncherModel;
+    QTimer m_saveTimer;
+    bool m_loading;
+    bool m_initialized;
 };
 
 #endif
