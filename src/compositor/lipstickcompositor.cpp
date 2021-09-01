@@ -288,7 +288,7 @@ bool LipstickCompositor::completed()
 
 void LipstickCompositor::clearKeyboardFocus()
 {
-//    defaultInputDevice()->setKeyboardFocus(NULL);
+    defaultSeat()->setKeyboardFocus(NULL);
 }
 
 void LipstickCompositor::setDisplayOff()
