@@ -9,6 +9,7 @@ TARGET = lipstick-qt5
 
 # Override the version from the spec file, we need .so version 1.0
 VERSION = 1.0
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
 
 DEFINES += LIPSTICK_BUILD_LIBRARY
 DEFINES += VERSION=\\\"$${VERSION}\\\"
