@@ -21,9 +21,9 @@
 
 LauncherWatcherModel::LauncherWatcherModel(QObject *parent) :
     QObjectListModel(parent),
-    _fileSystemWatcher()
+    m_fileSystemWatcher()
 {
-    connect(&_fileSystemWatcher, SIGNAL(fileChanged(QString)), this, SLOT(monitoredFileChanged(QString)));
+    connect(&m_fileSystemWatcher, SIGNAL(fileChanged(QString)), this, SLOT(monitoredFileChanged(QString)));
 }
 
 LauncherWatcherModel::~LauncherWatcherModel()
@@ -83,7 +83,7 @@ void LauncherWatcherModel::setFilePaths(QStringList paths)
             LauncherItem *item = new LauncherItem(path, this);
             if (item->isValid()) {
                 insertItem(insertIndex, item);
-                _fileSystemWatcher.addPath(path);
+                m_fileSystemWatcher.addPath(path);
             } else {
                 delete item;
                 continue;
@@ -94,7 +94,7 @@ void LauncherWatcherModel::setFilePaths(QStringList paths)
 
     while (insertIndex < itemCount()) {
         LauncherItem *item = static_cast<LauncherItem *>(get(insertIndex));
-        _fileSystemWatcher.removePath(item->filePath());
+        m_fileSystemWatcher.removePath(item->filePath());
         removeItem(insertIndex);
         delete item;
     }
