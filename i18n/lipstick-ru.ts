@@ -1,8 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="prg">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="ru" version="2.1">
 <context>
-    <name></name>
+    <name/>
     <message id="qtn_ap_lipstick">
         <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
@@ -165,13 +163,13 @@
     </message>
     <message id="qtn_usb_filessystem_inuse">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="233"/>
-        <source></source>
-        <translation></translation>
+        <source/>
+        <translation>ФС используется</translation>
     </message>
     <message id="qtn_usb_mount_failed">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="237"/>
-        <source></source>
-        <translation></translation>
+        <source/>
+        <translation>Ошибка монтирования</translation>
     </message>
 </context>
 </TS>
