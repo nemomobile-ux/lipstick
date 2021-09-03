@@ -1,8 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="cs">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="cs" version="2.1">
 <context>
-    <name></name>
+    <name/>
     <message id="qtn_ap_lipstick">
         <location filename="../src/homeapplication.cpp" line="78"/>
         <source>System</source>
@@ -32,7 +30,6 @@
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="224"/>
         <source>Not charging. Adjust or recycle charger.</source>
-        <oldsource>Charging not started. Replace charger.</oldsource>
         <translation>Nabíjení nezačalo. Seřiďte nebo zrecyklujte nabíječku.</translation>
     </message>
     <message id="qtn_ener_rebatt">
@@ -57,40 +54,34 @@
         <location filename="../src/notifications/batterynotifier.cpp" line="240"/>
         <location filename="../tests/ut_batterynotifier/ut_batterynotifier.cpp" line="101"/>
         <source>Low battery level</source>
-        <oldsource>Low battery</oldsource>
         <translation>Nízký stav nabití aku</translation>
     </message>
     <message id="qtn_ener_nopowcharge">
         <location filename="../src/notifications/batterynotifier.cpp" line="244"/>
         <source>Power input below charging threshold</source>
-        <oldsource>Not enough power to charge</oldsource>
         <translation>Napájení nedosahuje úrovně potřebné pro nabíjení</translation>
     </message>
     <message id="qtn_memu_memlow_notification_src">
         <location filename="../src/notifications/diskspacenotifier.cpp" line="56"/>
         <source>Storage space running out.</source>
-        <oldsource>Getting low with storage. Please check.</oldsource>
         <translation>Dochází prostor na úložišti.</translation>
     </message>
     <message id="qtn_shut_high_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="34"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="78"/>
         <source>Device getting hot. Close all apps.</source>
-        <oldsource>Device is getting hot. Close all apps.</oldsource>
         <translation>Zařízení se přehřívá. Ukončete všechny aplikace.</translation>
     </message>
     <message id="qtn_shut_high_temp_alert">
         <location filename="../src/notifications/thermalnotifier.cpp" line="38"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Device overheating. Turn it off.</source>
-        <oldsource>Device is overheating. Turn it off.</oldsource>
         <translation>Zařízení se přehřívá. Vypněte ho.</translation>
     </message>
     <message id="qtn_shut_low_temp_warning">
         <location filename="../src/notifications/thermalnotifier.cpp" line="42"/>
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="90"/>
         <source>The device is too cold</source>
-        <oldsource>Low temperature warning</oldsource>
         <translation>Zařízení je příliš prochladlé</translation>
     </message>
     <message id="qtn_shut_high_temp">
@@ -103,7 +94,6 @@
         <location filename="../src/shutdownscreen.cpp" line="84"/>
         <location filename="../tests/ut_shutdownscreen/ut_shutdownscreen.cpp" line="108"/>
         <source>USB cable plugged in. Unplug it to shut down device.</source>
-        <oldsource>USB cable plugged in. Unplug the USB cable to shutdown.</oldsource>
         <translation>Je připojen USB kabel. Pro vypnutí zařízení ho odpojte.</translation>
     </message>
     <message id="qtn_shut_batt_empty">
@@ -151,7 +141,6 @@
         <location filename="../src/usbmodeselector.cpp" line="144"/>
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="181"/>
         <source>Sync-and-connect in use</source>
-        <oldsource>Sync and connect in use</oldsource>
         <translation>Je používána funkce sync-and-connect</translation>
     </message>
     <message id="qtn_usb_adb_active">
@@ -174,13 +163,13 @@
     </message>
     <message id="qtn_usb_filessystem_inuse">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="233"/>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <source/>
+        <translation>qtn_usb_filessystem_inuse</translation>
     </message>
     <message id="qtn_usb_mount_failed">
         <location filename="../tests/ut_usbmodeselector/ut_usbmodeselector.cpp" line="237"/>
-        <source></source>
-        <translation type="unfinished"></translation>
+        <source/>
+        <translation>qtn_usb_mount_failed</translation>
     </message>
 </context>
 </TS>
