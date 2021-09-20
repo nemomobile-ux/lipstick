@@ -60,6 +60,7 @@ PUBLICHEADERS += \
     devicestate/displaystate.h \
     devicestate/devicestate.h \
     devicestate/thermal.h \
+    devicestate/system_global.h \
     vpnagent.h \
     connectivitymonitor.h \
     connectionselector.h
@@ -166,8 +167,7 @@ PKGCONFIG += \
     ngf-qt5 \
     systemsettings \
     thermalmanager_dbus_if \
-    usb-moded-qt5 \
-    sailfishusermanager
+    usb-moded-qt5
 
 LIBS += -lrt -lEGL
 
@@ -177,6 +177,10 @@ packagesExist(contentaction5) {
     DEFINES += HAVE_CONTENTACTION
 } else {
     warning("contentaction doesn't exist; falling back to exec - this may not work so great")
+}
+
+packagesExist(sailfishusermanager) {
+    DEFINES += HAVE_SAILFISHUSERMANAGER
 }
 
 QT += dbus xml qml quick sql gui gui-private sensors

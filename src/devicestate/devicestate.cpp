@@ -33,7 +33,9 @@
 #include "devicestate_p.h"
 
 #include <dsme/thermalmanager_dbus_if.h>
+#ifdef HAVE_SAILFISHUSERMANAGER
 #include <sailfishusermanagerinterface.h>
+#endif
 
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
@@ -41,7 +43,7 @@
 #include <QDBusReply>
 #include <QDBusServiceWatcher>
 #include <QMetaMethod>
-
+#include <QDebug>
 
 namespace DeviceState {
 
@@ -111,6 +113,7 @@ void DeviceState::connectNotify(const QMetaMethod &signal) {
                                                  thermalmanager_state_change_ind,
                                                  d,
                                                  SLOT(emitThermalShutdown(QString)));
+#ifdef HAVE_SAILFISHUSERMANAGER
             d->userManagerWatcher = new QDBusServiceWatcher(SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                                                QDBusConnection::systemBus(),
                                                                QDBusServiceWatcher::WatchForRegistration
@@ -122,6 +125,7 @@ void DeviceState::connectNotify(const QMetaMethod &signal) {
                     this, &DeviceState::disconnectUserManager);
             if (QDBusConnection::systemBus().interface()->isServiceRegistered(SAILFISH_USERMANAGER_DBUS_INTERFACE))
                 connectUserManager();
+#endif
         }
         d->connectCount[SIGNAL_SYSTEM_STATE]++;
     }
@@ -182,6 +186,7 @@ void DeviceState::disconnectNotify(const QMetaMethod &signal) {
 
 void DeviceState::connectUserManager()
 {
+#ifdef HAVE_SAILFISHUSERMANAGER
     Q_D(DeviceState);
     QDBusConnection::systemBus().connect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                              SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
@@ -189,10 +194,15 @@ void DeviceState::connectUserManager()
                                              "aboutToChangeCurrentUser",
                                              d,
                                              SLOT(emitUserSwitching(uint)));
+#else
+    qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
+#endif
+
 }
 
 void DeviceState::disconnectUserManager()
 {
+#ifdef HAVE_SAILFISHUSERMANAGER
     Q_D(DeviceState);
     QDBusConnection::systemBus().disconnect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                             SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
@@ -200,6 +210,9 @@ void DeviceState::disconnectUserManager()
                                             "aboutToChangeCurrentUser",
                                             d,
                                             SLOT(emitUserChanging(uint)));
+#else
+    qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
+#endif
 }
 
 } // DeviceState namespace
