@@ -19,13 +19,17 @@
 #include "lipstickglobal.h"
 #include <QQmlParserStatus>
 #include <QAbstractListModel>
+#ifdef HAVE_SAILFISHUSERMANAGER
 #include <QDBusContext>
+#endif
 
 class LipstickCompositor;
 class LipstickCompositorWindow;
-class LIPSTICK_EXPORT WindowModel : public QAbstractListModel,
-                                    public QQmlParserStatus,
-                                    public QDBusContext
+class LIPSTICK_EXPORT WindowModel : public QAbstractListModel
+                                    , public QQmlParserStatus
+#ifdef HAVE_SAILFISHUSERMANAGER
+                                    , public QDBusContext
+#endif
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)

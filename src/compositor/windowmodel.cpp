@@ -172,6 +172,7 @@ void WindowModel::refresh()
 
 bool WindowModel::isPrivileged() const
 {
+#ifdef HAVE_SAILFISHUSERMANAGER
     if (!calledFromDBus()) {
         return true;
     }
@@ -184,6 +185,9 @@ bool WindowModel::isPrivileged() const
         return false;
     }
     return true;
+#else
+    return true;
+#endif
 }
 
 // used by mapplauncherd to bring a binary to the front
