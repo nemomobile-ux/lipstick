@@ -14,5 +14,6 @@
 
 #include "logging.h"
 
-Q_LOGGING_CATEGORY(lcLipstickCoreLog, "org.sailfishos.lipstick", QtWarningMsg)
-Q_LOGGING_CATEGORY(lcLipstickHwcLog, "org.sailfishos.lipstick.hwc", QtWarningMsg)
+Q_LOGGING_CATEGORY(lcLipstickCoreLog, "org.nemomobile.lipstick", QtWarningMsg)
+Q_LOGGING_CATEGORY(lcLipstickHwcLog, "org.nemomobile.lipstick.hwc", QtWarningMsg)
+Q_LOGGING_CATEGORY(lcLipstickAppLaunchLog, "org.nemomobile.lipstick.applaunch", QtWarningMsg)

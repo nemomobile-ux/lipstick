@@ -87,6 +87,9 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     QTranslator *engineeringEnglish = new QTranslator(this);
     engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
     installTranslator(engineeringEnglish);
+    QTranslator *translator = new QTranslator(this);
+    translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
+    installTranslator(translator);
 
     setApplicationName("Lipstick");
     setApplicationVersion(VERSION);
@@ -190,6 +193,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_qmlEngine->rootContext()->setContextProperty("volumeControl", m_volumeControl);
     m_qmlEngine->rootContext()->setContextProperty("localeManager", m_localeMngr);
     m_qmlEngine->rootContext()->setContextProperty("connectivityMonitor", m_connectivityMonitor);
+    m_qmlEngine->rootContext()->setContextProperty("usbModeSelector", m_usbModeSelector);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }
@@ -418,7 +422,13 @@ void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
 
 bool HomeApplication::takeScreenshot(const QString &path)
 {
-    return ScreenshotService::saveScreenshot(path);
+    if (ScreenshotResult *result = ScreenshotService::saveScreenshot(path)) {
+        result->waitForFinished();
+
+        return result->status() == ScreenshotResult::Finished;
+    } else {
+        return false;
+    }
 }
 
 LocaleManager *HomeApplication::localeManager()

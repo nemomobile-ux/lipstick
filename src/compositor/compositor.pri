@@ -13,9 +13,7 @@ PUBLICHEADERS += \
 
 HEADERS += \
     $$PWD/windowpixmapitem.h \
-    $$PWD/lipstickrecorder.h \
-    $$PWD/hwcrenderstage.h \
-    $$PWD/hwcimage.h
+    $$PWD/lipstickrecorder.h
 
 SOURCES += \
     $$PWD/lipstickcompositor.cpp \
@@ -24,9 +22,7 @@ SOURCES += \
     $$PWD/lipstickcompositoradaptor.cpp \
     $$PWD/fileserviceadaptor.cpp \
     $$PWD/windowmodel.cpp \
-    $$PWD/windowpixmapitem.cpp \
-    $$PWD/hwcrenderstage.cpp \
-    $$PWD/hwcimage.cpp
+    $$PWD/windowpixmapitem.cpp
 
 DEFINES += QT_COMPOSITOR_QUICK
 
@@ -34,7 +30,5 @@ QT += waylandcompositor
 
 # needed for hardware compositor
 QT += quick-private gui-private core-private waylandcompositor-private qml-private
-
-WAYLANDSERVERSOURCES += ../protocol/lipstick-recorder.xml \
 
 OTHER_FILES += $$PWD/compositor.xml $$PWD/fileservice.xml

@@ -53,8 +53,7 @@ void CategoryDefinitionStore::updateCategoryDefinitionFileList()
     if (categoryDefinitionsDir.exists()) {
         QStringList filter("*" + QString(FILE_EXTENSION));
 
-        QStringList filteredEntries = categoryDefinitionsDir.entryList(filter, QDir::Files);
-        QSet<QString> files(filteredEntries.begin(), filteredEntries.end());
+        QSet<QString> files = categoryDefinitionsDir.entryList(filter, QDir::Files).toSet();
         QSet<QString> removedFiles = m_categoryDefinitionFiles - files;
 
         foreach(const QString &removedCategory, removedFiles) {

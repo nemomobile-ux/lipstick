@@ -36,6 +36,7 @@ bool userInteracting(const QEvent *event) {
     case QEvent::MouseButtonRelease:
     case QEvent::MouseMove:
     case QEvent::MouseButtonDblClick:
+    case QEvent::KeyPress:
         return true;
     default:
         return false;
@@ -133,7 +134,7 @@ TouchScreen::TouchScreen(QObject *parent)
     connect(watcher, &QDBusPendingCallWatcher::finished,
             this, &TouchScreen::inputPolicyReply);
 
-    qApp->installEventFilter(this);
+    //qApp->installEventFilter(this);
 }
 
 TouchScreen::~TouchScreen()
@@ -218,6 +219,8 @@ bool TouchScreen::eventFilter(QObject *, QEvent *event)
     if (eat) {
         setEnabled(true);
     }
+
+    qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<" << eat;
 
     return eat;
 }

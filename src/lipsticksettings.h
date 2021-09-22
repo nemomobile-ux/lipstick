@@ -48,6 +48,7 @@ public:
     QString blankingPolicy();
 
     Q_INVOKABLE void lockScreen(bool immediate);
+    Q_INVOKABLE void setInteractionExpected(bool expected);
 
 signals:
     void lockscreenVisibleChanged();

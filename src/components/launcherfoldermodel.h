@@ -81,11 +81,11 @@ private slots:
     void handleRemoved(QObject*);
 
 private:
-    QString mTitle;
-    QString mIconId;
-    QString mDirectoryFile;
-    QSharedPointer<MDesktopEntry> mDesktopEntry;
-    QPointer<LauncherFolderItem> mParentFolder;
+    QString m_title;
+    QString m_iconId;
+    QString m_directoryFile;
+    QSharedPointer<MDesktopEntry> m_desktopEntry;
+    QPointer<LauncherFolderItem> m_parentFolder;
 };
 
 class DeferredLauncherModel;

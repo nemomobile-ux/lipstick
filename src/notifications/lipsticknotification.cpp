@@ -18,8 +18,8 @@
 #include "lipsticknotification.h"
 
 #include <QDBusArgument>
-#include <QtDebug>
 #include <QDataStream>
+#include <QtDebug>
 
 namespace {
 // deprecated
@@ -152,10 +152,12 @@ void LipstickNotification::setAppIcon(const QString &appIcon, int source)
     bool sourceChanged = false;
 
     if (appIcon != m_appIcon) {
+        iconChanged = true;
         m_appIcon = appIcon;
     }
 
     if (source != m_appIconOrigin) {
+        sourceChanged = true;
         m_appIconOrigin = source;
     }
 

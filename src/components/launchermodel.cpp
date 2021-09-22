@@ -31,15 +31,14 @@
 // Make sure to also update this in the .spec file, so it gets
 // created whenever lipstick is installed, otherwise monitoring
 // will fail and newly-installed icons will not be detected
-    static const QStringList LAUNCHER_ICONS_PATH = {
-        "/usr/share/icons/hicolor/86x86/apps/",
-        "/usr/share/icons/hicolor/128x128/apps/",
-        "/usr/share/icons/hicolor/256x256/apps/",
-        "/var/lib/flatpak/exports/share/icons/hicolor/86x86/apps",
-        "/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps",
-        "/var/lib/flatpak/exports/share/icons/hicolor/512x512/apps"
-    };
-
+static const QStringList LAUNCHER_ICONS_PATH = {
+    "/usr/share/icons/hicolor/86x86/apps/",
+    "/usr/share/icons/hicolor/128x128/apps/",
+    "/usr/share/icons/hicolor/256x256/apps/",
+    "/var/lib/flatpak/exports/share/icons/hicolor/86x86/apps",
+    "/var/lib/flatpak/exports/share/icons/hicolor/128x128/apps",
+    "/var/lib/flatpak/exports/share/icons/hicolor/512x512/apps"
+};
 
 // Time in millseconds to wait before removing temporary launchers
 #define LAUNCHER_UPDATING_REMOVAL_HOLDBACK_MS 3000
@@ -62,19 +61,6 @@ static inline bool isIconFile(const QString &filename)
     return filename.startsWith(QLatin1Char('/')) && filename.endsWith(".png");
 }
 
-static inline QString iconIdFromFilename(const QString &filename)
-{
-    int start = filename.lastIndexOf('/') + 1;
-    int end = filename.lastIndexOf('.');
-
-    if (start == -1 || end == -1) {
-        // something's fishy..
-        return QString();
-    }
-
-    return filename.mid(start, end - start);
-}
-
 static inline QString filenameFromIconId(const QString &filename, const QString &path)
 {
     return QString("%1%2%3").arg(path).arg(filename).arg(".png");
@@ -95,13 +81,7 @@ static QStringList defaultDirectories()
         userLocalLauncherDir.mkpath(userLocalAppsPath);
     }
 
-    QString flatpackAppsPath = "/var/lib/flatpak/exports/share/applications";
-    QDir flatpackAppsDir(flatpackAppsPath);
-    if(!flatpackAppsDir.exists()) {
-        flatpackAppsPath = QString();
-    }
-
-    return QStringList() << QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation) << userLocalAppsPath << flatpackAppsPath;
+    return QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation);
 }
 
 Q_GLOBAL_STATIC(LauncherDBus, _launcherDBus);
@@ -183,12 +163,12 @@ LauncherModel::~LauncherModel()
 }
 
 void LauncherModel::onFilesUpdated(const QStringList &added,
-        const QStringList &modified, const QStringList &removed)
+                                   const QStringList &modified, const QStringList &removed)
 {
     QStringList modifiedAndNeedUpdating = modified;
 
     // First, remove all removed launcher items before adding new ones
-    foreach (const QString &filename, removed) {
+    for (const QString &filename : removed) {
         if (isDesktopFile(m_directories, filename)) {
             // Desktop file has been removed - remove launcher
             LauncherItem *item = itemInModel(filename);
@@ -199,13 +179,11 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
             } else {
                 item = takeHiddenItem(filename);
             }
-        } else if (isIconFile(filename)) {
-            // Icons has been removed - find item and clear its icon path
-            updateItemsWithIcon(filename, false);
+            delete item;
         }
     }
 
-    foreach (const QString &filename, added) {
+    for (const QString &filename : added) {
         if (isDesktopFile(m_directories, filename)) {
             // New desktop file appeared - add launcher
             LauncherItem *item = itemInModel(filename);
@@ -223,7 +201,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
                 item = tempItem;
 
                 qWarning() << "Applying heuristics:" << filename <<
-                    "is the launcher item for" << item->packageName();
+                              "is the launcher item for" << item->packageName();
                 item->setIconFilename("");
                 item->setFilePath(filename);
             }
@@ -233,15 +211,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
                 item = addItemIfValid(filename);
 
                 if (item != NULL) {
-                    // Try to look up an already-installed icon in the icons directory
-                    foreach (const QString &iconPath, m_launcherMonitor.iconDirectories()) {
-                        QString iconname = filenameFromIconId(item->getOriginalIconId(), iconPath);
-                        if (QFile(iconname).exists()) {
-                            LAUNCHER_DEBUG("Loading existing icon:" << iconname);
-                            updateItemsWithIcon(iconname, true);
-                            break;
-                        }
-                    }
+                    updateItemsWithIcon(item->getOriginalIconId(), QString());
                 }
             } else {
                 // This case happens if a .desktop file is found as new, but we
@@ -255,12 +225,11 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
                 modifiedAndNeedUpdating << filename;
             }
         } else if (isIconFile(filename)) {
-            // Icons has been added - find item and update its icon path
-            updateItemsWithIcon(filename, true);
+            updateItemsWithIcon(QString(), filename);
         }
     }
 
-    foreach (const QString &filename, modifiedAndNeedUpdating) {
+    for (const QString &filename : modifiedAndNeedUpdating) {
         if (isDesktopFile(m_directories, filename)) {
             // Desktop file has been updated - update launcher
             LauncherItem *item = itemInModel(filename);
@@ -273,18 +242,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
                     unsetTemporary(item);
                     removeItem(item);
                 } else {
-                    // File has been updated and is still valid; check if we
-                    // might need to auto-update the icon file
-                    if (item->iconFilename().isEmpty()) {
-                        foreach (const QString &iconPath, m_launcherMonitor.iconDirectories()) {
-                            QString filename = filenameFromIconId(item->getOriginalIconId(), iconPath);
-                            LAUNCHER_DEBUG("Desktop file changed, checking for:" << filename);
-                            if (QFile(filename).exists()) {
-                                updateItemsWithIcon(filename, true);
-                                break;
-                            }
-                        }
-                    }
+                    updateItemsWithIcon(item->getOriginalIconId(), QString());
                 }
             } else if ((item = takeHiddenItem(filename))) {
                 addItemIfValid(item);
@@ -293,9 +251,6 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
                 // we should show the item now
                 addItemIfValid(filename);
             }
-        } else if (isIconFile(filename)) {
-            // Icons has been updated - find item and update its icon path
-            updateItemsWithIcon(filename, true);
         }
     }
 
@@ -303,27 +258,39 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
     savePositions();
 }
 
-void LauncherModel::updateItemsWithIcon(const QString &filename, bool existing)
+void LauncherModel::updateItemsWithIcon(const QString &iconId, const QString &filename)
 {
-    QString iconId = iconIdFromFilename(filename);
+    LAUNCHER_DEBUG("updateItemsWithIcon: iconId=" << iconId << "filename=" << filename);
 
-    LAUNCHER_DEBUG("updateItemsWithIcon: filename=" << filename << ", existing=" << existing << ", id=" << iconId);
+    QStringList iconDirectories = m_launcherMonitor.iconDirectories();
 
-    foreach (LauncherItem *item, *getList<LauncherItem>()) {
-        const QString &currentId = item->getOriginalIconId();
-        if (currentId.isEmpty()) {
-            continue;
+    // Try to determine icon id from filename
+    QString id = iconId;
+    if (id.isEmpty()) {
+        QFileInfo fileInfo(filename);
+        if (iconDirectories.contains(fileInfo.path() + "/")) {
+            id = fileInfo.baseName();
         }
+    }
 
-        if (!existing && filename == item->iconFilename()) {
-            // File is currently used as icon, but has been removed
-            LAUNCHER_DEBUG("Icon vanished, removing:" << filename);
-            item->setIconFilename("");
-        } else if (existing) {
-            if ((filename == currentId) /* absolute file path in .desktop file */ ||
-                    (iconId == currentId) /* icon id matches */) {
-                LAUNCHER_DEBUG("Icon was added or updated:" << filename);
-                item->setIconFilename(filename);
+    // Prefer to use scalable icons in icon directories, sorted by the closest icon size
+    QString scalableIconFilename;
+    if (!id.isEmpty()) {
+        for (const QString &iconPath : iconDirectories) {
+            QString filename = filenameFromIconId(id, iconPath);
+            if (QFile(filename).exists()) {
+                scalableIconFilename = filename;
+                break;
+            }
+        }
+    }
+
+    if (!scalableIconFilename.isEmpty()) {
+        // Use the most suitable scalable icon in the launcher items that share the icon id
+        for (LauncherItem *item : *getList<LauncherItem>()) {
+            if (id == item->getOriginalIconId()) {
+                item->setIconFilename(scalableIconFilename);
+                LAUNCHER_DEBUG("Scalable icon" << scalableIconFilename << "was updated for id" << id);
             }
         }
     }
@@ -521,10 +488,10 @@ static QString desktopFileFromPackageName(const QStringList &directories, const 
 }
 
 void LauncherModel::updatingStarted(const QString &packageName, const QString &label,
-        const QString &iconPath, QString desktopFile, const QString &serviceName)
+                                    const QString &iconPath, QString desktopFile, const QString &serviceName)
 {
     LAUNCHER_DEBUG("Update started:" << packageName << label
-            << iconPath << desktopFile);
+                   << iconPath << desktopFile);
 
     // Remember which service notified us about this package, so we can
     // clean up existing updates when the service vanishes from D-Bus.
@@ -541,30 +508,45 @@ void LauncherModel::updatingStarted(const QString &packageName, const QString &l
         item = packageInModel(packageName);
     }
 
-    // Calling updatingStarted on an existing temporary icon should
-    // update the internal state of the temporary icon (and if the
-    // .desktop file exists, make the icon non-temporary).
-    if (item && item->isTemporary()) {
-        if (!label.isEmpty()) {
-            item->setCustomTitle(label);
-        }
+    if (item) {
+        if (item->isTemporary()) {
+            // Calling updatingStarted on an existing temporary icon should
+            // update the internal state of the temporary icon (and if the
+            // .desktop file exists, make the icon non-temporary).
+            if (!label.isEmpty()) {
+                item->setCustomTitle(label);
+            }
 
-        if (!iconPath.isEmpty()) {
-            item->setIconFilename(iconPath);
-        }
+            if (!iconPath.isEmpty()) {
+                item->setIconFilename(iconPath);
+            }
 
-        if (!desktopFile.isEmpty() && isDesktopFile(m_directories, desktopFile)) {
-            // Only update the .desktop file name if we actually consider
-            // it a .desktop file in the paths we monitor for changes (JB#29427)
-            item->setFilePath(desktopFile);
-            // XXX: Changing the .desktop file path might hide the icon;
-            // we don't handle this here, but expect onFilesUpdated() to be
-            // called with the correct file names via the filesystem monitor
-        }
+            if (!desktopFile.isEmpty() && isDesktopFile(m_directories, desktopFile)) {
+                // Only update the .desktop file name if we actually consider
+                // it a .desktop file in the paths we monitor for changes (JB#29427)
+                item->setFilePath(desktopFile);
+                // XXX: Changing the .desktop file path might hide the icon;
+                // we don't handle this here, but expect onFilesUpdated() to be
+                // called with the correct file names via the filesystem monitor
+            }
 
-        if (QFile(desktopFile).exists()) {
-            // The file has appeared - remove temporary flag
-            unsetTemporary(item);
+            if (QFile(desktopFile).exists()) {
+                // The file has appeared - remove temporary flag
+                unsetTemporary(item);
+            }
+        } else {
+            // if there's first update notification without desktop file info and the guess made here fails,
+            // a temporary item will be created.
+            // if then after that there's update notification with both desktop file and package name,
+            // need to remove the temporary one.
+            foreach (LauncherItem *item, m_temporaryLaunchers) {
+                if (item->packageName() == packageName) {
+                    // Will remove it from _temporaryLaunchers
+                    unsetTemporary(item);
+                    removeItem(item);
+                    break;
+                }
+            }
         }
     }
 
@@ -583,7 +565,7 @@ void LauncherModel::updatingStarted(const QString &packageName, const QString &l
 }
 
 void LauncherModel::updatingProgress(const QString &packageName, int progress,
-        const QString &serviceName)
+                                     const QString &serviceName)
 {
     LAUNCHER_DEBUG("Update progress:" << packageName << progress);
 
@@ -605,7 +587,7 @@ void LauncherModel::updatingProgress(const QString &packageName, int progress,
 }
 
 void LauncherModel::updatingFinished(const QString &packageName,
-        const QString &serviceName)
+                                     const QString &serviceName)
 {
     LAUNCHER_DEBUG("Update finished:" << packageName);
 
@@ -633,7 +615,7 @@ void LauncherModel::updatingFinished(const QString &packageName,
     if (item->isTemporary()) {
         // Schedule removal of temporary icons
         QTimer::singleShot(LAUNCHER_UPDATING_REMOVAL_HOLDBACK_MS,
-                this, SLOT(removeTemporaryLaunchers()));
+                           this, SLOT(removeTemporaryLaunchers()));
     }
 }
 
@@ -777,10 +759,10 @@ QList<LauncherItem *> LauncherModel::itemsForMimeType(const QString &mimeType)
     QList<LauncherItem *> items;
 
     for (QObject *object : *getList()) {
-         LauncherItem *item = static_cast<LauncherItem *>(object);
-         if (item->canOpenMimeType(mimeType)) {
-             items.append(item);
-         }
+        LauncherItem *item = static_cast<LauncherItem *>(object);
+        if (item->canOpenMimeType(mimeType)) {
+            items.append(item);
+        }
     }
     for (LauncherItem *item : m_hiddenLaunchers) {
         if (item->canOpenMimeType(mimeType)) {
@@ -802,10 +784,10 @@ LauncherItem *LauncherModel::itemForService(const QString &name)
     }
 
     for (QObject *object : *getList()) {
-         LauncherItem *item = static_cast<LauncherItem *>(object);
-         if (matchDBusName(name, item->dBusServiceName())) {
-             return item;
-         }
+        LauncherItem *item = static_cast<LauncherItem *>(object);
+        if (matchDBusName(name, item->dBusServiceName())) {
+            return item;
+        }
     }
     for (LauncherItem *item : m_hiddenLaunchers) {
         if (matchDBusName(name, item->dBusServiceName())) {

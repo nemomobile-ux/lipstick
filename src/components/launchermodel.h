@@ -118,8 +118,8 @@ private:
     LauncherItem *packageInModel(const QString &packageName);
     QVariant launcherPos(const QString &path);
     LauncherItem *addItemIfValid(const QString &path);
-    void updateItemsWithIcon(const QString &filename, bool existing);
     LauncherItem *addItemIfValid(LauncherItem *item);
+    void updateItemsWithIcon(const QString &iconId, const QString &filename);
     void updateWatchedDBusServices();
     void setTemporary(LauncherItem *item);
     void unsetTemporary(LauncherItem *item);

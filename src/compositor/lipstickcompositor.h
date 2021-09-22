@@ -68,8 +68,6 @@ class LIPSTICK_EXPORT LipstickCompositor
     Q_PROPERTY(int ghostWindowCount READ ghostWindowCount NOTIFY ghostWindowCountChanged)
     Q_PROPERTY(bool homeActive READ homeActive WRITE setHomeActive NOTIFY homeActiveChanged)
     Q_PROPERTY(bool debug READ debug CONSTANT)
-    Q_PROPERTY(QWaylandSurface* fullscreenSurface READ fullscreenSurface WRITE setFullscreenSurface NOTIFY fullscreenSurfaceChanged)
-    Q_PROPERTY(bool directRenderingActive READ directRenderingActive NOTIFY directRenderingActiveChanged)
     Q_PROPERTY(int topmostWindowId READ topmostWindowId WRITE setTopmostWindowId NOTIFY topmostWindowIdChanged)
     Q_PROPERTY(Qt::ScreenOrientation topmostWindowOrientation READ topmostWindowOrientation WRITE setTopmostWindowOrientation NOTIFY topmostWindowOrientationChanged)
     Q_PROPERTY(Qt::ScreenOrientation screenOrientation READ screenOrientation WRITE setScreenOrientation NOTIFY screenOrientationChanged)
@@ -97,10 +95,6 @@ public:
 
     bool homeActive() const;
     void setHomeActive(bool);
-
-    QWaylandSurface *fullscreenSurface() const { return m_fullscreenSurface; }
-    void setFullscreenSurface(QWaylandSurface *surface);
-    bool directRenderingActive() const { return m_directRenderingActive; }
 
     int topmostWindowId() const { return m_topmostWindowId; }
     void setTopmostWindowId(int id);
@@ -164,7 +158,6 @@ signals:
     void availableWinIdsChanged();
 
     void homeActiveChanged();
-    void fullscreenSurfaceChanged();
     void directRenderingActiveChanged();
     void topmostWindowIdChanged();
     void privateTopmostWindowProcessIdChanged(int pid);
@@ -197,7 +190,6 @@ signals:
 private slots:
     void onHasContentChanged();
     void surfaceTitleChanged();
-    void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
@@ -207,7 +199,6 @@ private slots:
     void setScreenOrientationFromSensor();
     void clipboardDataChanged();
     void onVisibleChanged(bool visible);
-    void onSurfaceDying();
     void initialize();
     void processQueuedSetUpdatesEnabledCalls();
 
@@ -230,8 +221,6 @@ private:
     void surfaceCommitted();
     void onSurfaceCreated(QWaylandSurface *surface);
 
-    QQmlComponent *shaderEffectComponent();
-
     void scheduleAmbientUpdate();
     void activateLogindSession();
 
@@ -246,9 +235,6 @@ private:
 
     bool m_homeActive;
 
-    QQmlComponent *m_shaderEffect;
-    QWaylandSurface *m_fullscreenSurface;
-    bool m_directRenderingActive;
     int m_topmostWindowId;
     int m_topmostWindowProcessId;
     Qt::ScreenOrientation m_topmostWindowOrientation;

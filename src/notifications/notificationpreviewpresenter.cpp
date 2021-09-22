@@ -25,7 +25,6 @@
 #include "notificationpreviewpresenter.h"
 #include "lipstickqmlpath.h"
 
-#include <qmlocks.h>
 #include "screenlock/screenlock.h"
 
 #include <mce/dbus-names.h>
@@ -68,6 +67,10 @@ NotificationPreviewPresenter::NotificationPreviewPresenter(
             this, &NotificationPreviewPresenter::updateNotification);
     connect(NotificationManager::instance(), &NotificationManager::notificationModified,
             this, &NotificationPreviewPresenter::updateNotification);
+    connect(NotificationManager::instance(), &NotificationManager::notificationRemoved,
+            this, [=](uint id) {
+            removeNotification(id);
+    });
     QTimer::singleShot(0, this, SLOT(createWindowIfNecessary()));
 }
 
@@ -97,8 +100,7 @@ void NotificationPreviewPresenter::showNextNotification()
 
         if (!show) {
             if (m_deviceLock->state() != NemoDeviceLock::DeviceLock::ManagerLockout) { // Suppress feedback if locked out.
-                // Don't show the notification but just remove it from the queue
-                emit notificationPresented(notification->id());
+                m_notificationFeedbackPlayer->addNotification(notification->id());
             }
 
             setCurrentNotification(0);
@@ -110,7 +112,7 @@ void NotificationPreviewPresenter::showNextNotification()
                 m_window->show();
             }
 
-            emit notificationPresented(notification->id());
+            m_notificationFeedbackPlayer->addNotification(notification->id());
 
             setCurrentNotification(notification);
         }
@@ -138,9 +140,9 @@ void NotificationPreviewPresenter::updateNotification(uint id)
                 }
             }
         } else {
-            // Remove updated notification only from the queue so that a currently visible notification won't suddenly disappear
-            emit notificationPresented(id);
+            m_notificationFeedbackPlayer->addNotification(id);
 
+            // Remove updated notification only from the queue so that a currently visible notification won't suddenly disappear
             removeNotification(id, true);
 
             if (m_currentNotification != notification) {

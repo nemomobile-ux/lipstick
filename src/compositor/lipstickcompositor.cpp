@@ -30,7 +30,6 @@
 #include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
 #include <qpa/qwindowsysteminterface.h>
-#include "hwcrenderstage.h"
 #include "logging.h"
 #include <private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
@@ -53,9 +52,6 @@ LipstickCompositor::LipstickCompositor()
     : m_totalWindowCount(0)
     , m_nextWindowId(1)
     , m_homeActive(true)
-    , m_shaderEffect(0)
-    , m_fullscreenSurface(0)
-    , m_directRenderingActive(false)
     , m_topmostWindowId(0)
     , m_topmostWindowProcessId(0)
     , m_topmostWindowOrientation(Qt::PrimaryOrientation)
@@ -119,8 +115,6 @@ LipstickCompositor::LipstickCompositor()
 
     connect(QGuiApplication::clipboard(), SIGNAL(dataChanged()), SLOT(clipboardDataChanged()));
 
-    HwcRenderStage::initialize(this);
-
     m_timedDbus = new Maemo::Timed::Interface();
     if( !m_timedDbus->isValid() )
     {
@@ -137,6 +131,16 @@ LipstickCompositor::LipstickCompositor()
     setUpdatesEnabledNow(false);
 }
 
+static inline bool displayStateIsDimmed(TouchScreen::DisplayState state)
+{
+    return state == TouchScreen::DisplayDimmed;
+}
+
+static bool displayStateIsOn(TouchScreen::DisplayState state)
+{
+    return state == TouchScreen::DisplayOn || state == TouchScreen::DisplayDimmed;
+}
+
 LipstickCompositor::~LipstickCompositor()
 {
     // ~QWindow can a call into onVisibleChanged and QWaylandCompositor after we
@@ -144,7 +148,6 @@ LipstickCompositor::~LipstickCompositor()
     disconnect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
 
     delete m_timedDbus;
-    delete m_shaderEffect;
 
     m_instance = nullptr;
 }
@@ -196,7 +199,6 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
 
     if(window) {
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
-        connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
     }
 }
 
@@ -212,6 +214,7 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
 
 bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
 {
+    Q_UNUSED(client);
     openUrlRequested(url);
 
     return true;
@@ -311,22 +314,6 @@ void LipstickCompositor::surfaceDamaged(const QRegion &)
     }
 }
 
-void LipstickCompositor::setFullscreenSurface(QWaylandSurface *surface)
-{
-    if (surface == m_fullscreenSurface)
-        return;
-
-    // Prevent flicker when returning to composited mode
-    if (!surface && m_fullscreenSurface) {
-        foreach (QWaylandView *view, m_fullscreenSurface->views())
-            static_cast<LipstickCompositorWindow *>(view->renderObject())->update();
-    }
-
-    m_fullscreenSurface = surface;
-
-    emit fullscreenSurfaceChanged();
-}
-
 QObject *LipstickCompositor::clipboard() const
 {
     return QGuiApplication::clipboard();
@@ -358,20 +345,6 @@ LipstickCompositorWindow *LipstickCompositor::createView(QWaylandSurface *surfac
     QObject::connect(item, SIGNAL(destroyed(QObject*)), this, SLOT(windowDestroyed()));
     m_windows.insert(item->windowId(), item);
     return item;
-}
-
-void LipstickCompositor::onSurfaceDying()
-{
-    QWaylandSurface *surface = static_cast<QWaylandSurface *>(sender());
-    LipstickCompositorWindow *item = surfaceWindow(surface);
-
-    if (surface == m_fullscreenSurface)
-        setFullscreenSurface(0);
-
-    if (item) {
-        item->m_windowClosed = true;
-        item->tryRemove();
-    }
 }
 
 void LipstickCompositor::activateLogindSession()
@@ -522,8 +495,6 @@ void LipstickCompositor::surfaceMapped(QWaylandSurface *surface)
         item->setParentItem(m_window->contentItem());
     }
 
-    QObject::connect(surface, &QWaylandSurface::surfaceDestroyed, this, &LipstickCompositor::onSurfaceDying);
-
     m_totalWindowCount++;
     m_mappedSurfaces.insert(item->windowId(), item);
 
@@ -550,17 +521,6 @@ void LipstickCompositor::surfaceTitleChanged()
         for (int ii = 0; ii < m_windowModels.count(); ++ii)
             m_windowModels.at(ii)->titleChanged(windowId);
     }
-}
-
-void LipstickCompositor::surfaceSetFullScreen(QWaylandOutput *output)
-{
-    QWaylandXdgToplevel *xdgShellSurface = qobject_cast<QWaylandXdgToplevel*>(sender());
-
-    QWaylandOutput *designatedOutput = output ? output : m_output;
-    if (!designatedOutput)
-        return;
-
-    xdgShellSurface->sendFullscreen(designatedOutput->geometry().size() / designatedOutput->scaleFactor());
 }
 
 void LipstickCompositor::windowSwapped()
@@ -592,9 +552,6 @@ void LipstickCompositor::windowPropertyChanged(const QString &property)
 
 void LipstickCompositor::surfaceUnmapped(QWaylandSurface *surface)
 {
-    if (surface == m_fullscreenSurface)
-        setFullscreenSurface(0);
-
     LipstickCompositorWindow *window = surfaceWindow(surface);
     if (window)
         emit windowHidden(window);
@@ -611,9 +568,6 @@ void LipstickCompositor::surfaceUnmapped(LipstickCompositorWindow *item)
 
     emit windowCountChanged();
     emit windowRemoved(item);
-
-    item->m_windowClosed = true;
-    item->tryRemove();
 
     emit ghostWindowCountChanged();
 
@@ -632,22 +586,6 @@ void LipstickCompositor::windowRemoved(int id)
 {
     for (int ii = 0; ii < m_windowModels.count(); ++ii)
         m_windowModels.at(ii)->remItem(id);
-}
-
-QQmlComponent *LipstickCompositor::shaderEffectComponent()
-{
-    const char *qml_source =
-            "import QtQuick 2.0\n"
-            "ShaderEffect {\n"
-            "property QtObject window\n"
-            "property ShaderEffectSource source: ShaderEffectSource { sourceItem: window }\n"
-            "}";
-
-    if (!m_shaderEffect) {
-        m_shaderEffect = new QQmlComponent(qmlEngine(this));
-        m_shaderEffect->setData(qml_source, QUrl());
-    }
-    return m_shaderEffect;
 }
 
 void LipstickCompositor::setTopmostWindowOrientation(Qt::ScreenOrientation topmostWindowOrientation)
@@ -709,33 +647,23 @@ bool LipstickCompositor::displayDimmed() const
 
 void LipstickCompositor::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState)
 {
-    if (newState == TouchScreen::DisplayOn) {
-        emit displayOn();
-    } else if (newState == TouchScreen::DisplayOff) {
-        QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
-        emit displayOff();
+    bool oldOn = displayStateIsOn(oldState);
+    bool newOn = displayStateIsOn(newState);
+
+    if (oldOn != newOn) {
+        if (newOn) {
+            emit displayOn();
+        } else  {
+            QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
+            emit displayOff();
+        }
     }
 
-    bool changeInDimming = (newState == TouchScreen::DisplayDimmed) != (oldState == TouchScreen::DisplayDimmed);
+    bool oldDimmed = displayStateIsDimmed(oldState);
+    bool newDimmed = displayStateIsDimmed(newState);
 
-    bool changeInAmbient = ((newState == TouchScreen::DisplayOff) != (oldState == TouchScreen::DisplayOff)) && ambientEnabled();
-
-    bool enterAmbient = changeInAmbient && (newState == TouchScreen::DisplayOff);
-    bool leaveAmbient = changeInAmbient && (newState != TouchScreen::DisplayOff);
-
-    oldState = newState;
-
-    if (changeInDimming) {
+    if (oldDimmed != newDimmed) {
         emit displayDimmedChanged();
-    }
-    if (changeInAmbient) {
-        emit displayAmbientChanged();
-    }
-    if (enterAmbient) {
-        emit displayAmbientEntered();
-    }
-    if (leaveAmbient) {
-        emit displayAmbientLeft();
     }
 }
 

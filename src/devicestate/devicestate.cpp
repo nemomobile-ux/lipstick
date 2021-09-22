@@ -177,16 +177,18 @@ void DeviceState::disconnectNotify(const QMetaMethod &signal) {
                                                     thermalmanager_state_change_ind,
                                                     d,
                                                     SLOT(emitThermalShutdown(QString)));
+#ifdef HAVE_SAILFISHUSERMANAGER
             disconnectUserManager();
+#endif
             d->userManagerWatcher->deleteLater();
             d->userManagerWatcher = nullptr;
         }
     }
 }
 
+#ifdef HAVE_SAILFISHUSERMANAGER
 void DeviceState::connectUserManager()
 {
-#ifdef HAVE_SAILFISHUSERMANAGER
     Q_D(DeviceState);
     QDBusConnection::systemBus().connect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                          SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
@@ -200,14 +202,10 @@ void DeviceState::connectUserManager()
                                          "currentUserChangeFailed",
                                          d,
                                          SLOT(emitUserSwitchingFailed(uint)));
-#else
-    qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
-#endif
 }
 
 void DeviceState::disconnectUserManager()
 {
-#ifdef HAVE_SAILFISHUSERMANAGER
     Q_D(DeviceState);
     QDBusConnection::systemBus().disconnect(SAILFISH_USERMANAGER_DBUS_INTERFACE,
                                             SAILFISH_USERMANAGER_DBUS_OBJECT_PATH,
@@ -221,9 +219,6 @@ void DeviceState::disconnectUserManager()
                                             "currentUserChangeFailed",
                                             d,
                                             SLOT(emitUserSwitchingFailed(uint)));
-#else
-    qWarning() << "SAILFISHUSERMANAGER NOT SUPPORT";
-#endif
 }
-
+#endif
 } // DeviceState namespace

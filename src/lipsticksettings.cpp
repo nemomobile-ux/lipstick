@@ -39,7 +39,7 @@ void LipstickSettings::setScreenLock(ScreenLock *screenLock)
 {
     // TODO: Disconnect from previous screenlock signals?
 
-    this->m_screenLock = screenLock;
+    m_screenLock = screenLock;
     connect(screenLock, SIGNAL(screenLockedChanged(bool)), this, SIGNAL(lockscreenVisibleChanged()));
     connect(screenLock, SIGNAL(lowPowerModeChanged()), this, SIGNAL(lowPowerModeChanged()));
     connect(screenLock, SIGNAL(blankingPolicyChanged(QString)), this, SIGNAL(blankingPolicyChanged()));
@@ -70,6 +70,13 @@ void LipstickSettings::lockScreen(bool immediate)
 {
     if (m_screenLock != 0 && (!m_screenLock->isScreenLocked() || immediate)) {
         m_screenLock->lockScreen(immediate);
+    }
+}
+
+void LipstickSettings::setInteractionExpected(bool expected)
+{
+    if (m_screenLock != 0) {
+        m_screenLock->setInteractionExpected(expected);
     }
 }
 

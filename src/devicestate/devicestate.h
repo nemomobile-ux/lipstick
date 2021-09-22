@@ -97,9 +97,10 @@ protected:
     void disconnectNotify(const QMetaMethod &signal);
 
 private slots:
+#ifdef HAVE_SAILFISHUSERMANAGER
     void connectUserManager();
     void disconnectUserManager();
-
+#endif
 private:
     Q_DISABLE_COPY(DeviceState)
     Q_DECLARE_PRIVATE(DeviceState)

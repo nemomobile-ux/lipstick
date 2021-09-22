@@ -85,6 +85,7 @@ void ShutdownScreen::applySystemState(DeviceState::DeviceState::StateIndication 
             //% "Temperature too high. Device shutting down."
             ThermalNotifier::publishTemperatureNotification(qtTrId("qtn_shut_high_temp"));
             break;
+
         case DeviceState::DeviceState::ShutdownDeniedUSB:
             //% "USB cable plugged in. Unplug the USB cable to shutdown."
             publishNotification("icon-system-usb", "accessory_connected", qtTrId("qtn_shut_unplug_usb"));

@@ -37,9 +37,9 @@ QObject *LipstickApi::compositor() const
     return LipstickCompositor::instance();
 }
 
-void LipstickApi::takeScreenshot(const QString &path)
+ScreenshotResult *LipstickApi::takeScreenshot(const QString &path)
 {
-    HomeApplication::instance()->takeScreenshot(path);
+    return ScreenshotService::saveScreenshot(path);
 }
 
 QString LipstickApi::notificationSystemApplicationName() const
