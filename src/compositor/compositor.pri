@@ -15,9 +15,7 @@ HEADERS += \
     $$PWD/windowpixmapitem.h \
     $$PWD/lipstickrecorder.h \
     $$PWD/hwcrenderstage.h \
-    $$PWD/hwcimage.h \
-    $$PWD/eglhybrisbuffer.h \
-    $$PWD/eglhybrisfunctions.h
+    $$PWD/hwcimage.h
 
 SOURCES += \
     $$PWD/lipstickcompositor.cpp \
@@ -28,9 +26,7 @@ SOURCES += \
     $$PWD/windowmodel.cpp \
     $$PWD/windowpixmapitem.cpp \
     $$PWD/hwcrenderstage.cpp \
-    $$PWD/hwcimage.cpp \
-    $$PWD/eglhybrisbuffer.cpp \
-    $$PWD/eglhybrisfunctions.cpp
+    $$PWD/hwcimage.cpp
 
 DEFINES += QT_COMPOSITOR_QUICK
 
