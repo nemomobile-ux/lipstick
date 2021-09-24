@@ -1,10 +1,9 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012-2019 Jolla Ltd.
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012-2019 Jolla Ltd.
 ** Copyright (c) 2019 Open Mobile Platform LLC.
 **
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
 **
 ** This file is part of lipstick.
 **
@@ -19,7 +18,6 @@
 #include <QQmlContext>
 #include <QScreen>
 #include <qusbmoded.h>
-#include "homewindow.h"
 #include "utilities/closeeventeater.h"
 #include "notifications/notificationmanager.h"
 #include "notifications/lipsticknotification.h"
@@ -28,7 +26,7 @@
 
 #include <nemo-devicelock/devicelock.h>
 
-USBModeSelector::USBModeSelector(DeviceLock *deviceLock, QObject *parent) :
+USBModeSelector::USBModeSelector(NemoDeviceLock::DeviceLock *deviceLock, QObject *parent) :
     QObject(parent),
     m_usbMode(new QUsbModed(this)),
     m_deviceLock(deviceLock),
@@ -85,7 +83,7 @@ void USBModeSelector::handleUSBEvent(const QString &event)
     // ReMountFailed, ModeSettingFailed, ChargerConnected, ChargerDisconnected
 
     if (event == QUsbModed::Mode::Connected) {
-        if (m_deviceLock->state() >= DeviceLock::Locked) {
+        if (m_deviceLock->state() >= NemoDeviceLock::DeviceLock::Locked) {
             // When the device lock is on and USB is connected, always pretend that the USB mode selection dialog is shown to unlock the touch screen lock
             emit dialogShown();
             emit showNotification(Notification::Locked);

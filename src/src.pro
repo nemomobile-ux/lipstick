@@ -1,22 +1,23 @@
 system(qdbusxml2cpp notifications/notificationmanager.xml -a notifications/notificationmanageradaptor -c NotificationManagerAdaptor -l NotificationManager -i notificationmanager.h)
 system(qdbusxml2cpp screenlock/screenlock.xml -a screenlock/screenlockadaptor -c ScreenLockAdaptor -l ScreenLock -i screenlock.h)
-system(qdbusxml2cpp devicelock/devicelock.xml -a devicelock/devicelockadaptor -c DeviceLockAdaptor -l DeviceLock -i devicelock.h)
 system(qdbusxml2cpp screenshotservice.xml -a screenshotserviceadaptor -c ScreenshotServiceAdaptor -l ScreenshotService -i screenshotservice.h)
 system(qdbusxml2cpp shutdownscreen.xml -a shutdownscreenadaptor -c ShutdownScreenAdaptor -l ShutdownScreen -i shutdownscreen.h)
+system(qdbusxml2cpp net.connman.vpn.Agent.xml -a connmanvpnagent -c ConnmanVpnAgentAdaptor -l VpnAgent -i vpnagent.h)
+system(qdbusxml2cpp -c ConnmanVpnProxy -p connmanvpnproxy net.connman.vpn.xml -i qdbusxml2cpp_dbus_types.h)
+system(qdbusxml2cpp -c ConnmanManagerProxy -p connmanmanagerproxy net.connman.manager.xml -i qdbusxml2cpp_dbus_types.h)
+system(qdbusxml2cpp -c ConnmanServiceProxy -p connmanserviceproxy net.connman.service.xml -i qdbusxml2cpp_dbus_types.h)
 
 TEMPLATE = lib
 TARGET = lipstick-qt5
 
-# Override the version from the spec file, we need .so version 1.0
-VERSION = 1.0
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
-
 DEFINES += LIPSTICK_BUILD_LIBRARY
 DEFINES += VERSION=\\\"$${VERSION}\\\"
+DEFINES += MESA_EGL_NO_X11_HEADERS
+DEFINES += EGL_NO_X11
 
+CONFIG += qt wayland-scanner c++11
 PKGCONFIG += timed-qt5
 
-CONFIG += qt wayland-scanner
 INSTALLS = target ts_install engineering_english_install
 target.path = $$[QT_INSTALL_LIBS]
 
@@ -24,13 +25,14 @@ QMAKE_STRIP = echo
 OBJECTS_DIR = .obj
 MOC_DIR = .moc
 
-INCLUDEPATH += utilities components xtools 3rdparty qmsystem2
+INCLUDEPATH += utilities touchscreen components xtools 3rdparty devicestate
 
 include(compositor/compositor.pri)
 
 PUBLICHEADERS += \
     utilities/qobjectlistmodel.h \
     utilities/closeeventeater.h \
+    touchscreen/touchscreen.h \
     homeapplication.h \
     homewindow.h \
     lipstickglobal.h \
@@ -51,13 +53,11 @@ PUBLICHEADERS += \
     bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
-    qmsystem2/qmactivity.h \
-    qmsystem2/qmdisplaystate.h \
-    qmsystem2/qmlocks.h \
-    qmsystem2/qmsystemstate.h \
-    qmsystem2/qmthermal.h \
-    qmsystem2/system_global.h \
-    connectionselector.h
+    devicestate/displaystate.h \
+    devicestate/devicestate.h \
+    devicestate/thermal.h \
+    vpnagent.h \
+    connectivitymonitor.h
 
 INSTALLS += publicheaderfiles dbus_policy
 publicheaderfiles.files = $$PUBLICHEADERS
@@ -68,33 +68,36 @@ dbus_policy.path = /etc/dbus-1/system.d
 HEADERS += \
     $$PUBLICHEADERS \
     3rdparty/synchronizelists.h \
+    3rdparty/dbus-gmain/dbus-gmain.h \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
-    notifications/diskspacenotifier.h \
     notifications/notificationfeedbackplayer.h \
     notifications/androidprioritystore.h \
     screenlock/screenlock.h \
     screenlock/screenlockadaptor.h \
+    touchscreen/touchscreen_p.h \
     volume/volumecontrol.h \
     volume/pulseaudiocontrol.h \
     lipstickapi.h \
     lipstickqmlpath.h \
-    devicelock/devicelockadaptor.h \
-    devicelock/devicelock.h \
     shutdownscreenadaptor.h \
     screenshotservice.h \
     screenshotserviceadaptor.h \
+    qdbusxml2cpp_dbus_types.h \
+    connmanvpnagent.h \
+    connmanvpnproxy.h \
+    connmanmanagerproxy.h \
+    connmanserviceproxy.h \
     notifications/thermalnotifier.h \
-    qmsystem2/qmsystemstate_p.h \
-    qmsystem2/qmdisplaystate_p.h \
-    qmsystem2/qmlocks_p.h \
-    qmsystem2/qmactivity_p.h \
-    qmsystem2/qmipcinterface_p.h \
-    qmsystem2/qmthermal_p.h \
-
+    devicestate/devicestate_p.h \
+    devicestate/displaystate_p.h \
+    devicestate/ipcinterface_p.h \
+    devicestate/thermal_p.h \
+    logging.h \
 
 SOURCES += \
+    3rdparty/dbus-gmain/dbus-gmain.c \
     homeapplication.cpp \
     homewindow.cpp \
     lipsticksettings.cpp \
@@ -114,10 +117,10 @@ SOURCES += \
     notifications/notificationlistmodel.cpp \
     notifications/notificationpreviewpresenter.cpp \
     notifications/batterynotifier.cpp \
-    notifications/diskspacenotifier.cpp \
     notifications/androidprioritystore.cpp \
     screenlock/screenlock.cpp \
     screenlock/screenlockadaptor.cpp \
+    touchscreen/touchscreen.cpp \
     volume/volumecontrol.cpp \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
@@ -126,27 +129,29 @@ SOURCES += \
     localemanager.cpp \
     shutdownscreen.cpp \
     shutdownscreenadaptor.cpp \
-    connectionselector.cpp \
+    vpnagent.cpp \
+    connectivitymonitor.cpp \
+    connmanvpnagent.cpp \
+    connmanvpnproxy.cpp \
+    connmanmanagerproxy.cpp \
+    connmanserviceproxy.cpp \
     lipstickapi.cpp \
-    devicelock/devicelockadaptor.cpp \
-    devicelock/devicelock.cpp \
     screenshotservice.cpp \
     screenshotserviceadaptor.cpp \
     notifications/thermalnotifier.cpp \
-    qmsystem2/qmactivity.cpp \
-    qmsystem2/qmdisplaystate.cpp \
-    qmsystem2/qmlocks.cpp \
-    qmsystem2/qmsystemstate.cpp \
-    qmsystem2/qmthermal.cpp \
-    qmsystem2/qmipcinterface.cpp \
+    devicestate/displaystate.cpp \
+    devicestate/devicestate.cpp \
+    devicestate/thermal.cpp \
+    devicestate/ipcinterface.cpp \
+    logging.cpp \
 
 CONFIG += link_pkgconfig mobility qt warn_on depend_includepath qmake_cache target_qt
 CONFIG -= link_prl
 
 PKGCONFIG += \
     dbus-1 \
-    dbus-glib-1 \
     dsme_dbus_if \
+    glib-2.0 \
     keepalive \
     libresourceqt5 \
     libsystemd \
@@ -155,7 +160,6 @@ PKGCONFIG += \
     mce-qt5 \
     nemodevicelock \
     ngf-qt5 \
-    Qt5SystemInfo \
     systemsettings \
     thermalmanager_dbus_if \
     usb-moded-qt5
@@ -167,17 +171,21 @@ packagesExist(contentaction5) {
     PKGCONFIG += contentaction5
     DEFINES += HAVE_CONTENTACTION
 } else {
+    PKGCONFIG += \
+        gio-2.0 \
+        gio-unix-2.0
     warning("contentaction doesn't exist; falling back to exec - this may not work so great")
+}
+
+packagesExist(sailfishusermanager) {
+    DEFINES += HAVE_SAILFISHUSERMANAGER
 }
 
 QT += dbus xml qml quick sql gui gui-private sensors
 
 QMAKE_CXXFLAGS += \
-    -Werror \
-    -Wno-error=format-security \
-    -Wno-deprecated-copy \ 
+    -Wfatal-errors \
     -g \
-    -std=c++0x \
     -fPIC \
     -fvisibility=hidden \
     -fvisibility-inlines-hidden
@@ -192,6 +200,7 @@ QMAKE_CLEAN += \
 
 CONFIG += create_pc create_prl
 QMAKE_PKGCONFIG_NAME = lib$$TARGET
+QMAKE_PKGCONFIG_VERSION = $$VERSION
 QMAKE_PKGCONFIG_DESCRIPTION = Library for creating QML desktops
 QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = $$publicheaderfiles.path

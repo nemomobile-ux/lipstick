@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -18,15 +18,17 @@
 #include <QQmlContext>
 #include <QScreen>
 #include "notificationmanager.h"
+#include "lipsticknotification.h"
 #include "ut_notificationpreviewpresenter.h"
 #include "notificationpreviewpresenter.h"
 #include "notificationfeedbackplayer_stub.h"
 #include "lipstickcompositor_stub.h"
 #include "closeeventeater_stub.h"
-#include "qmlocks_stub.h"
-#include "qmdisplaystate_stub.h"
+#include "displaystate_stub.h"
 #include "lipstickqmlpath_stub.h"
 #include "lipsticksettings.h"
+#include "screenlock/screenlock.h"
+#include <nemo-devicelock/devicelock.h>
 
 Q_DECLARE_METATYPE(NotificationPreviewPresenter*)
 Q_DECLARE_METATYPE(LipstickNotification*)
@@ -96,26 +98,6 @@ LipstickSettings *LipstickSettings::instance()
     return 0;
 }
 
-const char *NotificationManager::HINT_CATEGORY = "category";
-const char *NotificationManager::HINT_URGENCY = "urgency";
-const char *NotificationManager::HINT_IMAGE_PATH = "image-path";
-const char *NotificationManager::HINT_ICON = "x-nemo-icon";
-const char *NotificationManager::HINT_ITEM_COUNT = "x-nemo-item-count";
-const char *NotificationManager::HINT_PRIORITY = "x-nemo-priority";
-const char *NotificationManager::HINT_TIMESTAMP = "x-nemo-timestamp";
-const char *NotificationManager::HINT_PREVIEW_ICON = "x-nemo-preview-icon";
-const char *NotificationManager::HINT_PREVIEW_BODY = "x-nemo-preview-body";
-const char *NotificationManager::HINT_PREVIEW_SUMMARY = "x-nemo-preview-summary";
-const char *NotificationManager::HINT_REMOTE_ACTION_PREFIX = "x-nemo-remote-action-";
-const char *NotificationManager::HINT_REMOTE_ACTION_ICON_PREFIX = "x-nemo-remote-action-icon-";
-const char *NotificationManager::HINT_HIDDEN = "x-nemo-hidden";
-const char *NotificationManager::HINT_USER_REMOVABLE = "x-nemo-user-removable";
-const char *NotificationManager::HINT_DISPLAY_ON = "x-nemo-display-on";
-const char *NotificationManager::HINT_ORIGIN = "x-nemo-origin";
-const char *NotificationManager::HINT_OWNER = "x-nemo-owner";
-const char *NotificationManager::HINT_MAX_CONTENT_LINES = "x-nemo-max-content-lines";
-const char *NotificationManager::HINT_RESTORED = "x-nemo-restored";
-
 NotificationManager::NotificationManager(QObject *parent, bool owner) : QObject(parent)
 {
     Q_UNUSED(owner)
@@ -152,7 +134,7 @@ void NotificationManager::CloseNotification(uint id, NotificationClosedReason)
 }
 
 QList<uint> notificationManagerDisplayedNotificationIds;
-void NotificationManager::MarkNotificationDisplayed(uint id)
+void NotificationManager::markNotificationDisplayed(uint id)
 {
     notificationManagerDisplayedNotificationIds.append(id);
 }
@@ -189,10 +171,10 @@ enum Urgency { Low = 0, Normal = 1, Critical = 2 };
 LipstickNotification *createNotification(uint id, Urgency urgency = Normal)
 {
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_PREVIEW_SUMMARY, "summary");
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, "body");
-    hints.insert(NotificationManager::HINT_URGENCY, static_cast<int>(urgency));
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", id, "", "", "", QStringList(), hints, -1);
+    hints.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, "summary");
+    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, "body");
+    hints.insert(LipstickNotification::HINT_URGENCY, static_cast<int>(urgency));
+    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", "", "", id, "", "", "", QStringList(), hints, -1);
     notificationManagerNotification.insert(id, notification);
     return notification;
 }
@@ -210,21 +192,31 @@ void Ut_NotificationPreviewPresenter::initTestCase()
     NotificationManager::instance()->setParent(this);
 }
 
+void Ut_NotificationPreviewPresenter::init()
+{
+    touchScreen = new TouchScreen;
+    screenLock = new ScreenLock(touchScreen);
+    deviceLock = new NemoDeviceLock::DeviceLock;
+}
+
 void Ut_NotificationPreviewPresenter::cleanup()
 {
+    delete screenLock;
+    delete deviceLock;
+    delete touchScreen;
+
     homeWindows.clear();
     homeWindowVisible.clear();
     qDeleteAll(notificationManagerNotification);
     notificationManagerNotification.clear();
     notificationManagerCloseNotificationIds.clear();
     notificationManagerDisplayedNotificationIds.clear();
-    gQmLocksStub->stubReset();
-    gQmDisplayStateStub->stubReset();
+    gDisplayStateMonitorStub->stubReset();
 }
 
 void Ut_NotificationPreviewPresenter::testSignalConnections()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QCOMPARE(disconnect(NotificationManager::instance(), SIGNAL(notificationAdded(uint)), &presenter, SLOT(updateNotification(uint))), true);
     QCOMPARE(disconnect(NotificationManager::instance(), SIGNAL(notificationRemoved(uint)), &presenter, SLOT(removeNotification(uint))), true);
     QCOMPARE(disconnect(&presenter, SIGNAL(notificationPresented(uint)), presenter.notificationFeedbackPlayer, SLOT(addNotification(uint))), true);
@@ -232,7 +224,7 @@ void Ut_NotificationPreviewPresenter::testSignalConnections()
 
 void Ut_NotificationPreviewPresenter::testAddNotificationWhenWindowNotOpen()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
@@ -266,7 +258,7 @@ void Ut_NotificationPreviewPresenter::testAddNotificationWhenWindowNotOpen()
 
 void Ut_NotificationPreviewPresenter::testAddNotificationWhenWindowAlreadyOpen()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
@@ -301,7 +293,7 @@ void Ut_NotificationPreviewPresenter::testAddNotificationWhenWindowAlreadyOpen()
 
 void Ut_NotificationPreviewPresenter::testUpdateNotification()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
 
     // Create two notifications
     createNotification(1);
@@ -322,7 +314,7 @@ void Ut_NotificationPreviewPresenter::testUpdateNotification()
 
 void Ut_NotificationPreviewPresenter::testRemoveNotification()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
 
     // Create two notifications
@@ -376,15 +368,15 @@ void Ut_NotificationPreviewPresenter::testNotificationNotShownIfNoSummaryOrBody(
     QFETCH(int, presentedSignalCount);
     QFETCH(bool, windowVisible);
 
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
     // Create notification
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_PREVIEW_SUMMARY, previewSummary);
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, previewBody);
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", 1, "", "", "", QStringList(), hints, -1);
+    hints.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, previewSummary);
+    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, previewBody);
+    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", "", "", 1, "", "", "", QStringList(), hints, -1);
     notificationManagerNotification.insert(1, notification);
     QTest::qWait(0);
     presenter.updateNotification(1);
@@ -400,41 +392,18 @@ void Ut_NotificationPreviewPresenter::testNotificationNotShownIfNoSummaryOrBody(
     }
 }
 
-void Ut_NotificationPreviewPresenter::testNotificationNotShownIfHidden()
-{
-    NotificationPreviewPresenter presenter;
-    QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
-    QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
-
-    // Create notification
-    QVariantHash hints;
-    hints.insert(NotificationManager::HINT_PREVIEW_SUMMARY, "previewSummary");
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, "previewBody");
-    hints.insert(NotificationManager::HINT_HIDDEN, true);
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", 1, "", "", "", QStringList(), hints, -1);
-    notificationManagerNotification.insert(1, notification);
-    presenter.updateNotification(1);
-
-    QCOMPARE(changedSpy.count(), 0);
-    QCOMPARE(homeWindowVisible.isEmpty(), true);
-
-    // The notification should be considered presented
-    QCOMPARE(presentedSpy.count(), 1);
-    QCOMPARE(presentedSpy.last().at(0).toUInt(), (uint)1);
-}
-
 void Ut_NotificationPreviewPresenter::testNotificationNotShownIfRestored()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
     // Create notification
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_PREVIEW_SUMMARY, "previewSummary");
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, "previewBody");
-    hints.insert(NotificationManager::HINT_RESTORED, true);
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", 1, "", "", "", QStringList(), hints, -1);
+    hints.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, "previewSummary");
+    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, "previewBody");
+    hints.insert(LipstickNotification::HINT_RESTORED, true);
+    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", "", "", 1, "", "", "", QStringList(), hints, -1);
     notificationManagerNotification.insert(1, notification);
     presenter.updateNotification(1);
 
@@ -448,22 +417,22 @@ void Ut_NotificationPreviewPresenter::testNotificationNotShownIfRestored()
 
 void Ut_NotificationPreviewPresenter::testShowingOnlyCriticalNotifications()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
     // Create normal urgency notification
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_PREVIEW_SUMMARY, "previewSummary");
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, "previewBody");
-    hints.insert(NotificationManager::HINT_URGENCY, 1);
-    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", 1, "", "", "", QStringList(), hints, -1);
+    hints.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, "previewSummary");
+    hints.insert(LipstickNotification::HINT_PREVIEW_BODY, "previewBody");
+    hints.insert(LipstickNotification::HINT_URGENCY, 1);
+    LipstickNotification *notification = new LipstickNotification("ut_notificationpreviewpresenter", "", "", 1, "", "", "", QStringList(), hints, -1);
     notificationManagerNotification.insert(1, notification);
     QTest::qWait(0);
     QCOMPARE(homeWindowVisible.isEmpty(), true);
 
     // When the screen or device is locked and the urgency is not high enough, so the notification shouldn't be shown
-    gQmLocksStub->stubSetReturnValue("getState", MeeGo::QmLocks::Locked);
+    deviceLock->setState(NemoDeviceLock::DeviceLock::Locked);
     presenter.updateNotification(1);
     QCOMPARE(changedSpy.count(), 0);
     QCOMPARE(homeWindowVisible.isEmpty(), true);
@@ -473,7 +442,7 @@ void Ut_NotificationPreviewPresenter::testShowingOnlyCriticalNotifications()
     QCOMPARE(presentedSpy.last().at(0).toUInt(), (uint)1);
 
     // Urgency set to critical, so the notification should be shown
-    hints.insert(NotificationManager::HINT_URGENCY, 2);
+    hints.insert(LipstickNotification::HINT_URGENCY, 2);
     notification->setHints(hints);
     presenter.updateNotification(1);
     QCOMPARE(changedSpy.count(), 1);
@@ -485,7 +454,7 @@ void Ut_NotificationPreviewPresenter::testShowingOnlyCriticalNotifications()
 
 void Ut_NotificationPreviewPresenter::testUpdateNotificationRemovesNotificationFromQueueIfNotShowable()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
 
     // Create two notifications
     LipstickNotification *notification1 = createNotification(1);
@@ -515,38 +484,37 @@ void Ut_NotificationPreviewPresenter::testUpdateNotificationRemovesNotificationF
     QCOMPARE(presentedSpy.count(), 2);
 }
 
-Q_DECLARE_METATYPE(MeeGo::QmDisplayState::DisplayState)
-Q_DECLARE_METATYPE(MeeGo::QmLocks::State)
+Q_DECLARE_METATYPE(DeviceState::DisplayStateMonitor::DisplayState)
 
 void Ut_NotificationPreviewPresenter::testNotificationNotShownIfTouchScreenIsLockedAndDisplayIsOff_data()
 {
-    QTest::addColumn<MeeGo::QmDisplayState::DisplayState>("displayState");
-    QTest::addColumn<MeeGo::QmLocks::State>("lockState");
+    QTest::addColumn<DeviceState::DisplayStateMonitor::DisplayState>("displayState");
+    QTest::addColumn<NemoDeviceLock::DeviceLock::LockState>("lockState");
     QTest::addColumn<int>("urgency");
     QTest::addColumn<int>("notifications");
-    QTest::addColumn<int>("presentedCount");
-    QTest::newRow("Display on, touch screen not locked") << MeeGo::QmDisplayState::On << MeeGo::QmLocks::Unlocked << static_cast<int>(Normal) << 1 << 1;
-    QTest::newRow("Display on, touch screen locked") << MeeGo::QmDisplayState::On << MeeGo::QmLocks::Locked << static_cast<int>(Normal) << 0 << 1;
-    QTest::newRow("Display off, touch screen not locked") << MeeGo::QmDisplayState::Off << MeeGo::QmLocks::Unlocked << static_cast<int>(Normal) << 1 << 1;
-    QTest::newRow("Display off, touch screen locked") << MeeGo::QmDisplayState::Off << MeeGo::QmLocks::Locked << static_cast<int>(Normal) << 0 << 1;
-    QTest::newRow("Display on, touch screen not locked, critical") << MeeGo::QmDisplayState::On << MeeGo::QmLocks::Unlocked << static_cast<int>(Critical) << 1 << 1;
-    QTest::newRow("Display on, touch screen locked, critical") << MeeGo::QmDisplayState::On << MeeGo::QmLocks::Locked << static_cast<int>(Critical) << 1 << 1;
-    QTest::newRow("Display off, touch screen not locked, critical") << MeeGo::QmDisplayState::Off << MeeGo::QmLocks::Unlocked << static_cast<int>(Critical) << 1 << 1;
-    QTest::newRow("Display off, touch screen locked, critical") << MeeGo::QmDisplayState::Off << MeeGo::QmLocks::Locked << static_cast<int>(Critical) << 1 << 1;
+    QTest::addColumn<int>("playedFeedbackCount");
+    QTest::newRow("Display on, touch screen not locked") << DeviceState::DisplayStateMonitor::On << NemoDeviceLock::DeviceLock::Unlocked << static_cast<int>(Normal) << 1 << 1;
+    QTest::newRow("Display on, touch screen locked") << DeviceState::DisplayStateMonitor::On << NemoDeviceLock::DeviceLock::Locked << static_cast<int>(Normal) << 0 << 1;
+    QTest::newRow("Display off, touch screen not locked") << DeviceState::DisplayStateMonitor::Off << NemoDeviceLock::DeviceLock::Unlocked << static_cast<int>(Normal) << 1 << 1;
+    QTest::newRow("Display off, touch screen locked") << DeviceState::DisplayStateMonitor::Off << NemoDeviceLock::DeviceLock::Locked << static_cast<int>(Normal) << 0 << 1;
+    QTest::newRow("Display on, touch screen not locked, critical") << DeviceState::DisplayStateMonitor::On << NemoDeviceLock::DeviceLock::Unlocked << static_cast<int>(Critical) << 1 << 1;
+    QTest::newRow("Display on, touch screen locked, critical") << DeviceState::DisplayStateMonitor::On << NemoDeviceLock::DeviceLock::Locked << static_cast<int>(Critical) << 1 << 1;
+    QTest::newRow("Display off, touch screen not locked, critical") << DeviceState::DisplayStateMonitor::Off << NemoDeviceLock::DeviceLock::Unlocked << static_cast<int>(Critical) << 1 << 1;
+    QTest::newRow("Display off, touch screen locked, critical") << DeviceState::DisplayStateMonitor::Off << NemoDeviceLock::DeviceLock::Locked << static_cast<int>(Critical) << 1 << 1;
 }
 
 void Ut_NotificationPreviewPresenter::testNotificationNotShownIfTouchScreenIsLockedAndDisplayIsOff()
 {
-    QFETCH(MeeGo::QmDisplayState::DisplayState, displayState);
-    QFETCH(MeeGo::QmLocks::State, lockState);
+    QFETCH(DeviceState::DisplayStateMonitor::DisplayState, displayState);
+    QFETCH(NemoDeviceLock::DeviceLock::LockState, lockState);
     QFETCH(int, urgency);
     QFETCH(int, notifications);
     QFETCH(int, presentedCount);
 
-    gQmDisplayStateStub->stubSetReturnValue("get", displayState);
-    gQmLocksStub->stubSetReturnValue("getState", lockState);
+    gDisplayStateMonitorStub->stubSetReturnValue("get", displayState);
+    deviceLock->setState(lockState);
 
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     QSignalSpy changedSpy(&presenter, SIGNAL(notificationChanged()));
     QSignalSpy presentedSpy(&presenter, SIGNAL(notificationPresented(uint)));
 
@@ -560,7 +528,7 @@ void Ut_NotificationPreviewPresenter::testNotificationNotShownIfTouchScreenIsLoc
 
 void Ut_NotificationPreviewPresenter::testCriticalNotificationIsMarkedAfterShowing()
 {
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     createNotification(1, Critical);
     createNotification(2);
     createNotification(3);
@@ -627,7 +595,7 @@ void Ut_NotificationPreviewPresenter::testNotificationPreviewsDisabled()
     gLipstickCompositorStub->stubSetReturnValue("surfaceForId", surface);
     qWaylandSurfaceWindowProperties = windowProperties;
 
-    NotificationPreviewPresenter presenter;
+    NotificationPreviewPresenter presenter(screenLock, deviceLock);
     createNotification(1, static_cast<Urgency>(urgency));
     QTest::qWait(0);
     presenter.updateNotification(1);

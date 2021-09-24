@@ -1,8 +1,8 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -21,6 +21,7 @@
 #include "homeapplication.h"
 #include "ut_shutdownscreen.h"
 #include "notificationmanager_stub.h"
+#include "lipsticknotification.h"
 #include "closeeventeater_stub.h"
 #include "lipstickqmlpath_stub.h"
 
@@ -55,10 +56,6 @@ void HomeApplication::restoreSignalHandlers()
     signalHandlersRestored = true;
 }
 
-void HomeApplication::sendStartupNotifications()
-{
-}
-
 int argc = 1;
 char *argv[] = { (char *) "./ut_shutdownscreen", NULL };
 
@@ -88,34 +85,31 @@ void Ut_ShutdownScreen::cleanup()
 
 void Ut_ShutdownScreen::testConnections()
 {
-    QCOMPARE(disconnect(shutdownScreen->systemState, SIGNAL(systemStateChanged(MeeGo::QmSystemState::StateIndication)), shutdownScreen, SLOT(applySystemState(MeeGo::QmSystemState::StateIndication))), true);
+    QCOMPARE(disconnect(shutdownScreen->m_systemState, &DeviceState::DeviceState::systemStateChanged, shutdownScreen, &ShutdownScreen::applySystemState), true);
 }
 
 void Ut_ShutdownScreen::testSystemState()
 {
     QSignalSpy spy(shutdownScreen, SIGNAL(windowVisibleChanged()));
-    shutdownScreen->applySystemState(MeeGo::QmSystemState::ThermalStateFatal);
+    shutdownScreen->applySystemState(DeviceState::DeviceState::ThermalStateFatal);
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 1);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_CATEGORY).toString(), QString("x-nemo.battery.temperature"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_shut_high_temp"));
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_high_temp"));
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
 
-    shutdownScreen->applySystemState(MeeGo::QmSystemState::ShutdownDeniedUSB);
+    shutdownScreen->applySystemState(DeviceState::DeviceState::ShutdownDeniedUSB);
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 2);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_CATEGORY).toString(), QString("device.added"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_shut_unplug_usb"));
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_unplug_usb"));
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
 
-    shutdownScreen->applySystemState(MeeGo::QmSystemState::BatteryStateEmpty);
+    shutdownScreen->applySystemState(DeviceState::DeviceState::BatteryStateEmpty);
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 3);
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_CATEGORY).toString(), QString("x-nemo.battery.shutdown"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(NotificationManager::HINT_PREVIEW_BODY).toString(), qtTrId("qtn_shut_batt_empty"));
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_batt_empty"));
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
 
-    shutdownScreen->applySystemState(MeeGo::QmSystemState::Shutdown);
+    shutdownScreen->applySystemState(DeviceState::DeviceState::Shutdown);
     QCOMPARE(qQuickViews.count(), 1);
 
     // Check window properties
@@ -129,7 +123,7 @@ void Ut_ShutdownScreen::testSystemState()
     QCOMPARE(qWindowVisible[static_cast<QWindow *>(qQuickViews.first())], true);
     QCOMPARE(spy.count(), 1);
 
-    shutdownScreen->applySystemState(MeeGo::QmSystemState::Reboot);
+    shutdownScreen->applySystemState(DeviceState::DeviceState::Reboot);
     QCOMPARE(qQuickViews.first()->rootContext()->contextProperty("shutdownMode").toString(), QString("reboot"));
 }
 

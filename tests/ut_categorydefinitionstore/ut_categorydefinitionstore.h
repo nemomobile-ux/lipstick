@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2016 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -17,7 +16,7 @@
 #define UT_CATEGORYDEFINITIONSTORE_H
 
 #include <QObject>
-#include <QMetaType>
+#include <displaystate.h>
 
 class CategoryDefinitionStore;
 
@@ -34,7 +33,8 @@ private slots:
     void testCategoryDefinitionUninstalling();
 
 private:
-    CategoryDefinitionStore *store;
+    void updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState);
+    void fakeDisplayOnAndReady();
 
 signals:
     void directoryChanged(const QString &path);

@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -17,31 +16,9 @@
 #include "notificationmanager.h"
 #include "notificationfeedbackplayer.h"
 #include "lipstickcompositor_stub.h"
+#include "lipsticknotification.h"
 #include "ngfclient_stub.h"
 #include "ut_notificationfeedbackplayer.h"
-
-const char *NotificationManager::HINT_CATEGORY = "category";
-const char *NotificationManager::HINT_URGENCY = "urgency";
-const char *NotificationManager::HINT_IMAGE_PATH = "image-path";
-const char *NotificationManager::HINT_ICON = "x-nemo-icon";
-const char *NotificationManager::HINT_ITEM_COUNT = "x-nemo-item-count";
-const char *NotificationManager::HINT_PRIORITY = "x-nemo-priority";
-const char *NotificationManager::HINT_TIMESTAMP = "x-nemo-timestamp";
-const char *NotificationManager::HINT_PREVIEW_ICON = "x-nemo-preview-icon";
-const char *NotificationManager::HINT_PREVIEW_BODY = "x-nemo-preview-body";
-const char *NotificationManager::HINT_PREVIEW_SUMMARY = "x-nemo-preview-summary";
-const char *NotificationManager::HINT_HIDDEN = "x-nemo-hidden";
-const char *NotificationManager::HINT_REMOTE_ACTION_PREFIX = "x-nemo-remote-action-";
-const char *NotificationManager::HINT_REMOTE_ACTION_ICON_PREFIX = "x-nemo-remote-action-icon-";
-const char *NotificationManager::HINT_FEEDBACK = "x-nemo-feedback";
-const char *NotificationManager::HINT_FEEDBACK_SUPPRESSED = "x-nemo-feedback-suppressed";
-const char *NotificationManager::HINT_USER_REMOVABLE = "x-nemo-user-removable";
-const char *NotificationManager::HINT_DISPLAY_ON = "x-nemo-display-on";
-const char *NotificationManager::HINT_LED_DISABLED_WITHOUT_BODY_AND_SUMMARY = "x-nemo-led-disabled-without-body-and-summary";
-const char *NotificationManager::HINT_ORIGIN = "x-nemo-origin";
-const char *NotificationManager::HINT_OWNER = "x-nemo-owner";
-const char *NotificationManager::HINT_MAX_CONTENT_LINES = "x-nemo-max-content-lines";
-const char *NotificationManager::HINT_RESTORED = "x-nemo-restored";
 
 NotificationManager::NotificationManager(QObject *parent, bool owner) : QObject(parent)
 {
@@ -107,12 +84,12 @@ QList<uint> NotificationManager::notificationIds() const
 LipstickNotification *createNotification(uint id, int urgency = 0, QVariant priority = QVariant())
 {
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_FEEDBACK, "feedback");
-    hints.insert(NotificationManager::HINT_URGENCY, urgency);
+    hints.insert(LipstickNotification::HINT_FEEDBACK, "feedback");
+    hints.insert(LipstickNotification::HINT_URGENCY, urgency);
     if (priority.isValid()) {
-        hints.insert(NotificationManager::HINT_PRIORITY, priority);
+        hints.insert(LipstickNotification::HINT_PRIORITY, priority);
     }
-    LipstickNotification *notification = new LipstickNotification("ut_notificationfeedbackplayer", id, "", "", "", QStringList(), hints, -1);
+    LipstickNotification *notification = new LipstickNotification("ut_notificationfeedbackplayer", "", "", id, "", "", "", QStringList(), hints, -1);
     notificationManagerNotification.insert(id, notification);
     return notification;
 }
@@ -193,7 +170,7 @@ void Ut_NotificationFeedbackPlayer::testMultipleFeedbackIds()
     // Create a notification
     LipstickNotification *notification = createNotification(1);
     QVariantHash hints(notification->hints());
-    hints.insert(NotificationManager::HINT_FEEDBACK, "feedback,foldback");
+    hints.insert(LipstickNotification::HINT_FEEDBACK, "feedback,foldback");
     notification->setHints(hints);
     player->addNotification(1);
 
@@ -219,30 +196,24 @@ void Ut_NotificationFeedbackPlayer::testMultipleFeedbackIds()
     QCOMPARE(eventIds, QSet<quint32>() << 1 << 2);
 }
 
-void Ut_NotificationFeedbackPlayer::testHiddenNotification()
+void Ut_NotificationFeedbackPlayer::testNotificationSoundSuppressed()
 {
+    gClientStub->stubSetReturnValue("play", (quint32)1);
+
     // Create a notification
     LipstickNotification *notification = createNotification(1);
     QVariantHash hints(notification->hints());
-    hints.insert(NotificationManager::HINT_HIDDEN, true);
+    hints.insert(LipstickNotification::HINT_SUPPRESS_SOUND, true);
     notification->setHints(hints);
     player->addNotification(1);
 
-    // Check that NGFAdapter::play() was not called for the feedback
-    QCOMPARE(gClientStub->stubCallCount("play"), 0);
-}
+    // Check that NGFAdapter::play() was called for the feedback, with audio disabled
+    QCOMPARE(gClientStub->stubCallCount("play"), 1);
+    QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QString>(0), QString("feedback"));
 
-void Ut_NotificationFeedbackPlayer::testSuppressedNotification()
-{
-    // Create a notification
-    LipstickNotification *notification = createNotification(1);
-    QVariantHash hints(notification->hints());
-    hints.insert(NotificationManager::HINT_FEEDBACK_SUPPRESSED, true);
-    notification->setHints(hints);
-    player->addNotification(1);
-
-    // Check that NGFAdapter::play() was not called for the feedback
-    QCOMPARE(gClientStub->stubCallCount("play"), 0);
+    QMap<QString, QVariant> properties(gClientStub->stubLastCallTo("play").parameter<QMap<QString, QVariant> >(1));
+    QVERIFY(properties.contains("media.audio"));
+    QCOMPARE(properties.value("media.audio").toBool(), false);
 }
 
 void Ut_NotificationFeedbackPlayer::testUpdateNotification()
@@ -270,7 +241,7 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotification()
 
     // Change the feedback and update
     QVariantHash hints(notification->hints());
-    hints.insert(NotificationManager::HINT_FEEDBACK, "foldback");
+    hints.insert(LipstickNotification::HINT_FEEDBACK, "foldback");
     notification->setHints(hints);
     player->addNotification(1);
 
@@ -284,7 +255,7 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotification()
 
     // Remove the feedback and update
     hints = notification->hints();
-    hints.remove(NotificationManager::HINT_FEEDBACK);
+    hints.remove(LipstickNotification::HINT_FEEDBACK);
     notification->setHints(hints);
     player->addNotification(1);
 
@@ -303,7 +274,7 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotificationAfterRestart()
 
     // Mark the notification as restored from storage
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_RESTORED, true);
+    hints.insert(LipstickNotification::HINT_RESTORED, true);
     notification->setHints(hints);
 
     // Update the notification
@@ -386,52 +357,6 @@ void Ut_NotificationFeedbackPlayer::testNotificationPriority()
     player->addNotification(1);
 
     QCOMPARE(gClientStub->stubCallCount("play"), playCount);
-}
-
-void Ut_NotificationFeedbackPlayer::testLEDDisabledWhenNoSummaryAndBody_data()
-{
-    QTest::addColumn<QVariant>("disableHint");
-    QTest::addColumn<bool>("mediaParametersDefined");
-
-    QTest::newRow("LED disabled without body and summary not defined") << QVariant() << true;
-    QTest::newRow("LED disabled without body and summary false") << QVariant(false) << false;
-    QTest::newRow("LED disabled without body and summary true") << QVariant(true) << true;
-}
-
-void Ut_NotificationFeedbackPlayer::testLEDDisabledWhenNoSummaryAndBody()
-{
-    QFETCH(QVariant, disableHint);
-    QFETCH(bool, mediaParametersDefined);
-
-    QVariantHash hints;
-    hints.insert(NotificationManager::HINT_FEEDBACK, "feedback");
-    if (disableHint.isValid()) {
-        hints.insert(NotificationManager::HINT_LED_DISABLED_WITHOUT_BODY_AND_SUMMARY, disableHint);
-    }
-    LipstickNotification *notification1 = new LipstickNotification("ut_notificationfeedbackplayer", 1, "", "", "", QStringList(), hints, -1);
-    LipstickNotification *notification2 = new LipstickNotification("ut_notificationfeedbackplayer", 2, "", "summary", "", QStringList(), hints, -1);
-    LipstickNotification *notification3 = new LipstickNotification("ut_notificationfeedbackplayer", 3, "", "", "body", QStringList(), hints, -1);
-    notificationManagerNotification.insert(1, notification1);
-    notificationManagerNotification.insert(2, notification2);
-    notificationManagerNotification.insert(3, notification3);
-
-    player->addNotification(1);
-    QCOMPARE(gClientStub->stubCallCount("play"), 1);
-    QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).contains("media.leds"), mediaParametersDefined);
-    if (mediaParametersDefined) {
-        QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).value("media.leds").toBool(), false);
-        QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).value("media.audio").toBool(), true);
-        QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).value("media.vibra").toBool(), true);
-        QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).value("media.backlight").toBool(), true);
-    }
-
-    player->addNotification(2);
-    QCOMPARE(gClientStub->stubCallCount("play"), 2);
-    QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).isEmpty(), true);
-
-    player->addNotification(3);
-    QCOMPARE(gClientStub->stubCallCount("play"), 3);
-    QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QVariantMap>(1).isEmpty(), true);
 }
 
 QTEST_MAIN(Ut_NotificationFeedbackPlayer)

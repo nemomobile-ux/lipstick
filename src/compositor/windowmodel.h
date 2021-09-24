@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -20,11 +19,17 @@
 #include "lipstickglobal.h"
 #include <QQmlParserStatus>
 #include <QAbstractListModel>
+#ifdef HAVE_SAILFISHUSERMANAGER
+#include <QDBusContext>
+#endif
 
 class LipstickCompositor;
 class LipstickCompositorWindow;
-class LIPSTICK_EXPORT WindowModel : public QAbstractListModel,
-                                    public QQmlParserStatus
+class LIPSTICK_EXPORT WindowModel : public QAbstractListModel
+                                    , public QQmlParserStatus
+#ifdef HAVE_SAILFISHUSERMANAGER
+                                    , public QDBusContext
+#endif
 {
     Q_OBJECT
     Q_INTERFACES(QQmlParserStatus)
@@ -64,6 +69,7 @@ private:
     void titleChanged(int);
 
     void refresh();
+    bool isPrivileged() const;
 
     bool m_complete:1;
     QList<int> m_items;

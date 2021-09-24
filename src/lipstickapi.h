@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -17,13 +16,14 @@
 #define LIPSTICKAPI_H
 
 #include <QObject>
-#include "lipstickglobal.h"
+#include "screenshotservice.h"
 
 class LIPSTICK_EXPORT LipstickApi : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool active READ active NOTIFY activeChanged)
     Q_PROPERTY(QObject *compositor READ compositor CONSTANT)
+    Q_PROPERTY(QString notificationSystemApplicationName READ notificationSystemApplicationName CONSTANT)
 
 public:
     LipstickApi(QObject *parent = 0);
@@ -31,7 +31,9 @@ public:
     bool active() const;
     QObject *compositor() const;
 
-    Q_INVOKABLE void takeScreenshot(const QString &path = QString());
+    Q_INVOKABLE ScreenshotResult *takeScreenshot(const QString &path = QString());
+
+    QString notificationSystemApplicationName() const;
 
 signals:
     void activeChanged();

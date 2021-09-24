@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -89,7 +88,7 @@ bool HomeWindowPrivate::isCompositor()
 void HomeWindowPrivate::checkMode()
 {
     if (mode == Unknown) {
-        mode = LipstickCompositor::instance()?Compositor:Window;
+        mode = LipstickCompositor::instance() ? Compositor : Window;
         if (mode == Window && qApp->platformName().startsWith("eglfs")) {
             qFatal("HomeWindow: Window mode not supported on eglfs");
         }

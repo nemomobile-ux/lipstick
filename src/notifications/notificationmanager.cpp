@@ -1,9 +1,8 @@
 /***************************************************************************
 **
-** Copyright (C) 2012-2019 Jolla Ltd.
+** Copyright (c) 2012 - 2019 Jolla Ltd.
 ** Copyright (c) 2019 Open Mobile Platform LLC.
 **
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
 **
 ** This file is part of lipstick.
 **
@@ -16,12 +15,20 @@
 ****************************************************************************/
 
 #include <QCoreApplication>
+#include <QDataStream>
+#include <QDBusArgument>
 #include <QDebug>
+#include <QImage>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QSqlTableModel>
+#include <QStandardPaths>
+#include <QFile>
+#include <QFileInfo>
+#include <QUrl>
+#include <aboutsettings.h>
 #include <mremoteaction.h>
 #include <mdesktopentry.h>
 #include <sys/statfs.h>
@@ -41,50 +48,17 @@
 //! The android priority store path
 static const char *ANDROID_PRIORITY_DEFINITION_PATH = "/usr/share/lipstick/androidnotificationpriorities";
 
-//! The android bridge process name
-static const char *ANDROID_BRIDGE_PROCESS = "alien_bridge_server";
-
 //! The category definitions directory
 static const char *CATEGORY_DEFINITION_FILE_DIRECTORY = "/usr/share/lipstick/notificationcategories";
 
 //! The number configuration files to load into the event type store.
 static const uint MAX_CATEGORY_DEFINITION_FILES = 100;
 
-//! Path of the privileged storage directory relative to the home directory
-static const char *PRIVILEGED_DATA_PATH= "/.local/share/system/privileged";
-
 //! Path to probe for desktop entries
-static const char *DESKTOP_ENTRY_PATH= "/usr/share/applications/";
+static const char *DESKTOP_ENTRY_PATH = "/usr/share/applications/";
 
 //! Minimum amount of disk space needed for the notification database in kilobytes
 static const uint MINIMUM_FREE_SPACE_NEEDED_IN_KB = 1024;
-
-const char *NotificationManager::HINT_URGENCY = "urgency";
-const char *NotificationManager::HINT_CATEGORY = "category";
-const char *NotificationManager::HINT_TRANSIENT = "transient";
-const char *NotificationManager::HINT_RESIDENT = "resident";
-const char *NotificationManager::HINT_IMAGE_PATH = "image-path";
-const char *NotificationManager::HINT_ICON = "x-nemo-icon";
-const char *NotificationManager::HINT_ITEM_COUNT = "x-nemo-item-count";
-const char *NotificationManager::HINT_PRIORITY = "x-nemo-priority";
-const char *NotificationManager::HINT_TIMESTAMP = "x-nemo-timestamp";
-const char *NotificationManager::HINT_PREVIEW_ICON = "x-nemo-preview-icon";
-const char *NotificationManager::HINT_PREVIEW_BODY = "x-nemo-preview-body";
-const char *NotificationManager::HINT_PREVIEW_SUMMARY = "x-nemo-preview-summary";
-const char *NotificationManager::HINT_REMOTE_ACTION_PREFIX = "x-nemo-remote-action-";
-const char *NotificationManager::HINT_REMOTE_ACTION_ICON_PREFIX = "x-nemo-remote-action-icon-";
-const char *NotificationManager::HINT_USER_REMOVABLE = "x-nemo-user-removable";
-const char *NotificationManager::HINT_USER_CLOSEABLE = "x-nemo-user-closeable";
-const char *NotificationManager::HINT_FEEDBACK = "x-nemo-feedback";
-const char *NotificationManager::HINT_FEEDBACK_SUPPRESSED = "x-nemo-feedback-suppressed";
-const char *NotificationManager::HINT_HIDDEN = "x-nemo-hidden";
-const char *NotificationManager::HINT_DISPLAY_ON = "x-nemo-display-on";
-const char *NotificationManager::HINT_LED_DISABLED_WITHOUT_BODY_AND_SUMMARY = "x-nemo-led-disabled-without-body-and-summary";
-const char *NotificationManager::HINT_ORIGIN = "x-nemo-origin";
-const char *NotificationManager::HINT_ORIGIN_PACKAGE = "x-nemo-origin-package";
-const char *NotificationManager::HINT_OWNER = "x-nemo-owner";
-const char *NotificationManager::HINT_MAX_CONTENT_LINES = "x-nemo-max-content-lines";
-const char *NotificationManager::HINT_RESTORED = "x-nemo-restored";
 
 // Exported for unit test:
 int MaxNotificationRestoreCount = 1000;
@@ -96,6 +70,20 @@ const int DefaultNotificationPriority = 50;
 const int CommitDelay = 10 * 1000;
 const int PublicationDelay = 1000;
 
+QString getProcessName(uint pid)
+{
+    if (pid > 1) {
+        const QString procFilename(QString::fromLatin1("/proc/%1/cmdline").arg(QString::number(pid)));
+        QFile procFile(procFilename);
+        if (procFile.open(QIODevice::ReadOnly)) {
+            const QByteArray cmdLine = procFile.readAll();
+            QString processNameWithPath = QFile::decodeName(cmdLine.left(cmdLine.indexOf('\0')));
+            return QFileInfo(processNameWithPath).fileName();
+        }
+    }
+    return QString();
+}
+
 QPair<QString, QString> processProperties(uint pid)
 {
     // Cache resolution of process name to properties:
@@ -106,35 +94,27 @@ QPair<QString, QString> processProperties(uint pid)
     if (pid == QCoreApplication::applicationPid()) {
         // This notification comes from our process
         rv.first = QCoreApplication::applicationName();
-    } else if (pid > 1) {
-        const QString procFilename(QString::fromLatin1("/proc/%1/cmdline").arg(QString::number(pid)));
-        QFile procFile(procFilename);
-        if (procFile.open(QIODevice::ReadOnly)) {
-            const QByteArray cmdLine = procFile.readAll();
-            const QString processName = QString::fromUtf8(cmdLine.left(cmdLine.indexOf('\0')));
-            if (!processName.isEmpty()) {
-                const QString basename(QFileInfo(processName).fileName());
-                if (!basename.isEmpty()) {
-                    QHash<QString, QPair<QString, QString> >::iterator it = nameProperties.find(basename);
-                    if (it == nameProperties.end()) {
-                        // Look up the desktop entry for this process name
-                        MDesktopEntry desktopEntry(DESKTOP_ENTRY_PATH + basename + ".desktop");
-                        if (desktopEntry.isValid()) {
-                            it = nameProperties.insert(basename, qMakePair(desktopEntry.name(), desktopEntry.icon()));
-                        } else {
-                            qWarning() << "No desktop entry for process name:" << processName;
-                            // Fallback to the basename for application name
-                            it = nameProperties.insert(basename, qMakePair(basename, QString()));
-                        }
-                    }
-                    if (it != nameProperties.end()) {
-                        rv.first = it->first;
-                        rv.second = it->second;
-                    }
+    } else {
+        const QString processName = getProcessName(pid);
+        if (!processName.isEmpty()) {
+            QHash<QString, QPair<QString, QString> >::iterator it = nameProperties.find(processName);
+            if (it == nameProperties.end()) {
+                // Look up the desktop entry for this process name
+                MDesktopEntry desktopEntry(DESKTOP_ENTRY_PATH + processName + ".desktop");
+                if (desktopEntry.isValid()) {
+                    it = nameProperties.insert(processName, qMakePair(desktopEntry.name(), desktopEntry.icon()));
+                } else {
+                    qWarning() << "No desktop entry for process name:" << processName;
+                    // Fallback to the processName for application name
+                    it = nameProperties.insert(processName, qMakePair(processName, QString()));
                 }
             }
+            if (it != nameProperties.end()) {
+                rv.first = it->first;
+                rv.second = it->second;
+            }
         } else {
-            qWarning() << "Unable to retrieve command line for pid:" << pid;
+            qWarning() << "Unable to retrieve process name for pid:" << pid;
         }
     }
 
@@ -175,8 +155,8 @@ NotificationManager::NotificationManager(QObject *parent, bool owner) :
         qDBusRegisterMetaType<NotificationList>();
 
         new NotificationManagerAdaptor(this);
-        QDBusConnection::sessionBus().registerService("org.freedesktop.Notifications");
         QDBusConnection::sessionBus().registerObject("/org/freedesktop/Notifications", this);
+        QDBusConnection::sessionBus().registerService("org.freedesktop.Notifications");
 
         connect(m_categoryDefinitionStore, SIGNAL(categoryDefinitionUninstalled(QString)), this, SLOT(removeNotificationsWithCategory(QString)));
         connect(m_categoryDefinitionStore, SIGNAL(categoryDefinitionModified(QString)), this, SLOT(updateNotificationsWithCategory(QString)));
@@ -218,144 +198,224 @@ QStringList NotificationManager::GetCapabilities()
     return QStringList() << "body"
                          << "actions"
                          << "persistence"
-                         << HINT_ICON
-                         << HINT_ITEM_COUNT
-                         << HINT_TIMESTAMP
-                         << HINT_PREVIEW_ICON
-                         << HINT_PREVIEW_BODY
-                         << HINT_PREVIEW_SUMMARY
+                         << "sound"
+                         << LipstickNotification::HINT_ITEM_COUNT
+                         << LipstickNotification::HINT_TIMESTAMP
+                         << LipstickNotification::HINT_PREVIEW_BODY
+                         << LipstickNotification::HINT_PREVIEW_SUMMARY
                          << "x-nemo-remote-actions"
-                         << HINT_USER_REMOVABLE
-                         << HINT_ORIGIN
-                         << HINT_MAX_CONTENT_LINES
+                         << LipstickNotification::HINT_USER_REMOVABLE
                          << "x-nemo-get-notifications";
 }
 
-uint NotificationManager::Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout)
+uint NotificationManager::Notify(const QString &appName, uint replacesId, const QString &appIcon,
+                                 const QString &summary, const QString &body, const QStringList &actions,
+                                 const QVariantHash &hints, int expireTimeout)
 {
     NOTIFICATIONS_DEBUG("NOTIFY:" << appName << replacesId << appIcon << summary << body << actions << hints << expireTimeout);
+    if (replacesId != 0 && !m_notifications.contains(replacesId)) {
+        replacesId = 0;
+    }
+
     uint id = replacesId != 0 ? replacesId : nextAvailableNotificationID();
 
-    if (replacesId == 0 || m_notifications.contains(id)) {
-        QVariantHash hints_(hints);
+    QVariantHash hints_(hints);
 
-        // Ensure the hints contain a timestamp, and convert to UTC if required
-        QString timestamp(hints_.value(HINT_TIMESTAMP).toString());
-        if (!timestamp.isEmpty()) {
-            QDateTime tsValue(QDateTime::fromString(timestamp, Qt::ISODate));
-            if (tsValue.isValid()) {
-                if (tsValue.timeSpec() != Qt::UTC) {
-                    tsValue = tsValue.toUTC();
-                }
-                timestamp = tsValue.toString(Qt::ISODate);
-            } else {
-                timestamp = QString();
+    // Ensure the hints contain a timestamp, and convert to UTC if required
+    QString timestamp(hints_.value(LipstickNotification::HINT_TIMESTAMP).toString());
+    if (!timestamp.isEmpty()) {
+        QDateTime tsValue(QDateTime::fromString(timestamp, Qt::ISODate));
+        if (tsValue.isValid()) {
+            if (tsValue.timeSpec() != Qt::UTC) {
+                tsValue = tsValue.toUTC();
             }
-        }
-        if (timestamp.isEmpty()) {
-            timestamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        }
-        hints_.insert(HINT_TIMESTAMP, timestamp);
-
-        LipstickNotification *notification = 0;
-        if (replacesId == 0) {
-            // Create a new notification
-            notification = new LipstickNotification(appName, id, appIcon, summary, body, actions, hints_, expireTimeout, this);
-            connect(notification, SIGNAL(actionInvoked(QString)), this, SLOT(invokeAction(QString)), Qt::QueuedConnection);
-            connect(notification, SIGNAL(removeRequested()), this, SLOT(removeNotificationIfUserRemovable()), Qt::QueuedConnection);
-            m_notifications.insert(id, notification);
+            timestamp = tsValue.toString(Qt::ISODate);
         } else {
-            // Only replace an existing notification if it really exists
-            notification = m_notifications.value(id);
-            notification->setAppName(appName);
-            notification->setAppIcon(appIcon);
-            notification->setSummary(summary);
-            notification->setBody(body);
-            notification->setActions(actions);
-            notification->setHints(hints_);
-            notification->setExpireTimeout(expireTimeout);
+            timestamp = QString();
         }
-
-        // Apply a category definition, if any
-        applyCategoryDefinition(notification);
-        hints_ = notification->hints();
-
-        QPair<QString, QString> pidProperties;
-        bool androidOrigin(false);
-        if (calledFromDBus()) {
-            // Look up the properties of the originating process
-            const QString callerService(message().service());
-            const QDBusReply<uint> pidReply(connection().interface()->servicePid(callerService));
-            if (pidReply.isValid()) {
-                pidProperties = processProperties(pidReply.value());
-                androidOrigin = (pidProperties.first == QString::fromLatin1(ANDROID_BRIDGE_PROCESS));
-            }
-        }
-
-        if (androidOrigin) {
-            // The app icon should also be the nemo icon
-            const QString icon(hints_.value(HINT_ICON).toString());
-            if (icon.isEmpty()) {
-                hints_.insert(HINT_ICON, appIcon);
-            }
-
-            // If this notification includes a preview, ensure it has a non-empty body and summary
-            const QString previewSummary(hints_.value(HINT_PREVIEW_SUMMARY).toString());
-            const QString previewBody(hints_.value(HINT_PREVIEW_BODY).toString());
-            if (!previewSummary.isEmpty()) {
-                if (previewBody.isEmpty()) {
-                    hints_.insert(HINT_PREVIEW_BODY, QStringLiteral(" "));
-                }
-            }
-            if (!previewBody.isEmpty()) {
-                if (previewSummary.isEmpty()) {
-                    hints_.insert(HINT_PREVIEW_SUMMARY, QStringLiteral(" "));
-                }
-            }
-
-            // See if this notification has elevated priority and feedback
-            AndroidPriorityStore::PriorityDetails priority;
-            const QString packageName(hints_.value(HINT_ORIGIN_PACKAGE).toString());
-            if (!packageName.isEmpty()) {
-                priority = m_androidPriorityStore->packageDetails(packageName);
-            } else {
-                priority = m_androidPriorityStore->appDetails(appName);
-            }
-            hints_.insert(HINT_PRIORITY, priority.first);
-            if (!priority.second.isEmpty()) {
-                // Add the appropriate feedback, unless it is specifically suppressed
-                if (!notification->hints().value(HINT_FEEDBACK_SUPPRESSED).toBool()) {
-                    hints_.insert(HINT_FEEDBACK, priority.second);
-                    // Also turn the display on if required
-                    hints_.insert(HINT_DISPLAY_ON, true);
-                }
-            }
-        } else {
-            if (notification->appName().isEmpty() && !pidProperties.first.isEmpty()) {
-                notification->setAppName(pidProperties.first);
-            }
-            if (notification->appIcon().isEmpty() && !pidProperties.second.isEmpty()) {
-                notification->setAppIcon(pidProperties.second);
-            }
-
-            // Unspecified priority should result in medium priority to permit low priorities
-            if (!hints_.contains(HINT_PRIORITY)) {
-                hints_.insert(HINT_PRIORITY, DefaultNotificationPriority);
-            }
-        }
-
-        notification->setHints(hints_);
-
-        publish(notification, replacesId);
-    } else {
-        // Return the ID 0 when trying to update a notification which doesn't exist
-        id = 0;
     }
+    if (timestamp.isEmpty()) {
+        timestamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+    }
+    hints_.insert(LipstickNotification::HINT_TIMESTAMP, timestamp);
+
+    auto it = hints_.find(LipstickNotification::HINT_IMAGE_DATA);
+    if (it != hints_.end()) {
+        const QDBusArgument argument = it->value<QDBusArgument>();
+
+        hints_.erase(it);
+
+        int width = 0;
+        int height = 0;
+        int stride = 0;
+        bool alpha = false;
+        int bitsPerSample = 0;
+        int channels = 0;
+        QByteArray data;
+
+        argument.beginStructure();
+        argument >> width;
+        argument >> height;
+        argument >> stride;
+        argument >> alpha;
+        argument >> bitsPerSample;
+        argument >> channels;
+        argument >> data;
+        argument.endStructure();
+
+        if (bitsPerSample == 8 && channels == 4 && data.size() >= stride * height) {
+            const QImage image(
+                        reinterpret_cast<const uchar *>(data.constData()),
+                        width,
+                        height,
+                        stride,
+                        alpha ? QImage::Format_ARGB32 : QImage::Format_RGB32);
+
+            QBuffer buffer;
+            buffer.open(QIODevice::WriteOnly);
+            image.save(&buffer, "PNG");
+            buffer.close();
+
+            const QUrl url
+                    = QLatin1String("data:image/png;base64,")
+                    + QString::fromUtf8(buffer.data().toBase64());
+
+            hints_.insert(LipstickNotification::HINT_IMAGE_PATH, url.toString());
+        }
+    }
+
+
+    QPair<QString, QString> pidProperties;
+    bool androidOrigin(false);
+    if (calledFromDBus()) {
+        // Look up the properties of the originating process
+        const QString callerService(message().service());
+        const QDBusReply<uint> pidReply(connection().interface()->servicePid(callerService));
+        if (pidReply.isValid()) {
+            pidProperties = processProperties(pidReply.value());
+            // A4 and A8.
+            androidOrigin = (pidProperties.first == QLatin1String("alien_bridge_server") ||
+                             pidProperties.first == QLatin1String("apkd-bridge"));
+        }
+    }
+
+    // Allow notifications originating from android to be differentiated from native app notifications
+    QString disambiguatedAppName(appName);
+    if (androidOrigin) {
+        disambiguatedAppName.append("-android");
+    }
+
+    LipstickNotification notificationData(
+                appName, appName, disambiguatedAppName, id, appIcon, summary, body, actions, hints_, expireTimeout);
+    applyCategoryDefinition(&notificationData);
+    hints_ = notificationData.hints();
+
+    if (!notificationData.isUserRemovableByHint() && !isPrivileged()) {
+        qWarning() << "Persistent notification from"
+                   << qPrintable(pidProperties.first)
+                   << "dropped because of insufficent permissions";
+        return 0;
+    }
+
+    LipstickNotification *notification = replacesId != 0
+            ? m_notifications.value(replacesId)
+            : nullptr;
+
+    if (notification) {
+        if (!notification->isUserRemovableByHint() && !isPrivileged()) {
+            qWarning() << "An alteration to a persistent notification by"
+                       << qPrintable(pidProperties.first)
+                       << "was ignored because of insufficent permissions";
+            return 0;
+        }
+
+        notification->setAppName(notificationData.appName());
+        notification->setExplicitAppName(notificationData.explicitAppName());
+        notification->setDisambiguatedAppName(notificationData.disambiguatedAppName());
+        notification->setSummary(notificationData.summary());
+        notification->setBody(notificationData.body());
+        notification->setActions(notificationData.actions());
+        notification->setHints(notificationData.hints());
+        notification->setExpireTimeout(notificationData.expireTimeout());
+    } else {
+        notification = new LipstickNotification(notificationData);
+        notification->setParent(this);
+
+        connect(notification, &LipstickNotification::actionInvoked,
+                this, &NotificationManager::invokeAction, Qt::QueuedConnection);
+        connect(notification, &LipstickNotification::removeRequested, // default prevents direction connection.
+                this, [this]() { removeNotificationIfUserRemovable(); }, Qt::QueuedConnection);
+
+        m_notifications.insert(id, notification);
+    }
+
+    notification->restartProgressTimer();
+
+    const QString previewSummary(hints_.value(LipstickNotification::HINT_PREVIEW_SUMMARY).toString());
+    const QString previewBody(hints_.value(LipstickNotification::HINT_PREVIEW_BODY).toString());
+
+    if (androidOrigin) {
+        // If this notification includes a preview, ensure it has a non-empty body and summary
+        if (!previewSummary.isEmpty()) {
+            if (previewBody.isEmpty()) {
+                hints_.insert(LipstickNotification::HINT_PREVIEW_BODY, QStringLiteral(" "));
+            }
+        }
+        if (!previewBody.isEmpty()) {
+            if (previewSummary.isEmpty()) {
+                hints_.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, QStringLiteral(" "));
+            }
+        }
+
+        // See if this notification has elevated priority and feedback
+        AndroidPriorityStore::PriorityDetails priority;
+        const QString packageName(hints_.value(LipstickNotification::HINT_ORIGIN_PACKAGE).toString());
+        if (!packageName.isEmpty()) {
+            priority = m_androidPriorityStore->packageDetails(packageName);
+        } else {
+            priority = m_androidPriorityStore->appDetails(appName);
+        }
+        hints_.insert(LipstickNotification::HINT_PRIORITY, priority.first);
+
+        if (!priority.second.isEmpty()) {
+            hints_.insert(LipstickNotification::HINT_FEEDBACK, priority.second);
+            // Also turn the display on if required, but only if it's really playing vibra or sound feedback
+            if (hints_.value(LipstickNotification::HINT_VIBRA, false).toBool()
+                    || !hints_.value(LipstickNotification::HINT_SUPPRESS_SOUND, false).toBool()) {
+                hints_.insert(LipstickNotification::HINT_DISPLAY_ON, true);
+            }
+        }
+    } else {
+        if (notification->appName().isEmpty() && !pidProperties.first.isEmpty()) {
+            notification->setAppName(pidProperties.first);
+        }
+        if (notification->appIcon().isEmpty() && !pidProperties.second.isEmpty()) {
+            notification->setAppIcon(pidProperties.second, LipstickNotification::InferredValue);
+        }
+
+        // Use the summary and body as fallback values for previewSummary and previewBody.
+        // (This can be avoided by setting them explicitly to empty strings.)
+        if (!hints_.contains(LipstickNotification::HINT_PREVIEW_SUMMARY)) {
+            hints_.insert(LipstickNotification::HINT_PREVIEW_SUMMARY, summary);
+        }
+        if (!hints_.contains(LipstickNotification::HINT_PREVIEW_BODY)) {
+            hints_.insert(LipstickNotification::HINT_PREVIEW_BODY, body);
+        }
+
+        // Unspecified priority should result in medium priority to permit low priorities
+        if (!hints_.contains(LipstickNotification::HINT_PRIORITY)) {
+            hints_.insert(LipstickNotification::HINT_PRIORITY, DefaultNotificationPriority);
+        }
+    }
+
+    notification->setHints(hints_);
+
+    publish(notification, replacesId);
 
     return id;
 }
 
-void NotificationManager::DeleteNotification(uint id)
+void NotificationManager::deleteNotification(uint id)
 {
     // Remove the notification, its actions and its hints from database
     const QVariantList params(QVariantList() << id);
@@ -367,10 +427,15 @@ void NotificationManager::DeleteNotification(uint id)
 
 void NotificationManager::CloseNotification(uint id, NotificationClosedReason closeReason)
 {
-    if (m_notifications.contains(id)) {
+    if (LipstickNotification *notification = m_notifications.value(id)) {
+        if (!notification->isUserRemovableByHint() && !isPrivileged()) {
+            qWarning() << "An application was not allowed to close a notification due to insufficient permissions";
+            return;
+        }
+
         emit NotificationClosed(id, closeReason);
 
-        DeleteNotification(id);
+        deleteNotification(id);
 
         NOTIFICATIONS_DEBUG("REMOVE:" << id);
         emit notificationRemoved(id);
@@ -380,7 +445,7 @@ void NotificationManager::CloseNotification(uint id, NotificationClosedReason cl
     }
 }
 
-void NotificationManager::CloseNotifications(const QList<uint> &ids, NotificationClosedReason closeReason)
+void NotificationManager::closeNotifications(const QList<uint> &ids, NotificationClosedReason closeReason)
 {
     QSet<uint> uniqueIds(ids.begin(), ids.end());
     QList<uint> removedIds;
@@ -390,7 +455,7 @@ void NotificationManager::CloseNotifications(const QList<uint> &ids, Notificatio
             removedIds.append(id);
             emit NotificationClosed(id, closeReason);
 
-            DeleteNotification(id);
+            deleteNotification(id);
         }
     }
 
@@ -407,11 +472,11 @@ void NotificationManager::CloseNotifications(const QList<uint> &ids, Notificatio
     }
 }
 
-void NotificationManager::MarkNotificationDisplayed(uint id)
+void NotificationManager::markNotificationDisplayed(uint id)
 {
     if (m_notifications.contains(id)) {
         const LipstickNotification *notification = m_notifications.value(id);
-        if (notification->hints().value(HINT_TRANSIENT).toBool()) {
+        if (notification->hints().value(LipstickNotification::HINT_TRANSIENT).toBool()) {
             // Remove this notification immediately
             CloseNotification(id, NotificationExpired);
             NOTIFICATIONS_DEBUG("REMOVED transient:" << id);
@@ -435,21 +500,25 @@ void NotificationManager::MarkNotificationDisplayed(uint id)
     }
 }
 
-QString NotificationManager::GetServerInformation(QString &name, QString &vendor, QString &version)
+QString NotificationManager::GetServerInformation(QString &vendor, QString &version, QString &spec_version)
 {
-    name = qApp->applicationName();
-    vendor = "Nemo Mobile";
+    QString name = qApp->applicationName();
+    AboutSettings settings;
+    vendor = settings.operatingSystemName();
     version = qApp->applicationVersion();
-    return QString();
+    spec_version = "1.2";
+    return name;
 }
 
 NotificationList NotificationManager::GetNotifications(const QString &owner)
 {
+    uint pid = callerProcessId();
+    QString callerProcessName = getProcessName(pid);
     QList<LipstickNotification *> notificationList;
     QHash<uint, LipstickNotification *>::const_iterator it = m_notifications.constBegin(), end = m_notifications.constEnd();
     for ( ; it != end; ++it) {
         LipstickNotification *notification = it.value();
-        if (notification->owner() == owner) {
+        if (notification->owner() == owner || (!callerProcessName.isEmpty() && (notification->owner() == callerProcessName))) {
             notificationList.append(notification);
         }
     }
@@ -457,21 +526,42 @@ NotificationList NotificationManager::GetNotifications(const QString &owner)
     return NotificationList(notificationList);
 }
 
-uint NotificationManager::nextAvailableNotificationID()
+NotificationList NotificationManager::GetNotificationsByCategory(const QString &category)
 {
-    bool idIncreased = false;
-
-    // Try to find an unused ID. Increase the ID at least once but only up to 2^32-1 times.
-    for (uint i = 0; i < UINT32_MAX && (!idIncreased || m_notifications.contains(m_previousNotificationID)); i++, idIncreased = true) {
-        m_previousNotificationID++;
-
-        if (m_previousNotificationID == 0) {
-            // 0 is not a valid ID so skip it
-            m_previousNotificationID = 1;
+    QList<LipstickNotification *> notificationList;
+    if (isPrivileged()) {
+        QHash<uint, LipstickNotification *>::const_iterator it = m_notifications.constBegin(), end = m_notifications.constEnd();
+        for ( ; it != end; ++it) {
+            LipstickNotification *notification = it.value();
+            if (notification->category() == category) {
+                notificationList.append(notification);
+            }
         }
     }
+    return NotificationList(notificationList);
+}
 
-    return m_previousNotificationID;
+QString NotificationManager::systemApplicationName() const
+{
+    //% "System"
+    return qtTrId("qtn_ap_lipstick");
+}
+
+uint NotificationManager::nextAvailableNotificationID()
+{
+    /* Find an unused ID. It is assumed that we will never end up
+     * in a situation where even close to significant portion of
+     * all possible ID numbers would be in use. If that ever happens
+     * this will turn into forever loop.
+     */
+    for (;;) {
+        uint id = ++m_previousNotificationID;
+        // 0 is not a valid ID so skip it
+        if (!id)
+            continue;
+        if (!m_notifications.contains(id))
+            return id;
+    }
 }
 
 void NotificationManager::removeNotificationsWithCategory(const QString &category)
@@ -484,7 +574,7 @@ void NotificationManager::removeNotificationsWithCategory(const QString &categor
             ids.append(it.key());
         }
     }
-    CloseNotifications(ids);
+    closeNotifications(ids);
 }
 
 void NotificationManager::updateNotificationsWithCategory(const QString &category)
@@ -502,18 +592,18 @@ void NotificationManager::updateNotificationsWithCategory(const QString &categor
     foreach (LipstickNotification *notification, categoryNotifications) {
         // Mark the notification as restored to avoid showing the preview banner again
         QVariantHash hints = notification->hints();
-        hints.insert(HINT_RESTORED, true);
+        hints.insert(LipstickNotification::HINT_RESTORED, true);
         notification->setHints(hints);
 
         // Update the category properties and re-publish
         applyCategoryDefinition(notification);
-        publish(notification, notification->replacesId());
+        publish(notification, notification->id());
     }
 }
 
 QHash<QString, QString> NotificationManager::categoryDefinitionParameters(const QVariantHash &hints) const
 {
-    return m_categoryDefinitionStore->categoryParameters(hints.value(HINT_CATEGORY).toString());
+    return m_categoryDefinitionStore->categoryParameters(hints.value(LipstickNotification::HINT_CATEGORY).toString());
 }
 
 void NotificationManager::applyCategoryDefinition(LipstickNotification *notification) const
@@ -533,9 +623,9 @@ void NotificationManager::applyCategoryDefinition(LipstickNotification *notifica
             if (notification->appName().isEmpty()) {
                 notification->setAppName(value);
             }
-        } else if (key == QString("appIcon")) {
+        } else if (key == QString("app_icon")) {
             if (notification->appIcon().isEmpty()) {
-                notification->setAppIcon(value);
+                notification->setAppIcon(value, LipstickNotification::CategoryValue);
             }
         } else if (key == QString("summary")) {
             if (notification->summary().isEmpty()) {
@@ -559,7 +649,7 @@ void NotificationManager::applyCategoryDefinition(LipstickNotification *notifica
 
 void NotificationManager::publish(const LipstickNotification *notification, uint replacesId)
 {
-    const uint id(notification->replacesId());
+    const uint id(notification->id());
     if (id == 0) {
         qWarning() << "Cannot publish notification without ID!";
         return;
@@ -570,27 +660,46 @@ void NotificationManager::publish(const LipstickNotification *notification, uint
 
     if (replacesId != 0) {
         // Delete the existing notification from the database
-        DeleteNotification(id);
+        deleteNotification(id);
     }
 
     // Add the notification, its actions and its hints to the database
-    execSQL("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?)", QVariantList() << id << notification->appName() << notification->appIcon() << notification->summary() << notification->body() << notification->expireTimeout());
-    foreach (const QString &action, notification->actions()) {
-        execSQL("INSERT INTO actions VALUES (?, ?)", QVariantList() << id << action);
+    execSQL("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            QVariantList() << id << notification->appName() << notification->appIcon() << notification->summary()
+            << notification->body() << notification->expireTimeout() << notification->disambiguatedAppName()
+            << notification->explicitAppName() << notification->appIconOrigin());
+
+    // every other is identifier and every other the localized name for it
+    bool everySecond = false;
+    QString action;
+    foreach (const QString &actionItem, notification->actions()) {
+        if (everySecond) {
+            if (!action.isEmpty()) {
+                execSQL("INSERT INTO actions VALUES (?, ?, ?)", QVariantList() << id << action << actionItem);
+            }
+        } else {
+            action = actionItem;
+        }
+        everySecond = !everySecond;
     }
+
     const QVariantHash hints(notification->hints());
     QVariantHash::const_iterator hit = hints.constBegin(), hend = hints.constEnd();
     for ( ; hit != hend; ++hit) {
         execSQL("INSERT INTO hints VALUES (?, ?, ?)", QVariantList() << id << hit.key() << hit.value());
     }
 
-    NOTIFICATIONS_DEBUG("PUBLISH:" << notification->appName() << notification->appIcon() << notification->summary() << notification->body() << notification->actions() << notification->hints() << notification->expireTimeout() << "->" << id);
+    NOTIFICATIONS_DEBUG("PUBLISH:" << notification->appName() << notification->appIcon() << notification->summary()
+                        << notification->body() << notification->actions() << notification->hints()
+                        << notification->expireTimeout() << "->" << id);
     m_modifiedIds.insert(id);
     if (!m_modificationTimer.isActive()) {
         m_modificationTimer.start();
     }
     if (replacesId == 0) {
         emit notificationAdded(id);
+    } else {
+        emit notificationModified(id);
     }
 }
 
@@ -607,7 +716,7 @@ void NotificationManager::restoreNotifications(bool update)
 
 bool NotificationManager::connectToDatabase()
 {
-    QString databasePath = "/home/ceres" + QString(PRIVILEGED_DATA_PATH) + QDir::separator() + "Notifications";
+    QString databasePath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/system/privileged/Notifications");
     if (!QDir::root().exists(databasePath)) {
         QDir::root().mkpath(databasePath);
     }
@@ -669,64 +778,60 @@ bool NotificationManager::checkTableValidity()
 
     const int databaseVersion(schemaVersion());
 
-    if (databaseVersion == 0) {
-        // Unmodified database - remove any existing notifications, which might cause problems
+    if (databaseVersion < 3) {
+        // All databases this old should have been migrated already.
         qWarning() << "Removing obsolete notifications";
         recreateNotificationsTable = true;
         recreateActionsTable = true;
         recreateHintsTable = true;
         recreateExpirationTable = true;
-
-        if (!setSchemaVersion(1)) {
-            qWarning() << "Unable to set database schema version!";
-        }
     } else {
-        // Check that the notifications table schema is as expected
-        QSqlTableModel notificationsTableModel(0, *m_database);
-        notificationsTableModel.setTable("notifications");
-        recreateNotificationsTable = (notificationsTableModel.fieldIndex("id") == -1 ||
-                                      notificationsTableModel.fieldIndex("app_name") == -1 ||
-                                      notificationsTableModel.fieldIndex("app_icon") == -1 ||
-                                      notificationsTableModel.fieldIndex("summary") == -1 ||
-                                      notificationsTableModel.fieldIndex("body") == -1 ||
-                                      notificationsTableModel.fieldIndex("expire_timeout") == -1);
+        if (databaseVersion == 3) {
+            QSqlQuery query(*m_database);
+            if (query.exec("ALTER TABLE notifications ADD COLUMN explicit_app_name TEXT")
+                    && query.exec("ALTER TABLE notifications ADD COLUMN app_icon_origin INTEGER")) {
+                qWarning() << "Extended notifications table";
+            } else {
+                qWarning() << "Failed to extend notifications table!" << query.lastError();
+                recreateNotificationsTable = true;
+            }
 
-        // Check that the actions table schema is as expected
-        QSqlTableModel actionsTableModel(0, *m_database);
-        actionsTableModel.setTable("actions");
-        recreateActionsTable = (actionsTableModel.fieldIndex("id") == -1 ||
-                                actionsTableModel.fieldIndex("action") == -1);
+        } else {
+            recreateNotificationsTable = !verifyTableColumns("notifications",
+                                                             QStringList() << "id" << "app_name" << "app_icon" << "summary"
+                                                             << "body" << "expire_timeout" << "disambiguated_app_name" << "explicit_app_name"
+                                                             << "app_icon_origin");
+            recreateActionsTable = !verifyTableColumns("actions", QStringList() << "id" << "action" << "display_name");
+        }
 
-        // Check that the hints table schema is as expected
-        QSqlTableModel hintsTableModel(0, *m_database);
-        hintsTableModel.setTable("hints");
-        recreateHintsTable = (hintsTableModel.fieldIndex("id") == -1 ||
-                              hintsTableModel.fieldIndex("hint") == -1 ||
-                              hintsTableModel.fieldIndex("value") == -1);
-
-        // Check that the expiration table schema is as expected
-        QSqlTableModel expirationTableModel(0, *m_database);
-        expirationTableModel.setTable("expiration");
-        recreateExpirationTable = (expirationTableModel.fieldIndex("id") == -1 ||
-                                   expirationTableModel.fieldIndex("expire_at") == -1);
+        recreateHintsTable = !verifyTableColumns("hints", QStringList() << "id" << "hint" << "value");
+        recreateExpirationTable = !verifyTableColumns("expiration", QStringList() << "id" << "expire_at");
     }
 
     if (recreateNotificationsTable) {
-        result &= recreateTable("notifications", "id INTEGER PRIMARY KEY, app_name TEXT, app_icon TEXT, summary TEXT, body TEXT, expire_timeout INTEGER");
+        qWarning() << "Recreating notifications table";
+        result &= recreateTable("notifications", "id INTEGER PRIMARY KEY, app_name TEXT, app_icon TEXT, summary TEXT, "
+                                                 "body TEXT, expire_timeout INTEGER, disambiguated_app_name TEXT, "
+                                                 "explicit_app_name TEXT, app_icon_origin INTEGER");
     }
-
     if (recreateActionsTable) {
-        result &= recreateTable("actions", "id INTEGER, action TEXT, PRIMARY KEY(id, action)");
+        qWarning() << "Recreating actions table";
+        result &= recreateTable("actions", "id INTEGER, action TEXT, display_name TEXT, PRIMARY KEY(id, action)");
     }
-
     if (recreateHintsTable) {
+        qWarning() << "Recreating hints table";
         result &= recreateTable("hints", "id INTEGER, hint TEXT, value TEXT, PRIMARY KEY(id, hint)");
     }
-
     if (recreateExpirationTable) {
+        qWarning() << "Recreating expiration table";
         result &= recreateTable("expiration", "id INTEGER PRIMARY KEY, expire_at INTEGER");
     }
 
+    if (result && databaseVersion != 4) {
+        if (!setSchemaVersion(4)) {
+            qWarning() << "Unable to set database schema version!";
+        }
+    }
     return result;
 }
 
@@ -758,6 +863,22 @@ bool NotificationManager::setSchemaVersion(int version)
     return result;
 }
 
+bool NotificationManager::verifyTableColumns(const QString &tableName, const QStringList &columnNames)
+{
+    QSqlTableModel tableModel(0, *m_database);
+    tableModel.setTable(tableName);
+
+    // The order of the columns must be correct
+    int index = 0;
+    foreach (const QString &columnName, columnNames) {
+        if (tableModel.fieldIndex(columnName) != index)
+            return false;
+        ++index;
+    }
+
+    return true;
+}
+
 bool NotificationManager::recreateTable(const QString &tableName, const QString &definition)
 {
     bool result = false;
@@ -777,10 +898,13 @@ void NotificationManager::fetchData(bool update)
     QSqlRecord actionsRecord = actionsQuery.record();
     int actionsTableIdFieldIndex = actionsRecord.indexOf("id");
     int actionsTableActionFieldIndex = actionsRecord.indexOf("action");
+    int actionsTableNameFieldIndex = actionsRecord.indexOf("display_name");
+
     QHash<uint, QStringList> actions;
     while (actionsQuery.next()) {
         const uint id = actionsQuery.value(actionsTableIdFieldIndex).toUInt();
         actions[id].append(actionsQuery.value(actionsTableActionFieldIndex).toString());
+        actions[id].append(actionsQuery.value(actionsTableNameFieldIndex).toString());
     }
 
     // Gather hints for each notification
@@ -796,7 +920,7 @@ void NotificationManager::fetchData(bool update)
         const QVariant hintValue(hintsQuery.value(hintsTableValueFieldIndex));
 
         QVariant value;
-        if (hintName == HINT_TIMESTAMP) {
+        if (hintName == LipstickNotification::HINT_TIMESTAMP) {
             // Timestamps in the DB are already UTC but not marked as such, so they will
             // be converted again unless specified to be UTC
             QDateTime timestamp(QDateTime::fromString(hintValue.toString(), Qt::ISODate));
@@ -831,14 +955,21 @@ void NotificationManager::fetchData(bool update)
     QSqlRecord notificationsRecord = notificationsQuery.record();
     int notificationsTableIdFieldIndex = notificationsRecord.indexOf("id");
     int notificationsTableAppNameFieldIndex = notificationsRecord.indexOf("app_name");
+    int notificationsTableExplicitAppNameFieldIndex = notificationsRecord.indexOf("explicit_app_name");
+    int notificationsTableDisambiguatedAppNameFieldIndex = notificationsRecord.indexOf("disambiguated_app_name");
     int notificationsTableAppIconFieldIndex = notificationsRecord.indexOf("app_icon");
+    int notificationsTableAppIconOriginFieldIndex = notificationsRecord.indexOf("app_icon_origin");
     int notificationsTableSummaryFieldIndex = notificationsRecord.indexOf("summary");
     int notificationsTableBodyFieldIndex = notificationsRecord.indexOf("body");
     int notificationsTableExpireTimeoutFieldIndex = notificationsRecord.indexOf("expire_timeout");
+
     while (notificationsQuery.next()) {
         const uint id = notificationsQuery.value(notificationsTableIdFieldIndex).toUInt();
         QString appName = notificationsQuery.value(notificationsTableAppNameFieldIndex).toString();
+        QString explicitAppName = notificationsQuery.value(notificationsTableExplicitAppNameFieldIndex).toString();
+        QString disambiguatedAppName = notificationsQuery.value(notificationsTableDisambiguatedAppNameFieldIndex).toString();
         QString appIcon = notificationsQuery.value(notificationsTableAppIconFieldIndex).toString();
+        int appIconOrigin = notificationsQuery.value(notificationsTableAppIconOriginFieldIndex).toInt();
         QString summary = notificationsQuery.value(notificationsTableSummaryFieldIndex).toString();
         QString body = notificationsQuery.value(notificationsTableBodyFieldIndex).toString();
         int expireTimeout = notificationsQuery.value(notificationsTableExpireTimeoutFieldIndex).toInt();
@@ -846,14 +977,15 @@ void NotificationManager::fetchData(bool update)
         const QStringList &notificationActions = actions[id];
 
         QVariantHash &notificationHints = hints[id];
-        if (notificationHints.value(HINT_TRANSIENT).toBool()) {
+        if (notificationHints.value(LipstickNotification::HINT_TRANSIENT).toBool()) {
             // This notification was transient, it should not be restored
-            NOTIFICATIONS_DEBUG("TRANSIENT AT RESTORE:" << appName << appIcon << summary << body << notificationActions << notificationHints << expireTimeout << "->" << id);
+            NOTIFICATIONS_DEBUG("TRANSIENT AT RESTORE:" << appName << appIcon << summary << body << notificationActions
+                                << notificationHints << expireTimeout << "->" << id);
             transientIds.append(id);
             continue;
         } else {
             // Mark this notification as restored
-            notificationHints.insert(HINT_RESTORED, true);
+            notificationHints.insert(LipstickNotification::HINT_RESTORED, true);
         }
 
         bool expired = false;
@@ -867,7 +999,10 @@ void NotificationManager::fetchData(bool update)
             }
         }
 
-        LipstickNotification *notification = new LipstickNotification(appName, id, appIcon, summary, body, notificationActions, notificationHints, expireTimeout, this);
+        LipstickNotification *notification = new LipstickNotification(appName, explicitAppName, disambiguatedAppName,
+                                                                      id, QString(), summary, body, notificationActions,
+                                                                      notificationHints, expireTimeout, this);
+        notification->setAppIcon(appIcon, appIconOrigin);
         m_notifications.insert(id, notification);
 
         if (id > m_previousNotificationID) {
@@ -878,7 +1013,8 @@ void NotificationManager::fetchData(bool update)
         if (!expired) {
             activeNotifications.append(notification);
         } else {
-            NOTIFICATIONS_DEBUG("EXPIRED AT RESTORE:" << appName << appIcon << summary << body << notificationActions << notificationHints << expireTimeout << "->" << id);
+            NOTIFICATIONS_DEBUG("EXPIRED AT RESTORE:" << appName << appIcon << summary << body << notificationActions
+                                << notificationHints << expireTimeout << "->" << id);
             expiredIds.append(id);
         }
     }
@@ -886,7 +1022,7 @@ void NotificationManager::fetchData(bool update)
     if (update) {
         // Remove notifications no longer required
         foreach (uint id, transientIds) {
-            DeleteNotification(id);
+            deleteNotification(id);
         }
     }
 
@@ -896,10 +1032,11 @@ void NotificationManager::fetchData(bool update)
         std::sort(activeNotifications.begin(), activeNotifications.end(), notificationReverseOrder);
 
         foreach (LipstickNotification *n, activeNotifications) {
-            const QVariant userRemovable = n->hints().value(HINT_USER_REMOVABLE);
+            const QVariant userRemovable = n->hints().value(LipstickNotification::HINT_USER_REMOVABLE);
             if (!userRemovable.isValid() || userRemovable.toBool()) {
-                const uint id = n->replacesId();
-                NOTIFICATIONS_DEBUG("CULLED AT RESTORE:" << n->appName() << n->appIcon() << n->summary() << n->body() << actions[id] << hints[id] << n->expireTimeout() << "->" << id);
+                const uint id = n->id();
+                NOTIFICATIONS_DEBUG("CULLED AT RESTORE:" << n->appName() << n->appIcon() << n->summary() << n->body()
+                                    << actions[id] << hints[id] << n->expireTimeout() << "->" << id);
                 expiredIds.append(id);
 
                 if (--cullCount == 0) {
@@ -910,7 +1047,7 @@ void NotificationManager::fetchData(bool update)
     }
 
     if (update) {
-        CloseNotifications(expiredIds, NotificationExpired);
+        closeNotifications(expiredIds, NotificationExpired);
 
         m_nextExpirationTime = unexpiredRemaining ? nextTimeout : 0;
         if (m_nextExpirationTime) {
@@ -919,17 +1056,15 @@ void NotificationManager::fetchData(bool update)
         }
     }
 
-    QList<uint> restoredIds;
     foreach (LipstickNotification *n, m_notifications) {
-        const uint id = n->replacesId();
         connect(n, SIGNAL(actionInvoked(QString)), this, SLOT(invokeAction(QString)), Qt::QueuedConnection);
         connect(n, SIGNAL(removeRequested()), this, SLOT(removeNotificationIfUserRemovable()), Qt::QueuedConnection);
-
-        NOTIFICATIONS_DEBUG("RESTORED:" << n->appName() << n->appIcon() << n->summary() << n->body() << actions[id] << hints[id] << n->expireTimeout() << "->" << id);
-        restoredIds.append(id);
+#ifdef DEBUG_NOTIFICATIONS
+        const uint id = n->id();
+        NOTIFICATIONS_DEBUG("RESTORED:" << n->appName() << n->appIcon() << n->summary() << n->body() << actions[id]
+                            << hints[id] << n->expireTimeout() << "->" << id);
+#endif
     }
-    if (!restoredIds.isEmpty())
-        emit notificationsModified(restoredIds);
 
     if (update) {
         qWarning() << "Notifications restored:" << m_notifications.count();
@@ -975,22 +1110,47 @@ void NotificationManager::execSQL(const QString &command, const QVariantList &ar
     m_databaseCommitTimer.start();
 }
 
+uint NotificationManager::callerProcessId() const
+{
+    if (calledFromDBus()) {
+        return connection().interface()->servicePid(message().service()).value();
+    } else {
+        return QCoreApplication::applicationPid();
+    }
+}
+
+bool NotificationManager::isPrivileged() const
+{
+    if (!calledFromDBus()) {
+        return true;
+    }
+
+    uint pid = callerProcessId();
+    QFileInfo info(QString("/proc/%1").arg(pid));
+    if (info.group() != QLatin1String("privileged") && info.owner() != QLatin1String("root")) {
+        QString errorString = QString("PID %1 is not in privileged group").arg(pid);
+        sendErrorReply(QDBusError::AccessDenied, errorString);
+        return false;
+    }
+    return true;
+}
+
 void NotificationManager::invokeAction(const QString &action)
 {
     LipstickNotification *notification = qobject_cast<LipstickNotification *>(sender());
     if (notification != 0) {
         uint id = m_notifications.key(notification, 0);
         if (id > 0) {
-            QString remoteAction = notification->hints().value(QString(HINT_REMOTE_ACTION_PREFIX) + action).toString();
+            QString remoteAction = notification->hints().value(QString(LipstickNotification::HINT_REMOTE_ACTION_PREFIX) + action).toString();
             if (!remoteAction.isEmpty()) {
                 NOTIFICATIONS_DEBUG("INVOKE REMOTE ACTION:" << action << id);
 
-                // If a remote action has been defined for the given action, trigger it
-                MRemoteAction(remoteAction).trigger();
+                emit remoteActionActivated(remoteAction);
             }
 
             for (int actionIndex = 0; actionIndex < notification->actions().count() / 2; actionIndex++) {
-                // Actions are sent over as a list of pairs. Each even element in the list (starting at index 0) represents the identifier for the action. Each odd element in the list is the localized string that will be displayed to the user.
+                // Actions are sent over as a list of pairs. Each even element in the list (starting at index 0) represents
+                // the identifier for the action. Each odd element in the list is the localized string that will be displayed to the user.
                 if (notification->actions().at(actionIndex * 2) == action) {
                     NOTIFICATIONS_DEBUG("INVOKE ACTION:" << action << id);
 
@@ -998,9 +1158,11 @@ void NotificationManager::invokeAction(const QString &action)
                 }
             }
 
-            // Unless marked as resident, we should remove the notification now
-            const QVariant resident(notification->hints().value(HINT_RESIDENT));
-            if (!resident.isValid() || resident.toBool() == false) {
+            // Unless marked as resident, we should remove the notification now.
+            // progress notifications expected to update real soon so there is no point of automatically removing.
+            const QVariant resident(notification->hints().value(LipstickNotification::HINT_RESIDENT));
+            if ((resident.isValid() && resident.toBool() == false)
+                    || (!resident.isValid() && !notification->hasProgress())) {
                 removeNotificationIfUserRemovable(id);
             }
         }
@@ -1021,20 +1183,10 @@ void NotificationManager::removeNotificationIfUserRemovable(uint id)
         return;
     }
 
-    QVariant userRemovable = notification->hints().value(HINT_USER_REMOVABLE);
+    QVariant userRemovable = notification->hints().value(LipstickNotification::HINT_USER_REMOVABLE);
     if (!userRemovable.isValid() || userRemovable.toBool()) {
         // The notification should be removed if user removability is not defined (defaults to true) or is set to true
-        QVariant userCloseable = notification->hints().value(HINT_USER_CLOSEABLE);
-        if (!userCloseable.isValid() || userCloseable.toBool()) {
-            // The notification should be closed if user closeability is not defined (defaults to true) or is set to true
-            CloseNotification(id, NotificationDismissedByUser);
-        } else {
-            // Uncloseable notifications should be only removed
-            emit notificationRemoved(id);
-
-            // Mark the notification as hidden
-            execSQL("INSERT INTO hints VALUES (?, ?, ?)", QVariantList() << id << HINT_HIDDEN << true);
-        }
+        CloseNotification(id, NotificationDismissedByUser);
     }
 }
 
@@ -1061,7 +1213,7 @@ void NotificationManager::expire()
         }
     }
 
-    CloseNotifications(expiredIds, NotificationExpired);
+    closeNotifications(expiredIds, NotificationExpired);
 
     m_nextExpirationTime = unexpiredRemaining ? nextTimeout : 0;
     if (m_nextExpirationTime) {
@@ -1072,12 +1224,10 @@ void NotificationManager::expire()
 
 void NotificationManager::reportModifications()
 {
-    if (m_modifiedIds.count() == 1) {
-        emit notificationModified(*m_modifiedIds.begin());
-    } else if (!m_modifiedIds.isEmpty()) {
+    if (!m_modifiedIds.isEmpty()) {
         emit notificationsModified(m_modifiedIds.values());
+        m_modifiedIds.clear();
     }
-    m_modifiedIds.clear();
 }
 
 void NotificationManager::removeUserRemovableNotifications()
@@ -1088,16 +1238,13 @@ void NotificationManager::removeUserRemovableNotifications()
     QHash<uint, LipstickNotification *>::const_iterator it = m_notifications.constBegin(), end = m_notifications.constEnd();
     for ( ; it != end; ++it) {
         LipstickNotification *notification(it.value());
-        QVariant userRemovable = notification->hints().value(HINT_USER_REMOVABLE);
+        QVariant userRemovable = notification->hints().value(LipstickNotification::HINT_USER_REMOVABLE);
         if (!userRemovable.isValid() || userRemovable.toBool()) {
-            QVariant userCloseable = notification->hints().value(HINT_USER_CLOSEABLE);
-            if (!userCloseable.isValid() || userCloseable.toBool()) {
-                closableNotifications.append(it.key());
-            }
+            closableNotifications.append(it.key());
         }
     }
 
-    CloseNotifications(closableNotifications, NotificationDismissedByUser);
+    closeNotifications(closableNotifications, NotificationDismissedByUser);
 
     // Remove any remaining notifications
     foreach(uint id, m_notifications.keys()) {

@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012-2019 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -19,6 +19,7 @@
 #include "lipstickglobal.h"
 #include <QObject>
 #include <QHash>
+#include <MGConfItem>
 
 class LipstickNotification;
 namespace Ngf {
@@ -52,6 +53,8 @@ public:
      */
     void setMinimumPriority(int minimumPriority);
 
+    bool doNotDisturbMode() const;
+
 signals:
     //! Emitted when the minimum priority of notifications for which a feedback should be played has changed
     void minimumPriorityChanged();
@@ -76,7 +79,7 @@ private slots:
 
 private:
     //! Check whether feedbacks should be enabled for the given notification
-    bool isEnabled(LipstickNotification *notification);
+    bool isEnabled(LipstickNotification *notification, int minimumPriority);
 
     //! Non-graphical feedback player
     Ngf::Client *m_ngfClient;
@@ -87,6 +90,9 @@ private:
     //! The minimum priority of notifications for which a feedback should be played
     int m_minimumPriority;
 
+    MGConfItem m_doNotDisturbSetting;
+
+    friend class NotificationPreviewPresenter;
 #ifdef UNIT_TEST
     friend class Ut_NotificationFeedbackPlayer;
 #endif

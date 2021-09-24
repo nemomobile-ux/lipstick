@@ -1,6 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 **
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,9 @@
 #include <signal.h>
 #include <QGuiApplication>
 #include "lipstickglobal.h"
+#include <touchscreen.h>
 
+class QSocketNotifier;
 class QQmlEngine;
 class HomeWindow;
 class ScreenLock;
@@ -28,6 +30,9 @@ class ConnectionSelector;
 class ScreenshotService;
 class BluetoothAgent;
 class LocaleManager;
+class VpnAgent;
+class ConnmanVpnProxy;
+class ConnectivityMonitor;
 
 /*!
  * Extends QApplication with features necessary to create a desktop.
@@ -94,7 +99,11 @@ public:
      */
     bool homeActive() const;
 
-    void takeScreenshot(const QString &path);
+    TouchScreen *touchScreen() const;
+
+    TouchScreen::DisplayState displayState();
+    void setDisplayOff();
+    bool takeScreenshot(const QString &path);
 
     LocaleManager *localeManager();
 
@@ -114,8 +123,16 @@ signals:
      */
     void aboutToDestroy();
 
+    /*!
+     * Emitted upon display state change.
+     */
+    void displayStateChanged(TouchScreen::DisplayState oldDisplayState, TouchScreen::DisplayState newDisplayState);
+
 protected:
     virtual bool event(QEvent *);
+
+private:
+    void setUpSignalHandlers();
 
 private slots:
     /*!
@@ -140,25 +157,26 @@ private:
 
     //! A signal handler that quits the QApplication
     static void quitSignalHandler(int);
+    //! An eventfd object for signal handling
+    static int s_quitSignalFd;
+    //! Socket notifier for signal handling
+    QSocketNotifier *m_quitSignalNotifier;
+    //! The original SIGINT action
+    struct sigaction m_originalSigIntAction;
+    //! The original SIGTERM action
+    struct sigaction m_originalSigTermAction;
 
     HomeWindow *m_mainWindowInstance;
     QString m_qmlPath;
     QString m_compositorPath;
 
-    //! The original SIGINT handler
-    sighandler_t m_originalSigIntHandler;
-
-    //! The original SIGTERM handler
-    sighandler_t m_originalSigTermHandler;
-
     //! QML Engine instance
     QQmlEngine *m_qmlEngine;
 
+    TouchScreen *m_touchScreen;
+
     //! Logic for locking and unlocking the screen
     ScreenLock *m_screenLock;
-
-    //! Logic for locking and unlocking the device
-    DeviceLock *m_deviceLock;
 
     //! Logic for setting the device volume
     VolumeControl *m_volumeControl;
@@ -175,11 +193,13 @@ private:
     //! Logic for showing the shutdown screen and related notifications
     ShutdownScreen *m_shutdownScreen;
 
-    //! Login for showing the connection selector
-    ConnectionSelector *m_connectionSelector;
-
     //! Whether the home ready signal has been sent or not
     bool m_homeReadySent;
+
+    VpnAgent *m_vpnAgent;
+    ConnmanVpnProxy * m_connmanVpn;
+    ConnectivityMonitor *m_connectivityMonitor;
+    bool m_online;
 
     ScreenshotService *m_screenshotService;
 };

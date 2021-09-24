@@ -1,9 +1,24 @@
+/***************************************************************************
+**
+** Copyright (c) 2013-2019 Jolla Ltd.
+** Copyright (c) 2019 Open Mobile Platform LLC.
+**
+** This file is part of lipstick.
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License version 2.1 as published by the Free Software Foundation
+** and appearing in the file LICENSE.LGPL included in the packaging
+** of this file.
+**
+****************************************************************************/
+
 #ifndef LIPSTICKCOMPOSITOR_STUB
 #define LIPSTICKCOMPOSITOR_STUB
 
 #include "lipstickcompositor.h"
+#include "touchscreen/touchscreen.h"
 #include <stubbase.h>
-
 
 // 1. DECLARE STUB
 // FIXME - stubgen is not yet finished
@@ -26,6 +41,7 @@ class LipstickCompositorStub : public StubBase {
   virtual void setTopmostWindowId(int id);
   virtual void setTopmostWindowOrientation(Qt::ScreenOrientation topmostWindowOrientation);
   virtual void setScreenOrientation(Qt::ScreenOrientation screenOrientation);
+  virtual bool displayDimmed() const;
   virtual LipstickKeymap *keymap() const;
   virtual void setKeymap(LipstickKeymap *keymap);
   virtual void updateKeymap();
@@ -51,7 +67,7 @@ class LipstickCompositorStub : public StubBase {
   virtual void windowSwapped();
   virtual void windowDestroyed();
   virtual void windowPropertyChanged(const QString &);
-  virtual void reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState);
+  virtual void reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState);
   virtual void setScreenOrientationFromSensor();
   virtual void clipboardDataChanged();
   virtual void onVisibleChanged(bool visible);
@@ -154,6 +170,12 @@ void LipstickCompositorStub::setScreenOrientation(Qt::ScreenOrientation screenOr
   QList<ParameterBase*> params;
   params.append( new Parameter<Qt::ScreenOrientation >(screenOrientation));
   stubMethodEntered("setScreenOrientation",params);
+}
+
+bool LipstickCompositorStub::displayDimmed() const
+{
+  stubMethodEntered("displayDimmed");
+  return stubReturnValue<bool>("displayDimmed");
 }
 
 LipstickKeymap *LipstickCompositorStub::keymap() const {
@@ -296,9 +318,10 @@ void LipstickCompositorStub::windowPropertyChanged(const QString &property) {
   stubMethodEntered("windowPropertyChanged",params);
 }
 
-void LipstickCompositorStub::reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state) {
+void LipstickCompositorStub::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState) {
   QList<ParameterBase*> params;
-  params.append( new Parameter<MeeGo::QmDisplayState::DisplayState >(state));
+  params.append(new Parameter<TouchScreen::DisplayState>(oldState));
+  params.append(new Parameter<TouchScreen::DisplayState>(newState));
   stubMethodEntered("reactOnDisplayStateChanges",params);
 }
 
@@ -331,7 +354,6 @@ QWaylandSurfaceView *LipstickCompositorStub::createView(QWaylandSurface *surf)
 // 3. CREATE A STUB INSTANCE
 LipstickCompositorStub gDefaultLipstickCompositorStub;
 LipstickCompositorStub* gLipstickCompositorStub = &gDefaultLipstickCompositorStub;
-
 
 // 4. CREATE A PROXY WHICH CALLS THE STUB
 LipstickCompositor::LipstickCompositor() {
@@ -401,6 +423,11 @@ void LipstickCompositor::setTopmostWindowOrientation(Qt::ScreenOrientation topmo
 
 void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrientation) {
   gLipstickCompositorStub->setScreenOrientation(screenOrientation);
+}
+
+bool LipstickCompositor::displayDimmed() const
+{
+  return gLipstickCompositorStub->displayDimmed();
 }
 
 LipstickKeymap *LipstickCompositor::keymap() const {
@@ -495,8 +522,8 @@ void LipstickCompositor::windowPropertyChanged(const QString &property) {
   gLipstickCompositorStub->windowPropertyChanged(property);
 }
 
-void LipstickCompositor::reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state) {
-  gLipstickCompositorStub->reactOnDisplayStateChanges(state);
+void LipstickCompositor::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState) {
+  gLipstickCompositorStub->reactOnDisplayStateChanges(oldState, newState);
 }
 
 void LipstickCompositor::homeApplicationAboutToDestroy() {
@@ -548,6 +575,10 @@ QWaylandCompositor::QWaylandCompositor(QWindow *, const char *, QWaylandComposit
 }
 
 QWaylandQuickCompositor::QWaylandQuickCompositor(QQuickWindow *, const char *, QWaylandCompositor::ExtensionFlags)
+{
+}
+
+void LipstickCompositor::processQueuedSetUpdatesEnabledCalls()
 {
 }
 

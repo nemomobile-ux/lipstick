@@ -1,7 +1,6 @@
 // This file is part of lipstick, a QML desktop library
 //
-// Copyright (c) 2014 Jolla Ltd.
-// Contact: Martin Jones <martin.jones@jolla.com>
+// Copyright (c) 2014-2017 Jolla Ltd.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -82,11 +81,11 @@ private slots:
     void handleRemoved(QObject*);
 
 private:
-    QString mTitle;
-    QString mIconId;
-    QString mDirectoryFile;
-    QSharedPointer<MDesktopEntry> mDesktopEntry;
-    QPointer<LauncherFolderItem> mParentFolder;
+    QString m_title;
+    QString m_iconId;
+    QString m_directoryFile;
+    QSharedPointer<MDesktopEntry> m_desktopEntry;
+    QPointer<LauncherFolderItem> m_parentFolder;
 };
 
 class DeferredLauncherModel;
@@ -98,9 +97,11 @@ class LIPSTICK_EXPORT LauncherFolderModel : public LauncherFolderItem
     Q_PROPERTY(QStringList iconDirectories READ iconDirectories WRITE setIconDirectories NOTIFY iconDirectoriesChanged)
     Q_PROPERTY(QStringList categories READ categories WRITE setCategories NOTIFY categoriesChanged)
     Q_PROPERTY(QStringList blacklistedApplications READ blacklistedApplications WRITE setBlacklistedApplications NOTIFY blacklistedApplicationsChanged)
-
+    Q_PROPERTY(LauncherModel *allItems READ allItems CONSTANT)
 public:
     LauncherFolderModel(QObject *parent = 0);
+
+    LauncherModel *allItems() const;
 
     QString scope() const;
     void setScope(const QString &scope);

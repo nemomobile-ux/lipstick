@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -18,12 +17,20 @@
 
 #include <QObject>
 
+namespace NemoDeviceLock {
+class DeviceLock;
+}
+
+class ScreenLock;
+class TouchScreen;
+
 class Ut_NotificationPreviewPresenter : public QObject
 {
     Q_OBJECT
 
 private slots:
     void initTestCase();
+    void init();
     void cleanup();
     void testSignalConnections();
     void testAddNotificationWhenWindowNotOpen();
@@ -32,7 +39,6 @@ private slots:
     void testRemoveNotification();
     void testNotificationNotShownIfNoSummaryOrBody_data();
     void testNotificationNotShownIfNoSummaryOrBody();
-    void testNotificationNotShownIfHidden();
     void testNotificationNotShownIfRestored();
     void testShowingOnlyCriticalNotifications();
     void testUpdateNotificationRemovesNotificationFromQueueIfNotShowable();
@@ -41,6 +47,11 @@ private slots:
     void testCriticalNotificationIsMarkedAfterShowing();
     void testNotificationPreviewsDisabled_data();
     void testNotificationPreviewsDisabled();
+
+private:
+    TouchScreen *touchScreen;
+    ScreenLock *screenLock;
+    NemoDeviceLock::DeviceLock *deviceLock;
 };
 
 #endif

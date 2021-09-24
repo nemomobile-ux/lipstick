@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 - 2019 Jolla Ltd.
+** Copyright (c) 2019 - 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -18,6 +18,8 @@
 
 #include <QQuickWindow>
 #include "lipstickglobal.h"
+#include "homeapplication.h"
+#include <QQmlParserStatus>
 #include <QWaylandQuickCompositor>
 #include <QWaylandQuickOutput>
 #include <QWaylandXdgShell>
@@ -27,7 +29,9 @@
 #include <QPointer>
 #include <QTimer>
 #include <MGConfItem>
-#include <qmdisplaystate.h>
+#include <QDBusConnection>
+#include <QDBusContext>
+#include <QDBusMessage>
 
 #include <timed-qt5/interface>
 #include <timed-qt5/exception>
@@ -38,8 +42,25 @@ class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
 class LipstickRecorderManager;
+class QMceNameOwner;
 
-class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
+struct QueuedSetUpdatesEnabledCall
+{
+    QueuedSetUpdatesEnabledCall(const QDBusConnection &connection, const QDBusMessage &message, bool enable)
+    : m_connection(connection)
+    , m_message(message)
+    , m_enable(enable)
+    {
+    }
+
+    QDBusConnection m_connection;
+    QDBusMessage m_message;
+    bool m_enable;
+};
+
+class LIPSTICK_EXPORT LipstickCompositor
+        : public QWaylandQuickCompositor
+        , QDBusContext
 {
     Q_OBJECT
 
@@ -47,8 +68,6 @@ class LIPSTICK_EXPORT LipstickCompositor : public QWaylandQuickCompositor
     Q_PROPERTY(int ghostWindowCount READ ghostWindowCount NOTIFY ghostWindowCountChanged)
     Q_PROPERTY(bool homeActive READ homeActive WRITE setHomeActive NOTIFY homeActiveChanged)
     Q_PROPERTY(bool debug READ debug CONSTANT)
-    Q_PROPERTY(QWaylandSurface* fullscreenSurface READ fullscreenSurface WRITE setFullscreenSurface NOTIFY fullscreenSurfaceChanged)
-    Q_PROPERTY(bool directRenderingActive READ directRenderingActive NOTIFY directRenderingActiveChanged)
     Q_PROPERTY(int topmostWindowId READ topmostWindowId WRITE setTopmostWindowId NOTIFY topmostWindowIdChanged)
     Q_PROPERTY(Qt::ScreenOrientation topmostWindowOrientation READ topmostWindowOrientation WRITE setTopmostWindowOrientation NOTIFY topmostWindowOrientationChanged)
     Q_PROPERTY(Qt::ScreenOrientation screenOrientation READ screenOrientation WRITE setScreenOrientation NOTIFY screenOrientationChanged)
@@ -77,10 +96,6 @@ public:
     bool homeActive() const;
     void setHomeActive(bool);
 
-    QWaylandSurface *fullscreenSurface() const { return m_fullscreenSurface; }
-    void setFullscreenSurface(QWaylandSurface *surface);
-    bool directRenderingActive() const { return m_directRenderingActive; }
-
     int topmostWindowId() const { return m_topmostWindowId; }
     void setTopmostWindowId(int id);
     int privateTopmostWindowProcessId() const { return m_topmostWindowProcessId; }
@@ -95,7 +110,7 @@ public:
 
     QVariant orientationLock() const { return m_orientationLock->value("dynamic"); }
 
-    bool displayDimmed() const { return m_currentDisplayState == MeeGo::QmDisplayState::Dimmed; }
+    bool displayDimmed() const;
 
     QObject *clipboard() const;
 
@@ -114,13 +129,14 @@ public:
     QWaylandSurface *surfaceForId(int) const;
 
     bool completed();
+    void setUpdatesEnabledNow(bool enabled, bool inAmbientMode = false);
 
     bool ambientSupported() const;
     void setAmbientEnabled(bool enabled);
     bool ambientEnabled() const { return m_ambientModeEnabled; }
     Q_INVOKABLE void setAmbientUpdatesEnabled(bool enabled);
 
-    bool displayAmbient() const { return (m_currentDisplayState == MeeGo::QmDisplayState::Off) && ambientEnabled(); }
+    bool displayAmbient() const;
     Q_INVOKABLE void setUpdatesEnabled(bool enabled, bool inAmbientMode = false);
     LipstickCompositorWindow *createView(QWaylandSurface *surf);
 
@@ -142,7 +158,6 @@ signals:
     void availableWinIdsChanged();
 
     void homeActiveChanged();
-    void fullscreenSurfaceChanged();
     void directRenderingActiveChanged();
     void topmostWindowIdChanged();
     void privateTopmostWindowProcessIdChanged(int pid);
@@ -170,20 +185,22 @@ signals:
 
     void showUnlockScreen();
 
+    void openUrlRequested(const QUrl &url);
+
 private slots:
     void onHasContentChanged();
     void surfaceTitleChanged();
-    void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
     void windowDestroyed();
-    void reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state);
+    void windowPropertyChanged(const QString &);
+    void reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState);
     void homeApplicationAboutToDestroy();
     void setScreenOrientationFromSensor();
     void clipboardDataChanged();
     void onVisibleChanged(bool visible);
-    void onSurfaceDying();
     void initialize();
+    void processQueuedSetUpdatesEnabledCalls();
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
 
@@ -204,9 +221,8 @@ private:
     void surfaceCommitted();
     void onSurfaceCreated(QWaylandSurface *surface);
 
-    QQmlComponent *shaderEffectComponent();
-
     void scheduleAmbientUpdate();
+    void activateLogindSession();
 
     static LipstickCompositor *m_instance;
 
@@ -219,19 +235,14 @@ private:
 
     bool m_homeActive;
 
-    QQmlComponent *m_shaderEffect;
-    QWaylandSurface *m_fullscreenSurface;
-    bool m_directRenderingActive;
     int m_topmostWindowId;
     int m_topmostWindowProcessId;
     Qt::ScreenOrientation m_topmostWindowOrientation;
     Qt::ScreenOrientation m_screenOrientation;
     Qt::ScreenOrientation m_sensorOrientation;
-    MeeGo::QmDisplayState *m_displayState;
     QOrientationSensor* m_orientationSensor;
     QPointer<QMimeData> m_retainedSelection;
     MGConfItem *m_orientationLock;
-    MeeGo::QmDisplayState::DisplayState m_currentDisplayState;
     bool m_updatesEnabled;
     bool m_completed;
     int m_onUpdatesDisabledUnfocusedWindowId;
@@ -243,6 +254,12 @@ private:
 
     Maemo::Timed::Interface *m_timedDbus;
     bool m_ambientModeEnabled;
+
+    QList<QueuedSetUpdatesEnabledCall> m_queuedSetUpdatesEnabledCalls;
+    QMceNameOwner *m_mceNameOwner;
+
+    QString m_logindSession;
+    uint m_sessionActivationTries;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H

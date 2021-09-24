@@ -1,6 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 **
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Lesser General Public
@@ -10,6 +10,7 @@
 **
 ****************************************************************************/
 
+#include <QSocketNotifier>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -17,21 +18,22 @@
 #include <QTimer>
 #include <QDBusMessage>
 #include <QDBusConnection>
+#include <QDBusServiceWatcher>
 #include <QIcon>
 #include <QTranslator>
 #include <QDebug>
 #include <QEvent>
 #include <systemd/sd-daemon.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 #include "notifications/notificationmanager.h"
 #include "notifications/notificationpreviewpresenter.h"
 #include "notifications/batterynotifier.h"
-#include "notifications/diskspacenotifier.h"
 #include "notifications/thermalnotifier.h"
 #include "screenlock/screenlock.h"
 #include "screenlock/screenlockadaptor.h"
-#include "devicelock/devicelock.h"
-#include "devicelock/devicelockadaptor.h"
+#include "touchscreen/touchscreen.h"
 #include "lipsticksettings.h"
 #include "homeapplication.h"
 #include "homewindow.h"
@@ -45,14 +47,24 @@
 #include "localemanager.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
-#include "connectionselector.h"
 #include "screenshotservice.h"
 #include "screenshotserviceadaptor.h"
+#include "vpnagent.h"
+#include "connmanvpnagent.h"
+#include "connmanvpnproxy.h"
+#include "connectivitymonitor.h"
+#include "screenshotservice.h"
+
+#include <nemo-devicelock/devicelock.h>
 
 void HomeApplication::quitSignalHandler(int)
 {
-    qApp->quit();
+    uint64_t a = 1;
+    ssize_t unused = ::write(s_quitSignalFd, &a, sizeof(a));
+    Q_UNUSED(unused);
 }
+
+int HomeApplication::s_quitSignalFd = -1;
 
 static void registerDBusObject(QDBusConnection &bus, const char *path, QObject *object)
 {
@@ -63,85 +75,143 @@ static void registerDBusObject(QDBusConnection &bus, const char *path, QObject *
 
 HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     : QGuiApplication(argc, argv)
+    , m_quitSignalNotifier(0)
     , m_mainWindowInstance(0)
     , m_qmlPath(qmlPath)
-    , m_originalSigIntHandler(signal(SIGINT, quitSignalHandler))
-    , m_originalSigTermHandler(signal(SIGTERM, quitSignalHandler))
     , m_homeReadySent(false)
+    , m_connmanVpn(0)
+    , m_online(false)
 {
+    setUpSignalHandlers();
+
     QTranslator *engineeringEnglish = new QTranslator(this);
     engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
     installTranslator(engineeringEnglish);
+    QTranslator *translator = new QTranslator(this);
+    translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
+    installTranslator(translator);
 
-    // Set the application name, as used in notifications
-    //% "System"
-    setApplicationName(qtTrId("qtn_ap_lipstick"));
+    setApplicationName("Lipstick");
     setApplicationVersion(VERSION);
 
     // Initialize the QML engine
     m_qmlEngine = new QQmlEngine(this);
 
-    // Initialize the notification manager
-    NotificationManager::instance();
-    new NotificationPreviewPresenter(this);
-
     // Export screen size / geometry as dconf keys
-    LipstickSettings::instance()->exportScreenSize();
+    LipstickSettings::instance()->exportScreenProperties();
 
-    // Create screen lock logic - not parented to "this" since destruction happens too late in that case
-    m_screenLock = new ScreenLock;
+    // Create touch screen and register for the screen lock.
+    m_touchScreen = new TouchScreen(this);
+    connect(m_touchScreen, &TouchScreen::displayStateChanged, this, &HomeApplication::displayStateChanged);
+
+    m_screenLock = new ScreenLock(m_touchScreen, this);
     LipstickSettings::instance()->setScreenLock(m_screenLock);
     new ScreenLockAdaptor(m_screenLock);
 
-    m_deviceLock = new DeviceLock(this);
-    new DeviceLockAdaptor(m_deviceLock);
+    NemoDeviceLock::DeviceLock *deviceLock = new NemoDeviceLock::DeviceLock(this);
 
-    m_volumeControl = new VolumeControl;
+    // Initialize the notification manager
+    NotificationManager::instance();
+    new NotificationPreviewPresenter(m_screenLock, deviceLock, this);
+
+    m_volumeControl = new VolumeControl(this);
     new BatteryNotifier(this);
-    new DiskSpaceNotifier(this);
     new ThermalNotifier(this);
-    m_usbModeSelector = new USBModeSelector(m_deviceLock ,this);
     m_bluetoothAgent = new BluetoothAgent(this);
+    m_usbModeSelector = new USBModeSelector(deviceLock, this);
+
+    m_screenshotService = new ScreenshotService(this);
+    new ScreenshotServiceAdaptor(m_screenshotService);
+
     m_shutdownScreen = new ShutdownScreen(this);
     m_localeMngr = new LocaleManager(this);
     new ShutdownScreenAdaptor(m_shutdownScreen);
-    m_connectionSelector = new ConnectionSelector(this);
 
     // MCE and usb-moded expect services to be registered on the system bus
     QDBusConnection systemBus = QDBusConnection::systemBus();
+    registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, m_screenLock);
+    registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
+
+
+
     if (!systemBus.registerService(LIPSTICK_DBUS_SERVICE_NAME)) {
         qWarning("Unable to register D-Bus service %s: %s", LIPSTICK_DBUS_SERVICE_NAME, systemBus.lastError().message().toUtf8().constData());
     }
 
-    registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, m_screenLock);
-    registerDBusObject(systemBus, LIPSTICK_DBUS_DEVICELOCK_PATH, m_deviceLock);
-    registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
+    // Bring automatic VPNs up and down when connectivity state changes
+    auto performUpDown = [this](const QList<QString> &activeTypes) {
+        const bool state(!activeTypes.isEmpty());
+        if (state != m_online) {
+            m_online = state;
+            QDBusConnection sessionBus = QDBusConnection::sessionBus();
+            QDBusMessage method = QDBusMessage::createMethodCall(
+                        QStringLiteral("org.freedesktop.systemd1"),
+                        QStringLiteral("/org/freedesktop/systemd1"),
+                        QStringLiteral("org.freedesktop.systemd1.Manager"),
+                        m_online ? QStringLiteral("StartUnit") : QStringLiteral("StopUnit"));
+            method.setArguments({ QStringLiteral("vpn-updown.service"), QStringLiteral("replace") });
+            sessionBus.call(method, QDBus::NoBlock);
+        }
+    };
 
-    m_screenshotService = new ScreenshotService(this);
-    new ScreenshotServiceAdaptor(m_screenshotService);
-    QDBusConnection sessionBus = QDBusConnection::sessionBus();
+    m_connectivityMonitor = new ConnectivityMonitor(this);
+    connect(m_connectivityMonitor, &ConnectivityMonitor::connectivityChanged, this, [performUpDown](const QList<QString> &activeTypes){ performUpDown(activeTypes); });
 
-    registerDBusObject(sessionBus, LIPSTICK_DBUS_SCREENSHOT_PATH, m_screenshotService);
+    // Respond to requests for VPN user input
+    m_vpnAgent = new VpnAgent(this);
+    new ConnmanVpnAgentAdaptor(m_vpnAgent);
+
+    registerDBusObject(systemBus, LIPSTICK_DBUS_VPNAGENT_PATH, m_vpnAgent);
+
+    auto registerVpnAgent = [this, performUpDown]() {
+        if (!m_connmanVpn) {
+            if (QDBusConnection::systemBus().interface()->isServiceRegistered(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE)) {
+                m_connmanVpn = new ConnmanVpnProxy(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE, "/", QDBusConnection::systemBus());
+                m_connmanVpn->RegisterAgent(QDBusObjectPath(LIPSTICK_DBUS_VPNAGENT_PATH));
+
+                // Connman has restarted - VPNs must be brought up if possible
+                performUpDown(QList<QString>());
+                performUpDown(m_connectivityMonitor->activeConnectionTypes());
+            }
+        }
+    };
+    auto unregisterVpnAgent = [this]() {
+        delete m_connmanVpn;
+        m_connmanVpn = 0;
+    };
+
+    QDBusServiceWatcher *connmanVpnWatcher = new QDBusServiceWatcher(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE, systemBus, QDBusServiceWatcher::WatchForRegistration | QDBusServiceWatcher::WatchForUnregistration, this);
+    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceRegistered, this, [registerVpnAgent](const QString &){ registerVpnAgent(); });
+    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [unregisterVpnAgent](const QString &){ unregisterVpnAgent(); });
+
+    registerVpnAgent();
 
     // Setting up the context and engine things
     m_qmlEngine->rootContext()->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
     m_qmlEngine->rootContext()->setContextProperty("lipstickSettings", LipstickSettings::instance());
     m_qmlEngine->rootContext()->setContextProperty("LipstickSettings", LipstickSettings::instance());
-    m_qmlEngine->rootContext()->setContextProperty("deviceLock", m_deviceLock);
     m_qmlEngine->rootContext()->setContextProperty("volumeControl", m_volumeControl);
     m_qmlEngine->rootContext()->setContextProperty("localeManager", m_localeMngr);
+    m_qmlEngine->rootContext()->setContextProperty("connectivityMonitor", m_connectivityMonitor);
+    m_qmlEngine->rootContext()->setContextProperty("usbModeSelector", m_usbModeSelector);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }
 
 HomeApplication::~HomeApplication()
 {
+    if (m_connmanVpn) {
+        m_connmanVpn->UnregisterAgent(QDBusObjectPath(LIPSTICK_DBUS_VPNAGENT_PATH));
+        delete m_connmanVpn;
+    }
+
     emit aboutToDestroy();
 
-    delete m_volumeControl;
-    delete m_screenLock;
     delete m_mainWindowInstance;
+    m_mainWindowInstance = nullptr;
+
     delete m_qmlEngine;
+    m_qmlEngine = nullptr;
 }
 
 HomeApplication *HomeApplication::instance()
@@ -149,10 +219,48 @@ HomeApplication *HomeApplication::instance()
     return qobject_cast<HomeApplication *>(qApp);
 }
 
+void HomeApplication::setUpSignalHandlers()
+{
+    s_quitSignalFd = ::eventfd(0, 0);
+    if (s_quitSignalFd == -1)
+        qFatal("Failed to create eventfd object for signal handling");
+
+    m_quitSignalNotifier = new QSocketNotifier(s_quitSignalFd, QSocketNotifier::Read, this);
+    connect(m_quitSignalNotifier, &QSocketNotifier::activated, this, [this]() {
+        uint64_t tmp;
+        ssize_t unused = ::read(s_quitSignalFd, &tmp, sizeof(tmp));
+        Q_UNUSED(unused);
+
+        quit();
+    });
+
+    struct sigaction action;
+    action.sa_handler = quitSignalHandler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    action.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGINT, &action, &m_originalSigIntAction))
+        qFatal("Failed to set up SIGINT handling");
+    if (sigaction(SIGTERM, &action, &m_originalSigTermAction))
+        qFatal("Failed to set up SIGTERM handling");
+}
+
 void HomeApplication::restoreSignalHandlers()
 {
-    signal(SIGINT, m_originalSigIntHandler);
-    signal(SIGTERM, m_originalSigTermHandler);
+    if (s_quitSignalFd == -1) {
+        qWarning() << "HomeApplication::restoreSignalHandlers: called multiple times?";
+        return;
+    }
+
+    if (sigaction(SIGINT, &m_originalSigIntAction, nullptr))
+        qFatal("Failed to restore original SIGINT handling");
+    if (sigaction(SIGTERM, &m_originalSigTermAction, nullptr))
+        qFatal("Failed to restore original SIGTERM handling");
+
+    delete m_quitSignalNotifier, m_quitSignalNotifier = nullptr;
+
+    ::close(s_quitSignalFd), s_quitSignalFd = -1;
 }
 
 void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
@@ -186,7 +294,24 @@ void HomeApplication::sendStartupNotifications()
 bool HomeApplication::homeActive() const
 {
     LipstickCompositor *c = LipstickCompositor::instance();
-    return c?c->homeActive():(QGuiApplication::focusWindow() != 0);
+    return c ? c->homeActive() : (QGuiApplication::focusWindow() != 0);
+}
+
+TouchScreen *HomeApplication::touchScreen() const
+{
+    return m_touchScreen;
+}
+
+TouchScreen::DisplayState HomeApplication::displayState()
+{
+    Q_ASSERT(m_touchScreen);
+    return m_touchScreen->currentDisplayState();
+}
+
+void HomeApplication::setDisplayOff()
+{
+    Q_ASSERT(m_touchScreen);
+    m_touchScreen->setDisplayOff();
 }
 
 bool HomeApplication::event(QEvent *e)
@@ -295,9 +420,15 @@ void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
     }
 }
 
-void HomeApplication::takeScreenshot(const QString &path)
+bool HomeApplication::takeScreenshot(const QString &path)
 {
-    m_screenshotService->saveScreenshot(path);
+    if (ScreenshotResult *result = ScreenshotService::saveScreenshot(path)) {
+        result->waitForFinished();
+
+        return result->status() == ScreenshotResult::Finished;
+    } else {
+        return false;
+    }
 }
 
 LocaleManager *HomeApplication::localeManager()

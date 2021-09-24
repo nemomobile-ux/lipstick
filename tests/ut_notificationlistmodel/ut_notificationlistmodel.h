@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -29,7 +28,6 @@ private slots:
     void testNotificationIsOnlyAddedIfNotAlreadyAdded();
     void testNotificationIsNotAddedIfNoSummaryOrBody_data();
     void testNotificationIsNotAddedIfNoSummaryOrBody();
-    void testNotificationIsNotAddedIfHidden();
     void testAlreadyAddedNotificationIsRemovedIfNoLongerAddable();
     void testNotificationRemoval();
     void testNotificationOrdering();

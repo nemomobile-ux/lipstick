@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -18,8 +17,11 @@
 #define SCREENLOCK_H
 
 #include <QObject>
+#include "touchscreen/touchscreen.h"
 
-class QDBusInterface;
+#include <QDBusMessage>
+
+class QTimer;
 
 /*!
  * The screen lock business logic is responsible for showing and hiding
@@ -28,6 +30,7 @@ class QDBusInterface;
 class ScreenLock : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool touchBlocked READ touchBlocked NOTIFY touchBlockedChanged FINAL)
 
 public:
     /*!
@@ -35,7 +38,7 @@ public:
      *
      * \param parent the parent QObject for the logic
      */
-    ScreenLock(QObject *parent = NULL);
+    explicit ScreenLock(TouchScreen *touchScreen, QObject *parent = 0);
 
     /*!
      * Destroys the screen lock business logic.
@@ -84,23 +87,47 @@ public:
      */
     QString blankingPolicy() const;
 
-    //! \reimp
-    virtual bool eventFilter(QObject *, QEvent *event);
-    //! \reimp_end
+    /*!
+     * Returns touch blocking state.
+     *
+     * \return \c true when touch is blocked, \c false otherwise
+     */
+    bool touchBlocked() const;
+
+    TouchScreen::DisplayState displayState() const;
 
 public slots:
     //! Shows the screen lock window and calls the MCE's lock function.
     void lockScreen(bool immediate = false);
+
+    /*!
+     * Register interaction expected -state
+     *
+     * The lockscreen implementation should set this to true when the
+     * ui state is such that no specific user interaction is expected,
+     * and false when exit from such state is made.
+     *
+     * As an concrete example: When display is woken up and lockscreen
+     * is shown -> set to true. When user swipes the lockscreen away
+     * or to lock code entry view -> set to false.
+     *
+     * Primary consumer of this state data is mce - which uses it as an
+     * input for display blanking policy.
+     */
+    void setInteractionExpected(bool expected);
+
+    //! Timer callback for broadcasting interaction expected -state
+    void interactionExpectedBroadcast();
 
     //! Hides the screen lock window and calls the MCE's unlock callback function.
     void unlockScreen();
 
 private slots:
     //! Shows or hides the screen lock window
-    void toggleScreenLockUI(bool toggle);
+    void setScreenLocked(bool value);
 
     //! Shows or hides the event eater window
-    void toggleEventEater(bool toggle);
+    void setEventEaterEnabled(bool value);
 
     //! Shows the screen lock window in normal mode and hides the event eater window.
     void showScreenLock();
@@ -123,9 +150,6 @@ private slots:
     //! Hides the event eater window.
     void hideEventEater();
 
-    //! Clear event eater if display is no longer dimmed
-    void handleDisplayStateChange(int displayState);
-
     //! Handles LPM events coming from mce.
     void handleLpmModeChange(const QString &state);
 
@@ -134,13 +158,23 @@ private slots:
 
 signals:
     //! Emitted when the screen lock state changes
-    void screenIsLocked(bool locked);
+    void screenLockedChanged(bool locked);
 
     //! Emitted when the low power mode state changes
     void lowPowerModeChanged();
 
     //! Emitted when the display blanking policy changes
-    void  blankingPolicyChanged(const QString &policy);
+    void blankingPolicyChanged(const QString &policy);
+
+    //! Emitted when touch blocking changes. Touch is blocked when display is off.
+    void touchBlockedChanged();
+
+    /*! Emitted when interaction expected -state changes.
+     *
+     * Uses under_score naming convention to maintain consistency with
+     * other things already present in the dbus interface.
+     */
+    void interaction_expected(bool expected);
 
 private:
     enum TkLockReply {
@@ -166,11 +200,10 @@ private:
         TkLockClosed
     };
 
-    //! MCE callback D-Bus interface
-    QDBusInterface *m_callbackInterface;
+    TouchScreen *m_touchScreen;
 
-    //! Name of the MCE callback method
-    QString m_callbackMethod;
+    //! The MCE callback method
+    QDBusMessage m_callbackMethod;
 
     //! Whether the system is shutting down or not
     bool m_shuttingDown;
@@ -178,14 +211,20 @@ private:
     //! Whether the lockscreen is visible or not
     bool m_lockscreenVisible;
 
-    //! Whether events should be eaten or not
-    bool m_eatEvents;
-
     //! Whether the lockscreen should be shown as low power mode
     bool m_lowPowerMode;
 
     //! The current blanking policy obtained from mce
     QString m_mceBlankingPolicy;
+
+    //! Timer object for delayed interaction expected -state broadcasting
+    QTimer *m_interactionExpectedTimer;
+
+    //! Current internally cached interaction expected -state
+    bool m_interactionExpectedCurrent;
+
+    //! Latest interaction expected -state broadcasted over dbus
+    int m_interactionExpectedEmitted;
 
 #ifdef UNIT_TEST
     friend class Ut_ScreenLock;

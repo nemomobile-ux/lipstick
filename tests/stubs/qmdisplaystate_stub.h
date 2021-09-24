@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -36,6 +35,8 @@ class QmDisplayStateStub : public StubBase {
   virtual bool set(MeeGo::QmDisplayState::DisplayState state);
   virtual void connectNotify(const QMetaMethod &signal);
   virtual void disconnectNotify(const QMetaMethod &signal);
+
+  MeeGo::QmDisplayState *displayState;
 }; 
 
 // 2. IMPLEMENT STUB
@@ -87,6 +88,7 @@ namespace MeeGo {
 // 4. CREATE A PROXY WHICH CALLS THE STUB
 QmDisplayState::QmDisplayState(QObject *parent) {
   gQmDisplayStateStub->QmDisplayStateConstructor(parent);
+  gQmDisplayStateStub->displayState = this;
 }
 
 QmDisplayState::~QmDisplayState() {

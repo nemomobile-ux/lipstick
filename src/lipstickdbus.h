@@ -1,7 +1,6 @@
 // This file is part of lipstick, a QML desktop library
 //
 // Copyright (c) 2014 Jolla Ltd.
-// Contact: Thomas Perl <thomas.perl@jolla.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -32,8 +31,10 @@
 #define LIPSTICK_DBUS_WINDOW_MODEL_INTERFACE "local.Lipstick.WindowModel"
 
 #define LIPSTICK_DBUS_SCREENLOCK_PATH "/screenlock"
-#define LIPSTICK_DBUS_DEVICELOCK_PATH "/devicelock"
 #define LIPSTICK_DBUS_SHUTDOWN_PATH "/shutdown"
 #define LIPSTICK_DBUS_SCREENSHOT_PATH "/org/nemomobile/lipstick/screenshot"
+
+#define LIPSTICK_DBUS_VPNAGENT_PATH "/org/nemomobile/lipstick/vpnagent"
+#define LIPSTICK_DBUS_CONNMAN_VPN_SERVICE "net.connman.vpn"
 
 #endif /* LIPSTICK_DBUS_H */

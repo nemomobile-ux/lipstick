@@ -1,9 +1,6 @@
 TEMPLATE = subdirs
 SUBDIRS = \
-          ut_categorydefinitionstore \
           ut_closeeventeater \
-          ut_devicelock \
-          ut_diskspacenotifier \
           ut_launchermodel \
           ut_lipsticksettings \
           ut_lipsticknotification \

@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -36,16 +35,13 @@ private slots:
     void testAddAndRemoveNotification();
     void testWithoutFeedbackId();
     void testMultipleFeedbackIds();
-    void testHiddenNotification();
-    void testSuppressedNotification();
+    void testNotificationSoundSuppressed();
     void testUpdateNotification();
     void testUpdateNotificationAfterRestart();
     void testNotificationPreviewsDisabled_data();
     void testNotificationPreviewsDisabled();
     void testNotificationPriority_data();
     void testNotificationPriority();
-    void testLEDDisabledWhenNoSummaryAndBody_data();
-    void testLEDDisabledWhenNoSummaryAndBody();
 
 private:
     NotificationFeedbackPlayer *player;

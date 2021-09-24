@@ -1,10 +1,9 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012-2019 Jolla Ltd.
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012-2019 Jolla Ltd.
 ** Copyright (c) 2019 Open Mobile Platform LLC.
 **
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
 **
 ** This file is part of lipstick.
 **
@@ -21,11 +20,12 @@
 #include <QObject>
 #include <QStringList>
 #include "lipstickglobal.h"
-#include "devicelock/devicelock.h"
 
-class HomeWindow;
 class QUsbModed;
+
+namespace NemoDeviceLock {
 class DeviceLock;
+}
 
 class LIPSTICK_EXPORT USBModeSelector : public QObject
 {
@@ -53,8 +53,9 @@ public:
         Host,
         Locked
     };
+    Q_ENUM(Notification)
 
-    explicit USBModeSelector(DeviceLock *deviceLock, QObject *parent = 0);
+    explicit USBModeSelector(NemoDeviceLock::DeviceLock *deviceLock, QObject *parent = 0);
 
     /*!
      * Returns whether the window should be visible or not.
@@ -127,7 +128,7 @@ signals:
     void preparingModeChanged(const QString &preparing);
 
     //! Sent to request a mode notification be shown to the user.
-    void showNotification(Notification type);
+    void showNotification(USBModeSelector::Notification type);
 
     //! Sent to request an error be displayed to the user.
     void showError(const QString &errorCode);
@@ -195,7 +196,7 @@ private:
     QUsbModed *m_usbMode;
 
     //! For getting information about the device lock state
-    DeviceLock *m_deviceLock;
+    NemoDeviceLock::DeviceLock *m_deviceLock;
 
     //! Whether or not the USB mode selection dialog is currently visible
     bool m_windowVisible;

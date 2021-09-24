@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 - 2019 Jolla Ltd.
+** Copyright (c) 2019 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -21,29 +21,31 @@
 
 // 1. DECLARE STUB
 // FIXME - stubgen is not yet finished
-class NotificationManagerStub : public StubBase {
-  public:
-   enum NotificationClosedReason { NotificationExpired=1, NotificationDismissedByUser, CloseNotificationCalled } ;
-  virtual NotificationManager * instance(bool owner = true);
-  virtual LipstickNotification * notification(uint id) const;
-  virtual QList<uint> notificationIds() const;
-  virtual QStringList GetCapabilities();
-  virtual uint Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout);
-  virtual void CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason);
-  virtual void MarkNotificationDisplayed(uint id);
-  virtual QString GetServerInformation(QString &name, QString &vendor, QString &version);
-  virtual NotificationList GetNotifications(const QString &appName);
-  virtual void removeNotificationsWithCategory(const QString &category);
-  virtual void updateNotificationsWithCategory(const QString &category);
-  virtual void commit();
-  virtual void invokeAction(const QString &action);
-  virtual void removeNotificationIfUserRemovable(uint id);
-  virtual void removeUserRemovableNotifications();
-  virtual void expire();
-  virtual void reportModifications();
-  virtual void NotificationManagerConstructor(QObject *parent, bool owner);
-  virtual void NotificationManagerDestructor();
-}; 
+class NotificationManagerStub : public StubBase
+{
+public:
+    enum NotificationClosedReason { NotificationExpired = 1, NotificationDismissedByUser, CloseNotificationCalled } ;
+    virtual NotificationManager *instance(bool owner = true);
+    virtual LipstickNotification *notification(uint id) const;
+    virtual QList<uint> notificationIds() const;
+    virtual QStringList GetCapabilities();
+    virtual uint Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout);
+    virtual void CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason);
+    virtual void markNotificationDisplayed(uint id);
+    virtual QString GetServerInformation(QString &name, QString &vendor, QString &version);
+    virtual NotificationList GetNotifications(const QString &appName);
+    virtual NotificationList GetNotificationsByCategory(const QString &category);
+    virtual void removeNotificationsWithCategory(const QString &category);
+    virtual void updateNotificationsWithCategory(const QString &category);
+    virtual void commit();
+    virtual void invokeAction(const QString &action);
+    virtual void removeNotificationIfUserRemovable(uint id);
+    virtual void removeUserRemovableNotifications();
+    virtual void expire();
+    virtual void reportModifications();
+    virtual void NotificationManagerConstructor(QObject *parent, bool owner);
+    virtual void NotificationManagerDestructor();
+};
 
 // 2. IMPLEMENT STUB
 NotificationManager * NotificationManagerStub::instance(bool owner) {
@@ -84,11 +86,11 @@ uint NotificationManagerStub::Notify(const QString &appName, uint replacesId, co
   return stubReturnValue<uint>("Notify");
 }
 
-void NotificationManagerStub::CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<uint >(id));
-  params.append( new Parameter<NotificationManager::NotificationClosedReason >(closeReason));
-  stubMethodEntered("CloseNotification",params);
+void NotificationManagerStub::markNotificationDisplayed(uint id)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<uint >(id));
+    stubMethodEntered("markNotificationDisplayed", params);
 }
 
 void NotificationManagerStub::MarkNotificationDisplayed(uint id) {
@@ -111,6 +113,13 @@ NotificationList NotificationManagerStub::GetNotifications(const QString &appNam
   params.append( new Parameter<QString >(appName));
   stubMethodEntered("GetNotifications",params);
   return stubReturnValue<NotificationList>("GetNotifications");
+}
+
+NotificationList NotificationManagerStub::GetNotificationsByCategory(const QString &category) {
+  QList<ParameterBase*> params;
+  params.append( new Parameter<QString >(category));
+  stubMethodEntered("GetNotificationsByCategory",params);
+  return stubReturnValue<NotificationList>("GetNotificationsByCategory");
 }
 
 void NotificationManagerStub::removeNotificationsWithCategory(const QString &category) {
@@ -170,34 +179,13 @@ NotificationManagerStub* gNotificationManagerStub = &gDefaultNotificationManager
 
 
 // 4. CREATE A PROXY WHICH CALLS THE STUB
-const char *NotificationManager::HINT_CATEGORY = "category";
-const char *NotificationManager::HINT_URGENCY = "urgency";
-const char *NotificationManager::HINT_TRANSIENT = "transient";
-const char *NotificationManager::HINT_RESIDENT = "resident";
-const char *NotificationManager::HINT_IMAGE_PATH = "image-path";
-const char *NotificationManager::HINT_ICON = "x-nemo-icon";
-const char *NotificationManager::HINT_ITEM_COUNT = "x-nemo-item-count";
-const char *NotificationManager::HINT_PRIORITY = "x-nemo-priority";
-const char *NotificationManager::HINT_TIMESTAMP = "x-nemo-timestamp";
-const char *NotificationManager::HINT_PREVIEW_ICON = "x-nemo-preview-icon";
-const char *NotificationManager::HINT_PREVIEW_BODY = "x-nemo-preview-body";
-const char *NotificationManager::HINT_PREVIEW_SUMMARY = "x-nemo-preview-summary";
-const char *NotificationManager::HINT_REMOTE_ACTION_PREFIX = "x-nemo-remote-action-";
-const char *NotificationManager::HINT_REMOTE_ACTION_ICON_PREFIX = "x-nemo-remote-action-icon-";
-const char *NotificationManager::HINT_HIDDEN = "x-nemo-hidden";
-const char *NotificationManager::HINT_USER_REMOVABLE = "x-nemo-user-removable";
-const char *NotificationManager::HINT_LED_DISABLED_WITHOUT_BODY_AND_SUMMARY = "x-nemo-led-disabled-without-body-and-summary";
-const char *NotificationManager::HINT_ORIGIN = "x-nemo-origin";
-const char *NotificationManager::HINT_OWNER = "x-nemo-owner";
-const char *NotificationManager::HINT_MAX_CONTENT_LINES = "x-nemo-max-content-lines";
-const char *NotificationManager::HINT_RESTORED = "x-nemo-restored";
-
-NotificationManager *NotificationManager::instance_ = 0;
-NotificationManager * NotificationManager::instance(bool owner) {
-  if (instance_ == 0) {
-    instance_ = new NotificationManager(qApp, owner);
-  }
-  return instance_;
+NotificationManager *NotificationManager::s_instance = 0;
+NotificationManager *NotificationManager::instance(bool owner)
+{
+    if (s_instance == 0) {
+        s_instance = new NotificationManager(qApp, owner);
+    }
+    return s_instance;
 }
 
 LipstickNotification * NotificationManager::notification(uint id) const {
@@ -220,8 +208,9 @@ void NotificationManager::CloseNotification(uint id, NotificationClosedReason cl
   gNotificationManagerStub->CloseNotification(id, closeReason);
 }
 
-void NotificationManager::MarkNotificationDisplayed(uint id) {
-  gNotificationManagerStub->MarkNotificationDisplayed(id);
+void NotificationManager::markNotificationDisplayed(uint id)
+{
+    gNotificationManagerStub->markNotificationDisplayed(id);
 }
 
 QString NotificationManager::GetServerInformation(QString &name, QString &vendor, QString &version) {
@@ -230,6 +219,10 @@ QString NotificationManager::GetServerInformation(QString &name, QString &vendor
 
 NotificationList NotificationManager::GetNotifications(const QString &appName) {
   return gNotificationManagerStub->GetNotifications(appName);
+}
+
+NotificationList NotificationManager::GetNotificationsByCategory(const QString &category) {
+  return gNotificationManagerStub->GetNotificationsByCategory(category);
 }
 
 void NotificationManager::removeNotificationsWithCategory(const QString &category) {
@@ -272,5 +265,9 @@ NotificationManager::~NotificationManager() {
   gNotificationManagerStub->NotificationManagerDestructor();
 }
 
+QString NotificationManager::systemApplicationName() const
+{
+    return QString();
+}
 
 #endif

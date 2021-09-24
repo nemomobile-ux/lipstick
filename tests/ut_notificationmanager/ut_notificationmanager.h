@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -26,6 +25,7 @@ private slots:
     void cleanup();
     void testManagerIsSingleton();
     void testDatabaseConnectionSucceedsAndTablesAreOk();
+    void testDatabaseConnectionUpgradeToVersion2();
     void testDatabaseConnectionSucceedsAndTablesAreNotOk();
     void testFirstDatabaseConnectionFails();
     void testNotEnoughDiskSpaceToOpenDatabase();
@@ -44,7 +44,6 @@ private slots:
     void testActionIsNotInvokedIfIncomplete();
     void testRemoteActionIsInvokedIfDefined();
     void testInvokingActionClosesNotificationIfUserRemovable();
-    void testInvokingActionRemovesNotificationIfUserRemovableAndNotCloseable();
     void testListingNotifications();
     void testRemoveUserRemovableNotifications();
     void testRemoveRequested();

@@ -1,30 +1,39 @@
 include(../common.pri)
 TARGET = ut_shutdownscreen
-INCLUDEPATH += $$SRCDIR $$NOTIFICATIONSRCDIR $$UTILITYSRCDIR $$XTOOLSRCDIR ../../src/qmsystem2
+INCLUDEPATH += $$SRCDIR $$NOTIFICATIONSRCDIR $$TOUCHSCREENSRCDIR $$UTILITYSRCDIR $$XTOOLSRCDIR $$DEVICESTATE
 QT += qml quick dbus
 
 CONFIG += link_pkgconfig
-PKGCONFIG += dsme_dbus_if thermalmanager_dbus_if usb_moded
+PKGCONFIG += dsme_dbus_if thermalmanager_dbus_if usb_moded sailfishusermanager
 
 # unit test and unit
 SOURCES += \
     $$SRCDIR/shutdownscreen.cpp \
     $$NOTIFICATIONSRCDIR/lipsticknotification.cpp \
+    $$NOTIFICATIONSRCDIR/thermalnotifier.cpp \
     $$STUBSDIR/stubbase.cpp \
     $$STUBSDIR/homewindow.cpp \
     $$STUBSDIR/homeapplication.cpp \
-    ../../src/qmsystem2/qmsystemstate.cpp \
-    ../../src/qmsystem2/qmipcinterface.cpp \
+    $$DEVICESTATE/devicestate.cpp \
+    $$DEVICESTATE/displaystate.cpp \
+    $$DEVICESTATE/thermal.cpp \
+    $$DEVICESTATE/ipcinterface.cpp \
     ut_shutdownscreen.cpp
 
 HEADERS += \
     $$SRCDIR/shutdownscreen.h \
     $$NOTIFICATIONSRCDIR/notificationmanager.h \
     $$NOTIFICATIONSRCDIR/lipsticknotification.h \
+    $$NOTIFICATIONSRCDIR/thermalnotifier.h \
     $$UTILITYSRCDIR/closeeventeater.h \
     $$SRCDIR/homeapplication.h \
     $$SRCDIR/homewindow.h \
-    ../../src/qmsystem2/qmsystemstate.h \
-    ../../src/qmsystem2/qmsystemstate_p.h \
-    ../../src/qmsystem2/qmipcinterface_p.h \
+    $$DEVICESTATE/devicestate.h \
+    $$DEVICESTATE/devicestate_p.h \
+    $$DEVICESTATE/displaystate.h \
+    $$DEVICESTATE/displaystate_p.h \
+    $$DEVICESTATE/thermal.h \
+    $$DEVICESTATE/thermal_p.h \
+    $$DEVICESTATE/ipcinterface_p.h \
+    $$STUBSDIR/nemo-devicelock/devicelock.h \
     ut_shutdownscreen.h

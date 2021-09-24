@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -16,15 +15,51 @@
 #define SCREENSHOTSERVICE_H
 
 #include <QObject>
+#include <QSocketNotifier>
+#include <QUrl>
 
-class ScreenshotService : public QObject
+#include "lipstickglobal.h"
+
+class LIPSTICK_EXPORT ScreenshotResult : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(QUrl path READ path CONSTANT)
 public:
-    explicit ScreenshotService(QObject *parent = 0);
+    enum Status {
+        Writing,
+        Finished,
+        Error
+    };
+    Q_ENUM(Status)
 
-public slots:
-    void saveScreenshot(const QString &path);
+    explicit ScreenshotResult(QObject *parent = nullptr); // For the benefit of qmlRegisterUncreatableType().
+    ScreenshotResult(int notifierId, const QUrl &path, QObject *parent = nullptr);
+    ~ScreenshotResult();
+
+    Status status() const;
+    QUrl path() const;
+
+    void waitForFinished();
+
+signals:
+    void finished();
+    void statusChanged();
+
+    void error();
+
+private:
+    QSocketNotifier m_notifier;
+    const QUrl m_path;
+    const int m_notifierId;
+    Status m_status = Writing;
+};
+
+class ScreenshotService : public QObject
+{    Q_OBJECT
+ public:
+     explicit ScreenshotService(QObject *parent = 0);
+     static ScreenshotResult *saveScreenshot(const QString &path);
 };
 
 #endif // SCREENSHOTSERVICE_H

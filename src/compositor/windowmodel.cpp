@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -14,6 +13,8 @@
 ****************************************************************************/
 
 #include <QDBusConnection>
+#include <QDBusConnectionInterface>
+#include <QFileInfo>
 #include "lipstickcompositorwindow.h"
 #include "lipstickcompositor.h"
 #include "windowmodel.h"
@@ -169,11 +170,31 @@ void WindowModel::refresh()
     endResetModel();
 }
 
+bool WindowModel::isPrivileged() const
+{
+#ifdef HAVE_SAILFISHUSERMANAGER
+    if (!calledFromDBus()) {
+        return true;
+    }
+
+    uint pid = connection().interface()->servicePid(message().service()).value();
+    QFileInfo info(QString("/proc/%1").arg(pid));
+    if (info.group() != QLatin1String("privileged") && info.owner() != QLatin1String("root")) {
+        QString errorString = QString("PID %1 is not in privileged group").arg(pid);
+        sendErrorReply(QDBusError::AccessDenied, errorString);
+        return false;
+    }
+    return true;
+#else
+    return true;
+#endif
+}
+
 // used by mapplauncherd to bring a binary to the front
 void WindowModel::launchProcess(const QString &binaryName)
 {
     LipstickCompositor *c = LipstickCompositor::instance();
-    if (!m_complete || !c)
+    if (!m_complete || !c || !isPrivileged())
         return;
 
     QStringList binaryParts = binaryName.split(QRegExp(QRegExp("\\s+")));

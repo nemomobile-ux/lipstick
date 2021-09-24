@@ -1,8 +1,8 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -19,7 +19,7 @@
 #include <QObject>
 #include <QDBusContext>
 #include "lipstickglobal.h"
-#include <qmsystemstate.h>
+#include <devicestate.h>
 
 class HomeWindow;
 
@@ -55,6 +55,8 @@ public:
 signals:
     //! Sent when the visibility of the window has changed.
     void windowVisibleChanged();
+    //! Sent when user change has failed.
+    void userSwitchFailed();
 
 private slots:
     /*!
@@ -63,25 +65,37 @@ private slots:
      *
      * \param what how the system state has changed
      */
-    void applySystemState(MeeGo::QmSystemState::StateIndication what);
+    void applySystemState(DeviceState::DeviceState::StateIndication what);
+
+    /*!
+     * Sets user to uid of the user whose information may be shown on
+     * ShutdownScreen.
+     *
+     * \param uid user id of the user
+     */
+    void setUser(uint uid);
 
 private:
     /*!
      * Shows a system notification.
      *
-     * \param category the category of the notification
+     * \param icon the icon of the notification
+     * \param feedback the feedback of the notification
      * \param body the body text of the notification
      */
-    void createAndPublishNotification(const QString &category, const QString &body);
+    void publishNotification(const QString &icon, const QString &feedback, const QString &body);
 
     //! The volume control window
     HomeWindow *m_window;
 
     //! For getting the system state
-    MeeGo::QmSystemState *m_systemState;
+    DeviceState::DeviceState *m_systemState;
 
     //! The shutdown mode to be communicated to the UI
     QString m_shutdownMode;
+
+    //! Uid of current user or uid of next user to login if that is happening
+    uint m_user;
 
 #ifdef UNIT_TEST
     friend class Ut_ShutdownScreen;

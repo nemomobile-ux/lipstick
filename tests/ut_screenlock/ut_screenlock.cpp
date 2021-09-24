@@ -1,8 +1,8 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -25,8 +25,13 @@
 
 #include "ut_screenlock.h"
 #include "screenlock.h"
+#include "touchscreen/touchscreen.h"
 #include "homeapplication.h"
 #include "closeeventeater_stub.h"
+#include "displaystate_stub.h"
+#include "lipsticktest.h"
+
+TouchScreen *gTouchScreen = 0;
 
 QDBus::CallMode qDbusAbstractInterfaceCallMode;
 QVariant qDbusAbstractInterfaceCallArg1;
@@ -56,9 +61,24 @@ void QTimer::singleShot(int, const QObject *receiver, const char *member)
     QMetaObject::invokeMethod(const_cast<QObject *>(receiver), modifiedMember, Qt::DirectConnection);
 }
 
+HomeApplication::~HomeApplication()
+{
+}
+
+HomeApplication *HomeApplication::instance()
+{
+    return qobject_cast<HomeApplication *>(qApp);
+}
+
+TouchScreen *HomeApplication::touchScreen() const
+{
+    return gTouchScreen;
+}
+
 void Ut_ScreenLock::init()
 {
-    screenLock = new ScreenLock;
+    gTouchScreen = new TouchScreen;
+    screenLock = new ScreenLock(gTouchScreen);
 }
 
 void Ut_ScreenLock::cleanup()
@@ -102,14 +122,16 @@ void Ut_ScreenLock::testToggleScreenLockUI()
 
 void Ut_ScreenLock::testToggleEventEater()
 {
+    fakeDisplayOnAndReady();
     QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
 
     // Make sure the screen locking signals are sent and the eater UI is shown/hidden
     screenLock->toggleEventEater(true);
-    QCOMPARE(screenLock->eventFilter(0, &event), true);
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    QCOMPARE(touchScreen->eventFilter(0, &event), true);
 
     screenLock->toggleEventEater(false);
-    QCOMPARE(screenLock->eventFilter(0, &event), false);
+    QCOMPARE(touchScreen->eventFilter(0, &event), false);
 }
 
 void Ut_ScreenLock::testUnlockScreenWhenLocked()
@@ -163,6 +185,7 @@ void Ut_ScreenLock::testTkLockOpen()
     QFETCH(bool, eventEaterWindowVisibilityModified);
     QFETCH(bool, eventEaterWindowVisible);
 
+    fakeDisplayOnAndReady();
     // Make sure the event eater is visible so that it will be hidden if necessary
     screenLock->showEventEater();
 
@@ -179,13 +202,15 @@ void Ut_ScreenLock::testTkLockOpen()
 
     if (eventEaterWindowVisibilityModified) {
         QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-        QCOMPARE(screenLock->eventFilter(0, &event), eventEaterWindowVisible);
+        TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+        QCOMPARE(touchScreen->eventFilter(0, &event), eventEaterWindowVisible);
     }
 }
 
 void Ut_ScreenLock::testTkLockClose()
 {
     // Show the screen lock window and the event eater
+    fakeDisplayOnAndReady();
     screenLock->showScreenLock();
     screenLock->showEventEater();
 
@@ -200,7 +225,28 @@ void Ut_ScreenLock::testTkLockClose()
 
     // Events should still be eaten
     QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(screenLock->eventFilter(0, &event), true);
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    QCOMPARE(touchScreen->eventFilter(0, &event), true);
 }
 
-QTEST_MAIN(Ut_ScreenLock)
+void Ut_ScreenLock::updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState)
+{
+    emit gDisplayStateMonitorStub->displayState->displayStateChanged(oldState);
+    emit gDisplayStateMonitorStub->displayState->displayStateChanged(newState);
+}
+
+void Ut_ScreenLock::fakeDisplayOnAndReady()
+{
+    // Fake display state change.
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    updateDisplayState(DeviceState::DisplayStateMonitor::Off, DeviceState::DisplayStateMonitor::On);
+    QSignalSpy touchBlockingSpy(screenLock, SIGNAL(touchBlockedChanged()));
+    touchBlockingSpy.wait();
+
+    QVERIFY(!screenLock->touchBlocked());
+    touchScreen->setEnabled(true);
+    QTouchEvent touch(QEvent::TouchBegin);
+    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
+}
+
+LIPSTICK_TEST_MAIN(Ut_ScreenLock)

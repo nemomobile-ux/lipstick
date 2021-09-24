@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -54,8 +53,7 @@ void CategoryDefinitionStore::updateCategoryDefinitionFileList()
     if (categoryDefinitionsDir.exists()) {
         QStringList filter("*" + QString(FILE_EXTENSION));
 
-        QStringList filteredEntries = categoryDefinitionsDir.entryList(filter, QDir::Files);
-        QSet<QString> files(filteredEntries.begin(), filteredEntries.end());
+        QSet<QString> files = categoryDefinitionsDir.entryList(filter, QDir::Files).toSet();
         QSet<QString> removedFiles = m_categoryDefinitionFiles - files;
 
         foreach(const QString &removedCategory, removedFiles) {

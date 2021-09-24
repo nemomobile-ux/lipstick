@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 - 2019 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -20,6 +20,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QVariantHash>
+#include <QTimer>
 
 class QDBusArgument;
 
@@ -29,35 +30,121 @@ class QDBusArgument;
 class LIPSTICK_EXPORT LipstickNotification : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(InformationOrigin)
     Q_PROPERTY(QString appName READ appName CONSTANT)
-    Q_PROPERTY(uint replacesId READ replacesId CONSTANT)
-    Q_PROPERTY(QString appIcon READ appIcon CONSTANT)
+    Q_PROPERTY(QString explicitAppName READ explicitAppName CONSTANT)
+    Q_PROPERTY(QString disambiguatedAppName READ disambiguatedAppName CONSTANT)
+    Q_PROPERTY(uint id READ id CONSTANT)
+    Q_PROPERTY(QString appIcon READ appIcon NOTIFY appIconChanged)
+    Q_PROPERTY(int appIconOrigin READ appIconOrigin NOTIFY appIconOriginChanged)
     Q_PROPERTY(QString summary READ summary NOTIFY summaryChanged)
     Q_PROPERTY(QString body READ body NOTIFY bodyChanged)
     Q_PROPERTY(QStringList actions READ actions CONSTANT)
     Q_PROPERTY(QVariantMap hints READ hintValues NOTIFY hintsChanged)
     Q_PROPERTY(int expireTimeout READ expireTimeout CONSTANT)
-    Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
     Q_PROPERTY(QDateTime timestamp READ timestamp NOTIFY timestampChanged)
-    Q_PROPERTY(QString previewIcon READ previewIcon NOTIFY previewIconChanged)
     Q_PROPERTY(QString previewSummary READ previewSummary NOTIFY previewSummaryChanged)
     Q_PROPERTY(QString previewBody READ previewBody NOTIFY previewBodyChanged)
+    Q_PROPERTY(QString subText READ subText NOTIFY subTextChanged)
     Q_PROPERTY(int urgency READ urgency NOTIFY urgencyChanged)
     Q_PROPERTY(int itemCount READ itemCount NOTIFY itemCountChanged)
     Q_PROPERTY(int priority READ priority NOTIFY priorityChanged)
     Q_PROPERTY(QString category READ category NOTIFY categoryChanged)
     Q_PROPERTY(bool userRemovable READ isUserRemovable NOTIFY userRemovableChanged)
-    Q_PROPERTY(QVariantList remoteActions READ remoteActions CONSTANT)
-    Q_PROPERTY(QString origin READ origin CONSTANT)
+    Q_PROPERTY(QVariantList remoteActions READ remoteActions NOTIFY remoteActionsChanged)
     Q_PROPERTY(QString owner READ owner CONSTANT)
-    Q_PROPERTY(int maxContentLines READ maxContentLines CONSTANT)
+    Q_PROPERTY(qreal progress READ progress NOTIFY progressChanged)
+    Q_PROPERTY(bool hasProgress READ hasProgress NOTIFY hasProgressChanged)
+    Q_PROPERTY(bool isTransient READ isTransient NOTIFY isTransientChanged)
+    Q_PROPERTY(QString color READ color NOTIFY colorChanged)
 
 public:
+    enum Urgency { Low = 0, Normal = 1, Critical = 2 };
+    enum InformationOrigin { ExplicitValue, CategoryValue, InferredValue };
+
+    //! Standard hint: The urgency level.
+    static const char *HINT_URGENCY;
+
+    //! Standard hint: The type of notification this is.
+    static const char *HINT_CATEGORY;
+
+    //! Standard hint: If true, the notification should be removed after display.
+    static const char *HINT_TRANSIENT;
+
+    //! Standard hint: If true, the notification should not be removed after activation.
+    static const char *HINT_RESIDENT;
+
+    //! Standard hint: Icon of the notification: either a file:// URL, an absolute path, or a token to be satisfied by the 'theme' image provider.
+    static const char *HINT_IMAGE_PATH;
+
+    //! Standard hint: Icon of the notification: image data.
+    static const char *HINT_IMAGE_DATA;
+
+    //! Standard hint: If true, audible feedback should be should be suppressed during notification feedback.
+    static const char *HINT_SUPPRESS_SOUND;
+
+    //! Standard hint: If set, override possible audible feedback sound.
+    static const char *HINT_SOUND_FILE;
+
+    //! Nemo hint: Item count represented by the notification.
+    static const char *HINT_ITEM_COUNT;
+
+    //! Nemo hint: Priority level of the notification.
+    static const char *HINT_PRIORITY;
+
+    //! Nemo hint: Timestamp of the notification.
+    static const char *HINT_TIMESTAMP;
+
+    //! Nemo hint: Body text of the preview of the notification.
+    static const char *HINT_PREVIEW_BODY;
+
+    //! Nemo hint: Summary text of the preview of the notification.
+    static const char *HINT_PREVIEW_SUMMARY;
+
+    //! Nemo hint: Sub-text of the notification.
+    static const char *HINT_SUB_TEXT;
+
+    //! Nemo hint: Remote action of the notification. Prefix only: the action identifier is to be appended.
+    static const char *HINT_REMOTE_ACTION_PREFIX;
+
+    //! Nemo hint: Icon for the remote action of the notification. Prefix only: the action identifier is to be appended.
+    static const char *HINT_REMOTE_ACTION_ICON_PREFIX;
+
+    //! Nemo hint: User removability of the notification.
+    static const char *HINT_USER_REMOVABLE;
+
+    //! Nemo hint: Feedback of the notification.
+    static const char *HINT_FEEDBACK;
+
+    //! Nemo hint: Whether to turn the screen on when displaying preview
+    static const char *HINT_DISPLAY_ON;
+
+    //! Nemo hint: Indicates the Android package name from which this notification originates
+    static const char *HINT_ORIGIN_PACKAGE;
+
+    //! Nemo hint: Indicates the identifer of the owner for notification
+    static const char *HINT_OWNER;
+
+    //! Nemo hint: Indicates that this notification has been restored from persistent storage since the last update.
+    //! Internal, shouldn't be expected or allowed from d-bus
+    static const char *HINT_RESTORED;
+
+    //! Nemo hint: progress percentage between 0 and 1, negative for indeterminate
+    static const char *HINT_PROGRESS;
+
+    //! Nemo hint: play vibra feedback
+    static const char *HINT_VIBRA;
+
+    //! Nemo hint: Indicates the confidentiality of the notification
+    static const char *HINT_VISIBILITY;
+
     /*!
      * Creates an object for storing information about a single notification.
      *
      * \param appName name of the application sending the notification
-     * \param replacesID the ID of the notification
+     * \param explicitAppName name explicitly set on the received notification
+     * \param disambiguatedAppName name of the application, decorated to disambiguate names from android and native applications
+     * \param id the ID of the notification
      * \param appIcon icon ID of the application sending the notification
      * \param summary summary text for the notification
      * \param body body text for the notification
@@ -66,7 +153,10 @@ public:
      * \param expireTimeout expiration timeout for the notification
      * \param parent the parent QObject
      */
-    LipstickNotification(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout, QObject *parent = 0);
+    LipstickNotification(const QString &appName, const QString &explicitAppName, const QString &disambiguatedAppName,
+                         uint id, const QString &appIcon, const QString &summary, const QString &body,
+                         const QStringList &actions, const QVariantHash &hints,
+                         int expireTimeout, QObject *parent = 0);
 
     /*!
      * Creates a new uninitialized representation of a notification.
@@ -77,18 +167,22 @@ public:
 
     //! Returns the name of the application sending the notification
     QString appName() const;
+    QString explicitAppName() const;
+    QString disambiguatedAppName() const;
 
     //! Sets the name of the application sending the notification
     void setAppName(const QString &appName);
+    void setExplicitAppName(const QString &appName);
+    void setDisambiguatedAppName(const QString &disambiguatedAppName);
 
     //! Returns the ID of the notification
-    uint replacesId() const;
+    uint id() const;
 
     //! Returns the icon ID of the application sending the notification
     QString appIcon() const;
+    void setAppIcon(const QString &appIcon, int source = ExplicitValue);
 
-    //! Sets the icon ID of the application sending the notification
-    void setAppIcon(const QString &appIcon);
+    int appIconOrigin() const;
 
     //! Returns the summary text for the notification
     QString summary() const;
@@ -121,20 +215,17 @@ public:
     //! Sets the expiration timeout for the notification
     void setExpireTimeout(int expireTimeout);
 
-    //! Returns the icon ID for the notification
-    QString icon() const;
-
     //! Returns the timestamp for the notification
     QDateTime timestamp() const;
-
-    //! Returns the icon ID for the preview of the notification
-    QString previewIcon() const;
 
     //! Returns the summary text for the preview of the notification
     QString previewSummary() const;
 
     //! Returns the body text for the preview of the notification
     QString previewBody() const;
+
+    //! Returns the sub-text for the notification
+    QString subText() const;
 
     //! Returns the urgency of the notification
     int urgency() const;
@@ -148,29 +239,36 @@ public:
     //! Returns the category of the notification
     QString category() const;
 
+    //! Returns whether the notification is transient
+    bool isTransient() const;
+
+    //! Returns the color set for notification, commonly just for Android compatibility
+    QString color() const;
+
     //! Returns the user removability of the notification
     bool isUserRemovable() const;
 
-    //! Returns true if the notification has been hidden to prevent further display
-    bool hidden() const;
+    //! Returns the user removability hint state
+    bool isUserRemovableByHint() const;
 
     //! Returns the remote actions invokable by the notification
     QVariantList remoteActions() const;
 
-    //! Returns an indicator for the origin of the notification
-    QString origin() const;
-
     //! Returns an indicator for the notification owner
     QString owner() const;
-
-    //! Returns the maximum number of content lines requested for display
-    int maxContentLines() const;
 
     //! Returns true if the notification has been restored since it was last modified
     bool restored() const;
 
+    qreal progress() const;
+
+    bool hasProgress() const;
+
     //! \internal
     quint64 internalTimestamp() const;
+
+    //! \internal
+    void restartProgressTimer();
 
     /*!
      * Creates a copy of an existing representation of a notification.
@@ -205,20 +303,21 @@ signals:
     //! Sent when the hints have been modified
     void hintsChanged();
 
-    //! Sent when the icon has been modified
-    void iconChanged();
+    //! Sent when the app icon has been modified
+    void appIconChanged();
+    void appIconOriginChanged();
 
     //! Sent when the timestamp has changed
     void timestampChanged();
-
-    //! Sent when the preview icon has been modified
-    void previewIconChanged();
 
     //! Sent when the preview summary has been modified
     void previewSummaryChanged();
 
     //! Sent when the preview body has been modified
     void previewBodyChanged();
+
+    //! Sent when the sub text has been modified
+    void subTextChanged();
 
     //! Sent when the urgency has been modified
     void urgencyChanged();
@@ -235,17 +334,28 @@ signals:
     //! Sent when the user removability has been modified
     void userRemovableChanged();
 
+    //! Sent when the remote actions have been modified
+    void remoteActionsChanged();
+
+    void hasProgressChanged();
+    void progressChanged();
+
+    void isTransientChanged();
+    void colorChanged();
+
 private:
     void updateHintValues();
 
     //! Name of the application sending the notification
     QString m_appName;
+    QString m_explicitAppName;
+    QString m_disambiguatedAppName;
 
     //! The ID of the notification
-    uint m_replacesId;
+    uint m_id;
 
-    //! Icon ID of the application sending the notification
     QString m_appIcon;
+    int m_appIconOrigin = ExplicitValue;
 
     //! Summary text for the notification
     QString m_summary;
@@ -266,6 +376,7 @@ private:
     // Cached values for speeding up comparisons:
     int m_priority;
     quint64 m_timestamp;
+    QTimer *m_activeProgressTimer;
 };
 
 // Order notifications by descending priority then timestamp:

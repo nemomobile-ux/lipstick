@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -38,7 +37,6 @@ signals:
 
 private slots:
     void init();
-    void updateNotification(uint id);
     void updateNotifications(const QList<uint> &ids);
     void removeNotification(uint id);
     void removeNotifications(const QList<uint> &ids);
@@ -70,6 +68,7 @@ protected:
 private:
     Q_DISABLE_COPY(NotificationListModel)
 
+    void updateNotification(uint id);
     bool m_populated;
 
 #ifdef UNIT_TEST

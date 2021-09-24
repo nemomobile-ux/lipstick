@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012-2015 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012-2015 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -135,7 +134,7 @@ void Ut_USBModeSelector::testShowDialog()
 
     QSignalSpy spy(usbModeSelector, SIGNAL(dialogShown()));
     usbModeSelector->m_usbMode->setConfigMode(mode);
-    usbModeSelector->handleUSBState();
+    usbModeSelector->handleUSBEvent(mode);
 
     QCOMPARE(homeWindows.count(), 1);
 
@@ -170,8 +169,8 @@ void Ut_USBModeSelector::testHideDialog()
     QFETCH(QString, mode);
 
     usbModeSelector->m_usbMode->setConfigMode(QUsbModed::Mode::Ask);
-    usbModeSelector->m_usbMode->setCurrentMode(QUsbModed::Mode::Ask);
-    usbModeSelector->handleUSBState();
+    usbModeSelector->handleUSBEvent(QUsbModed::Mode::Ask);
+    usbModeSelector->handleUSBEvent(mode);
     QCOMPARE(homeWindowVisible[homeWindows.first()], false);
 }
 
@@ -199,8 +198,7 @@ void Ut_USBModeSelector::testUSBNotifications()
     QFETCH(QString, category);
     QFETCH(QString, body);
 
-    usbModeSelector->m_usbMode->setCurrentMode(QUsbModed::Mode::Ask);
-    usbModeSelector->handleUSBState();
+    usbModeSelector->handleUSBEvent(mode);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 1);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_CATEGORY).toString(), category);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QVariantHash>(6).value(LipstickNotification::HINT_PREVIEW_BODY).toString(), body);

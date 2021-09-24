@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2012-2014 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -15,14 +15,21 @@
 #ifndef THERMALNOTIFIER_H
 #define THERMALNOTIFIER_H
 
-#include <qmthermal.h>
-#include <qmdisplaystate.h>
+#include <thermal.h>
+#include <displaystate.h>
 
 class ThermalNotifier : public QObject
 {
     Q_OBJECT
 public:
     explicit ThermalNotifier(QObject *parent = 0);
+
+    /*!
+     * Shows a system notification.
+     *
+     * \param body the body text of the notification
+     */
+    static void publishTemperatureNotification(const QString &body);
 
 private slots:
     /*!
@@ -31,7 +38,7 @@ private slots:
      *
      * \param state the new thermal state
      */
-    void applyThermalState(MeeGo::QmThermal::ThermalState state);
+    void applyThermalState(DeviceState::Thermal::ThermalState state);
 
     /*!
      * Reacts to display state changes by showing the
@@ -39,25 +46,17 @@ private slots:
      *
      * \param state the new display state
      */
-    void applyDisplayState(MeeGo::QmDisplayState::DisplayState state);
+    void applyDisplayState(DeviceState::DisplayStateMonitor::DisplayState state);
 
 private:
-    /*!
-     * Shows a system notification.
-     *
-     * \param category the category of the notification
-     * \param body the body text of the notification
-     */
-    void createAndPublishNotification(const QString &category, const QString &body);
-
     //! For getting the thermal state
-    MeeGo::QmThermal *m_thermalState;
+    DeviceState::Thermal *m_thermalState;
 
     //! For getting the display state
-    MeeGo::QmDisplayState *m_displayState;
+    DeviceState::DisplayStateMonitor *m_displayState;
 
     //! Thermal state for which a notification has been displayed while the screen was on
-    MeeGo::QmThermal::ThermalState m_thermalStateNotifiedWhileScreenIsOn;
+    DeviceState::Thermal::ThermalState m_thermalStateNotifiedWhileScreenIsOn;
 
 #ifdef UNIT_TEST
     friend class Ut_ThermalNotifier;

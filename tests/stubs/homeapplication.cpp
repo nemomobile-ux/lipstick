@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -15,6 +14,12 @@
 
 #include "homeapplication.h"
 
+HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
+    : QGuiApplication(argc, argv)
+{
+    Q_UNUSED(qmlPath);
+}
+
 bool HomeApplication::event(QEvent *)
 {
     qFatal("Not implemented");
@@ -22,6 +27,10 @@ bool HomeApplication::event(QEvent *)
 }
 
 void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
+{
+}
+
+void HomeApplication::sendStartupNotifications()
 {
 }
 

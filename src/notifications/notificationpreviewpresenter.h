@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -19,14 +18,14 @@
 #include "lipstickglobal.h"
 #include <QObject>
 
+namespace NemoDeviceLock {
+class DeviceLock;
+}
+
 class HomeWindow;
 class LipstickNotification;
 class NotificationFeedbackPlayer;
-
-namespace MeeGo {
-class QmLocks;
-class QmDisplayState;
-}
+class ScreenLock;
 
 /*!
  * \class NotificationPreviewPresenter
@@ -42,16 +41,8 @@ class LIPSTICK_EXPORT NotificationPreviewPresenter : public QObject
     Q_PROPERTY(LipstickNotification *notification READ notification NOTIFY notificationChanged)
 
 public:
-    /*!
-     * Creates a notification preview presenter.
-     *
-     * \param parent the parent object
-     */
-    explicit NotificationPreviewPresenter(QObject *parent = 0);
-
-    /*!
-     * Destroys the notification preview presenter.
-     */
+    explicit NotificationPreviewPresenter(ScreenLock *screenLock, NemoDeviceLock::DeviceLock *deviceLock,
+                                          QObject *parent = 0);
     virtual ~NotificationPreviewPresenter();
 
     /*!
@@ -65,9 +56,6 @@ public:
 signals:
     //! Sent when the notification to be shown has changed.
     void notificationChanged();
-
-    //! Sent when a notification is considered presented by the presenter
-    void notificationPresented(uint id);
 
 public slots:
     /*!
@@ -96,7 +84,6 @@ private slots:
     void createWindowIfNecessary();
 
 private:
-    //! Checks whether the given notification has a preview body and a preview summary.
     bool notificationShouldBeShown(LipstickNotification *notification);
 
     //! Sets the given notification as the current notification
@@ -115,10 +102,9 @@ private:
     NotificationFeedbackPlayer *m_notificationFeedbackPlayer;
 
     //! For getting information about the touch screen lock state
-    MeeGo::QmLocks *m_locks;
+    ScreenLock *m_screenLock;
 
-    //! For getting information about the display state
-    MeeGo::QmDisplayState *m_displayState;
+    NemoDeviceLock::DeviceLock *m_deviceLock;
 
 #ifdef UNIT_TEST
     friend class Ut_NotificationPreviewPresenter;

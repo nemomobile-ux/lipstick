@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013-2014 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013-2014 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -17,6 +16,7 @@
 
 #include "homeapplication.h"
 #include "compositor/lipstickcompositor.h"
+#include "notifications/notificationmanager.h"
 
 LipstickApi::LipstickApi(QObject *parent)
 : QObject(parent)
@@ -37,7 +37,12 @@ QObject *LipstickApi::compositor() const
     return LipstickCompositor::instance();
 }
 
-void LipstickApi::takeScreenshot(const QString &path)
+ScreenshotResult *LipstickApi::takeScreenshot(const QString &path)
 {
-    HomeApplication::instance()->takeScreenshot(path);
+    return ScreenshotService::saveScreenshot(path);
+}
+
+QString LipstickApi::notificationSystemApplicationName() const
+{
+    return NotificationManager::instance(false)->systemApplicationName();
 }

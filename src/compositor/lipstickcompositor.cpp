@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 - 2019 Jolla Ltd.
+** Copyright (c) 2019 - 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -13,9 +13,6 @@
 **
 ****************************************************************************/
 
-#ifdef HAVE_CONTENTACTION
-#include <contentaction.h>
-#endif
 
 #include <QWaylandSeat>
 #include <QDesktopServices>
@@ -25,23 +22,29 @@
 #include <QMimeData>
 #include <QtGui/qpa/qplatformnativeinterface.h>
 #include "homeapplication.h"
+#include "touchscreen/touchscreen.h"
 #include "windowmodel.h"
 #include "lipstickcompositorprocwindow.h"
 #include "lipstickcompositor.h"
 #include "lipstickcompositoradaptor.h"
+#include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
 #include <qpa/qwindowsysteminterface.h>
-#include "hwcrenderstage.h"
+#include "logging.h"
 #include <private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
 #include <QWaylandQuickShellSurfaceItem>
 
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
-
+#include <qmcenameowner.h>
+#include <dbus/dbus-protocol.h>
+#include <sys/types.h>
+#include <systemd/sd-bus.h>
+#include <systemd/sd-login.h>
+#include <unistd.h>
 
 #define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
-
 
 LipstickCompositor *LipstickCompositor::m_instance = 0;
 
@@ -49,21 +52,19 @@ LipstickCompositor::LipstickCompositor()
     : m_totalWindowCount(0)
     , m_nextWindowId(1)
     , m_homeActive(true)
-    , m_shaderEffect(0)
-    , m_fullscreenSurface(0)
-    , m_directRenderingActive(false)
     , m_topmostWindowId(0)
     , m_topmostWindowProcessId(0)
     , m_topmostWindowOrientation(Qt::PrimaryOrientation)
     , m_screenOrientation(Qt::PrimaryOrientation)
     , m_sensorOrientation(Qt::PrimaryOrientation)
-    , m_displayState(0)
     , m_retainedSelection(0)
-    , m_currentDisplayState(MeeGo::QmDisplayState::Unknown)
     , m_updatesEnabled(true)
     , m_completed(false)
     , m_onUpdatesDisabledUnfocusedWindowId(0)
     , m_fakeRepaintTriggered(false)
+    , m_queuedSetUpdatesEnabledCalls()
+    , m_mceNameOwner(new QMceNameOwner(this))
+    , m_sessionActivationTries(0)
 {
     m_window = new QQuickWindow();
     m_window->setColor(Qt::black);
@@ -114,15 +115,30 @@ LipstickCompositor::LipstickCompositor()
 
     connect(QGuiApplication::clipboard(), SIGNAL(dataChanged()), SLOT(clipboardDataChanged()));
 
-    HwcRenderStage::initialize(this);
-
     m_timedDbus = new Maemo::Timed::Interface();
     if( !m_timedDbus->isValid() )
     {
-      qWarning() << "invalid dbus interface:" << m_timedDbus->lastError();
+        qWarning() << "invalid dbus interface:" << m_timedDbus->lastError();
     }
 
     QTimer::singleShot(0, this, SLOT(initialize()));
+
+    QObject::connect(m_mceNameOwner, &QMceNameOwner::validChanged,
+                     this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
+    QObject::connect(m_mceNameOwner, &QMceNameOwner::nameOwnerChanged,
+                     this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
+
+    setUpdatesEnabledNow(false);
+}
+
+static inline bool displayStateIsDimmed(TouchScreen::DisplayState state)
+{
+    return state == TouchScreen::DisplayDimmed;
+}
+
+static bool displayStateIsOn(TouchScreen::DisplayState state)
+{
+    return state == TouchScreen::DisplayOn || state == TouchScreen::DisplayDimmed;
 }
 
 LipstickCompositor::~LipstickCompositor()
@@ -132,7 +148,8 @@ LipstickCompositor::~LipstickCompositor()
     disconnect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
 
     delete m_timedDbus;
-    delete m_shaderEffect;
+
+    m_instance = nullptr;
 }
 
 LipstickCompositor *LipstickCompositor::instance()
@@ -182,7 +199,6 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
 
     if(window) {
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
-        connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
     }
 }
 
@@ -198,17 +214,10 @@ void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
 
 bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
 {
-    Q_UNUSED(client)
-#if defined(HAVE_CONTENTACTION)
-    ContentAction::Action action = url.scheme() == "file"? ContentAction::Action::defaultActionForFile(url.toString()) : ContentAction::Action::defaultActionForScheme(url.toString());
-    if (action.isValid()) {
-        action.trigger();
-    }
-    return action.isValid();
-#else
-    Q_UNUSED(url)
-    return false;
-#endif
+    Q_UNUSED(client);
+    openUrlRequested(url);
+
+    return true;
 }
 
 void LipstickCompositor::retainedSelectionReceived(QMimeData *mimeData)
@@ -278,7 +287,7 @@ void LipstickCompositor::closeClientForWindowId(int id)
 QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
 {
     LipstickCompositorWindow *window = m_windows.value(id, 0);
-    return window?window->surface():0;
+    return window ? window->surface() : 0;
 }
 
 bool LipstickCompositor::completed()
@@ -293,12 +302,7 @@ void LipstickCompositor::clearKeyboardFocus()
 
 void LipstickCompositor::setDisplayOff()
 {
-    if (!m_displayState) {
-        qWarning() << "No display";
-        return;
-    }
-
-    m_displayState->set(MeeGo::QmDisplayState::Off);
+    HomeApplication::instance()->setDisplayOff();
 }
 
 void LipstickCompositor::surfaceDamaged(const QRegion &)
@@ -308,22 +312,6 @@ void LipstickCompositor::surfaceDamaged(const QRegion &)
         // make it conditional to QT_WAYLAND_COMPOSITOR_NO_THROTTLE?
         m_output->sendFrameCallbacks();
     }
-}
-
-void LipstickCompositor::setFullscreenSurface(QWaylandSurface *surface)
-{
-    if (surface == m_fullscreenSurface)
-        return;
-
-    // Prevent flicker when returning to composited mode
-    if (!surface && m_fullscreenSurface) {
-        foreach (QWaylandView *view, m_fullscreenSurface->views())
-            static_cast<LipstickCompositorWindow *>(view->renderObject())->update();
-    }
-
-    m_fullscreenSurface = surface;
-
-    emit fullscreenSurfaceChanged();
 }
 
 QObject *LipstickCompositor::clipboard() const
@@ -359,39 +347,111 @@ LipstickCompositorWindow *LipstickCompositor::createView(QWaylandSurface *surfac
     return item;
 }
 
-void LipstickCompositor::onSurfaceDying()
+void LipstickCompositor::activateLogindSession()
 {
-    QWaylandSurface *surface = static_cast<QWaylandSurface *>(sender());
-    LipstickCompositorWindow *item = surfaceWindow(surface);
+    m_sessionActivationTries++;
 
-    if (surface == m_fullscreenSurface)
-        setFullscreenSurface(0);
+    if (m_logindSession.isEmpty()) {
+        /* Find the current session based on uid */
+        uid_t uid = getuid();
+        char **sessions = NULL;
+        uid_t *uids = NULL;
+        uint count = 0;
+        if (sd_seat_get_sessions("seat0", &sessions, &uids, &count) > 0) {
+            for (uint i = 0; i < count; ++i) {
+                if (uids[i] == uid) {
+                    m_logindSession = sessions[i];
+                    break;
+                }
+            }
+            for (char **s = sessions; *s ; ++s)
+                free(*s);
+        }
+        free(sessions);
+        free(uids);
 
-    if (item) {
-        item->m_windowClosed = true;
-        item->tryRemove();
+        if (m_logindSession.isEmpty()) {
+            qCWarning(lcLipstickCoreLog) << "Could not read session id, could not activate session";
+            return;
+        }
     }
+
+    if (sd_session_is_active(m_logindSession.toUtf8()) > 0) {
+        qCInfo(lcLipstickCoreLog) << "Session" << m_logindSession << "successfully activated";
+        return;
+    }
+
+    if (m_sessionActivationTries > 10) {
+        qCWarning(lcLipstickCoreLog) << "Could not activate session, giving up";
+        return;
+    }
+
+    qCDebug(lcLipstickCoreLog) << "Activating session on seat0";
+
+    QDBusMessage method = QDBusMessage::createMethodCall(
+                QStringLiteral("org.freedesktop.login1"),
+                QStringLiteral("/org/freedesktop/login1"),
+                QStringLiteral("org.freedesktop.login1.Manager"),
+                QStringLiteral("ActivateSession"));
+    method.setArguments({ m_logindSession });
+
+    QDBusPendingCall call = QDBusConnection::systemBus().asyncCall(method);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
+    connect(watcher, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *call) {
+        QDBusPendingReply<void> reply = *call;
+        if (reply.isError()) {
+            qCWarning(lcLipstickCoreLog) << "Could not activate session:" << reply.error();
+        } else {
+            // VT switching may fail without notice, check status again a bit later
+            QTimer::singleShot(100, this, &LipstickCompositor::activateLogindSession);
+        }
+        call->deleteLater();
+    });
+
+    qCDebug(lcLipstickCoreLog) << "Session" << m_logindSession << "is activating";
 }
 
 void LipstickCompositor::initialize()
 {
-    m_displayState = new MeeGo::QmDisplayState(this);
-    MeeGo::QmDisplayState::DisplayState displayState = m_displayState->get();
-    reactOnDisplayStateChanges(displayState);
-    connect(m_displayState, SIGNAL(displayStateChanged(MeeGo::QmDisplayState::DisplayState)), this, SLOT(reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState)));
+    activateLogindSession();
+
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    reactOnDisplayStateChanges(TouchScreen::DisplayUnknown, touchScreen->currentDisplayState());
+    connect(touchScreen, &TouchScreen::displayStateChanged, this, &LipstickCompositor::reactOnDisplayStateChanges);
 
     new LipstickCompositorAdaptor(this);
 
     QDBusConnection systemBus = QDBusConnection::systemBus();
-    if (!systemBus.registerService("org.nemomobile.compositor")) {
-        qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s", systemBus.lastError().message().toUtf8().constData());
-    }
+
     if (!systemBus.registerObject("/", this)) {
         qWarning("Unable to register object at path /: %s", systemBus.lastError().message().toUtf8().constData());
     }
+
+    /* We might have for example minui based encryption unlock ui
+     * running as compositor and waiting to be able to hand-off
+     * to us -> use ReplaceExistingService to facilitate this.
+     */
+    QDBusReply<QDBusConnectionInterface::RegisterServiceReply> reply =
+            systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
+                                                   QDBusConnectionInterface::ReplaceExistingService,
+                                                   QDBusConnectionInterface::DontAllowReplacement);
+    if (!reply.isValid()) {
+        qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s",
+                 reply.error().message().toUtf8().constData());
+    } else if (reply.value() != QDBusConnectionInterface::ServiceRegistered) {
+        qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s",
+                 "Did not get primary name ownership");
+    }
+
+
     QDBusMessage message = QDBusMessage::createMethodCall(MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_DISPLAY_LPM_SET_SUPPORTED);
     message.setArguments(QVariantList() << ambientSupported());
     QDBusConnection::systemBus().asyncCall(message);
+
+    new FileServiceAdaptor(this);
+    QDBusConnection sessionBus = QDBusConnection::sessionBus();
+    sessionBus.registerObject(QLatin1String("/"), this);
+    sessionBus.registerService(QLatin1String("org.nemomobile.fileservice"));
 }
 
 void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)
@@ -435,8 +495,6 @@ void LipstickCompositor::surfaceMapped(QWaylandSurface *surface)
         item->setParentItem(m_window->contentItem());
     }
 
-    QObject::connect(surface, &QWaylandSurface::surfaceDestroyed, this, &LipstickCompositor::onSurfaceDying);
-
     m_totalWindowCount++;
     m_mappedSurfaces.insert(item->windowId(), item);
 
@@ -465,17 +523,6 @@ void LipstickCompositor::surfaceTitleChanged()
     }
 }
 
-void LipstickCompositor::surfaceSetFullScreen(QWaylandOutput *output)
-{
-    QWaylandXdgToplevel *xdgShellSurface = qobject_cast<QWaylandXdgToplevel*>(sender());
-
-    QWaylandOutput *designatedOutput = output ? output : m_output;
-    if (!designatedOutput)
-        return;
-
-    xdgShellSurface->sendFullscreen(designatedOutput->geometry().size() / designatedOutput->scaleFactor());
-}
-
 void LipstickCompositor::windowSwapped()
 {
     m_output->sendFrameCallbacks();
@@ -488,11 +535,23 @@ void LipstickCompositor::windowDestroyed()
     emit ghostWindowCountChanged();
 }
 
+void LipstickCompositor::windowPropertyChanged(const QString &property)
+{
+    qWarning() << "NOT IMPLEMENTED: Window properties changed:" << property;
+    QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+    if(window) {
+        if (property == QLatin1String("MOUSE_REGION")) {
+            window->refreshMouseRegion();
+        } else if (property == QLatin1String("GRABBED_KEYS")) {
+            window->refreshGrabbedKeys();
+        }
+    }
+
+}
+
 void LipstickCompositor::surfaceUnmapped(QWaylandSurface *surface)
 {
-    if (surface == m_fullscreenSurface)
-        setFullscreenSurface(0);
-
     LipstickCompositorWindow *window = surfaceWindow(surface);
     if (window)
         emit windowHidden(window);
@@ -509,9 +568,6 @@ void LipstickCompositor::surfaceUnmapped(LipstickCompositorWindow *item)
 
     emit windowCountChanged();
     emit windowRemoved(item);
-
-    item->m_windowClosed = true;
-    item->tryRemove();
 
     emit ghostWindowCountChanged();
 
@@ -530,22 +586,6 @@ void LipstickCompositor::windowRemoved(int id)
 {
     for (int ii = 0; ii < m_windowModels.count(); ++ii)
         m_windowModels.at(ii)->remItem(id);
-}
-
-QQmlComponent *LipstickCompositor::shaderEffectComponent()
-{
-    const char *qml_source =
-        "import QtQuick 2.0\n"
-        "ShaderEffect {\n"
-            "property QtObject window\n"
-            "property ShaderEffectSource source: ShaderEffectSource { sourceItem: window }\n"
-        "}";
-
-    if (!m_shaderEffect) {
-        m_shaderEffect = new QQmlComponent(qmlEngine(this));
-        m_shaderEffect->setData(qml_source, QUrl());
-    }
-    return m_shaderEffect;
 }
 
 void LipstickCompositor::setTopmostWindowOrientation(Qt::ScreenOrientation topmostWindowOrientation)
@@ -599,39 +639,31 @@ void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrient
     }
 }
 
-void LipstickCompositor::reactOnDisplayStateChanges(MeeGo::QmDisplayState::DisplayState state)
+bool LipstickCompositor::displayDimmed() const
 {
-    if (m_currentDisplayState == state) {
-        return;
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    return touchScreen->currentDisplayState() == TouchScreen::DisplayDimmed;
+}
+
+void LipstickCompositor::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState)
+{
+    bool oldOn = displayStateIsOn(oldState);
+    bool newOn = displayStateIsOn(newState);
+
+    if (oldOn != newOn) {
+        if (newOn) {
+            emit displayOn();
+        } else  {
+            QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
+            emit displayOff();
+        }
     }
 
-    if (state == MeeGo::QmDisplayState::On) {
-        emit displayOn();
-    } else if (state == MeeGo::QmDisplayState::Off) {
-        QCoreApplication::postEvent(this, new QTouchEvent(QEvent::TouchCancel));
-        emit displayOff();
-    }
+    bool oldDimmed = displayStateIsDimmed(oldState);
+    bool newDimmed = displayStateIsDimmed(newState);
 
-    bool changeInDimming = (state == MeeGo::QmDisplayState::Dimmed) != (m_currentDisplayState == MeeGo::QmDisplayState::Dimmed);
-
-    bool changeInAmbient = ((state == MeeGo::QmDisplayState::Off) != (m_currentDisplayState == MeeGo::QmDisplayState::Off)) && ambientEnabled();
-
-    bool enterAmbient = changeInAmbient && (state == MeeGo::QmDisplayState::Off);
-    bool leaveAmbient = changeInAmbient && (state != MeeGo::QmDisplayState::Off);
-
-    m_currentDisplayState = state;
-
-    if (changeInDimming) {
+    if (oldDimmed != newDimmed) {
         emit displayDimmedChanged();
-    }
-    if (changeInAmbient) {
-        emit displayAmbientChanged();
-    }
-    if (enterAmbient) {
-        emit displayAmbientEntered();
-    }
-    if (leaveAmbient) {
-        emit displayAmbientLeft();
     }
 }
 
@@ -644,26 +676,26 @@ void LipstickCompositor::setScreenOrientationFromSensor()
 
     Qt::ScreenOrientation sensorOrientation = m_sensorOrientation;
     switch (reading->orientation()) {
-        case QOrientationReading::TopUp:
-            sensorOrientation = Qt::PortraitOrientation;
-            break;
-        case QOrientationReading::TopDown:
-            sensorOrientation = Qt::InvertedPortraitOrientation;
-            break;
-        case QOrientationReading::LeftUp:
-            sensorOrientation = Qt::InvertedLandscapeOrientation;
-            break;
-        case QOrientationReading::RightUp:
-            sensorOrientation = Qt::LandscapeOrientation;
-            break;
-        case QOrientationReading::FaceUp:
-        case QOrientationReading::FaceDown:
-            /* Keep screen orientation at previous state */
-            break;
-        case QOrientationReading::Undefined:
-        default:
-            sensorOrientation = Qt::PrimaryOrientation;
-            break;
+    case QOrientationReading::TopUp:
+        sensorOrientation = Qt::PortraitOrientation;
+        break;
+    case QOrientationReading::TopDown:
+        sensorOrientation = Qt::InvertedPortraitOrientation;
+        break;
+    case QOrientationReading::LeftUp:
+        sensorOrientation = Qt::InvertedLandscapeOrientation;
+        break;
+    case QOrientationReading::RightUp:
+        sensorOrientation = Qt::LandscapeOrientation;
+        break;
+    case QOrientationReading::FaceUp:
+    case QOrientationReading::FaceDown:
+        /* Keep screen orientation at previous state */
+        break;
+    case QOrientationReading::Undefined:
+    default:
+        sensorOrientation = Qt::PrimaryOrientation;
+        break;
     }
 
     if (sensorOrientation != m_sensorOrientation) {
@@ -772,8 +804,9 @@ void LipstickCompositor::scheduleAmbientUpdate()
 
 void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 {
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
     if (enabled) {
-        if (m_currentDisplayState == MeeGo::QmDisplayState::On) {
+        if (touchScreen->currentDisplayState() == TouchScreen::DisplayOn) {
             return;
         }
         if (!ambientEnabled()) {
@@ -786,7 +819,13 @@ void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
     }
 }
 
-void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
+bool LipstickCompositor::displayAmbient() const
+{
+    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    return touchScreen->currentDisplayState() == TouchScreen::DisplayOn;
+}
+
+void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)
 {
     if ((m_updatesEnabled != enabled) || inAmbientMode) {
         if (!inAmbientMode) {
@@ -828,6 +867,40 @@ void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
     if (enabled && !m_completed) {
         m_completed = true;
         emit completedChanged();
+    }
+}
+
+void LipstickCompositor::setUpdatesEnabled(bool enabled, bool inAmbientMode)
+{
+    if (!calledFromDBus()) {
+        setUpdatesEnabledNow(enabled, inAmbientMode);
+    } else {
+        if (message().isReplyRequired())
+            setDelayedReply(true);
+        m_queuedSetUpdatesEnabledCalls.append(QueuedSetUpdatesEnabledCall(connection(), message(), enabled));
+        QMetaObject::invokeMethod(this, "processQueuedSetUpdatesEnabledCalls", Qt::QueuedConnection);
+    }
+}
+
+void LipstickCompositor::processQueuedSetUpdatesEnabledCalls()
+{
+    if (m_mceNameOwner->valid()) {
+        while (!m_queuedSetUpdatesEnabledCalls.isEmpty()) {
+            QueuedSetUpdatesEnabledCall queued(m_queuedSetUpdatesEnabledCalls.takeFirst());
+            if (queued.m_message.service() != m_mceNameOwner->nameOwner()) {
+                if (queued.m_message.isReplyRequired()) {
+                    QDBusMessage reply(queued.m_message.createErrorReply(DBUS_ERROR_ACCESS_DENIED,
+                                                                         "Only mce is allowed to call this method"));
+                    queued.m_connection.send(reply);
+                }
+            } else {
+                setUpdatesEnabledNow(queued.m_enable);
+                if (queued.m_message.isReplyRequired()) {
+                    QDBusMessage reply(queued.m_message.createReply());
+                    queued.m_connection.send(reply);
+                }
+            }
+        }
     }
 }
 

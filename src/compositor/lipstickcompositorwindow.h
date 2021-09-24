@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 Jolla Ltd.
-** Contact: Aaron Kennedy <aaron.kennedy@jollamobile.com>
+** Copyright (c) 2013 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -61,8 +60,6 @@ public:
 
     Q_INVOKABLE void terminateProcess(int killTimeout);
 
-    QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *);
-
     bool focusOnTouch() const;
     void setFocusOnTouch(bool focusOnTouch);
 
@@ -89,7 +86,6 @@ signals:
 private slots:
     void handleTouchCancel();
     void killProcess();
-    void connectSurfaceSignals();
 
 private:
     friend class LipstickCompositor;
@@ -97,15 +93,17 @@ private:
     friend class WindowPixmapItem;
     void imageAddref(QQuickItem *item);
     void imageRelease(QQuickItem *item);
-    void onSync();
 
     bool canRemove() const;
     void tryRemove();
+    void refreshMouseRegion();
+    void refreshGrabbedKeys();
     void handleTouchEvent(QTouchEvent *e);
 
     void setTitle(QString title);
     QString m_title;
 
+    qint64 m_processId;
     int m_windowId;
     QString m_category;
     bool m_delayRemove:1;
@@ -113,11 +111,8 @@ private:
     bool m_removePosted:1;
     bool m_interceptingTouch:1;
     bool m_mapped : 1;
-    bool m_noHardwareComposition: 1;
     bool m_focusOnTouch : 1;
-    bool m_hasVisibleReferences : 1;
     QVariant m_data;
-    QList<QMetaObject::Connection> m_surfaceConnections;
     QVector<QQuickItem *> m_refs;
 };
 

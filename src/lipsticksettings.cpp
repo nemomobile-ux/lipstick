@@ -39,8 +39,8 @@ void LipstickSettings::setScreenLock(ScreenLock *screenLock)
 {
     // TODO: Disconnect from previous screenlock signals?
 
-    this->m_screenLock = screenLock;
-    connect(screenLock, SIGNAL(screenIsLocked(bool)), this, SIGNAL(lockscreenVisibleChanged()));
+    m_screenLock = screenLock;
+    connect(screenLock, SIGNAL(screenLockedChanged(bool)), this, SIGNAL(lockscreenVisibleChanged()));
     connect(screenLock, SIGNAL(lowPowerModeChanged()), this, SIGNAL(lowPowerModeChanged()));
     connect(screenLock, SIGNAL(blankingPolicyChanged(QString)), this, SIGNAL(blankingPolicyChanged()));
 }
@@ -73,23 +73,47 @@ void LipstickSettings::lockScreen(bool immediate)
     }
 }
 
+void LipstickSettings::setInteractionExpected(bool expected)
+{
+    if (m_screenLock != 0) {
+        m_screenLock->setInteractionExpected(expected);
+    }
+}
+
 QSize LipstickSettings::screenSize()
 {
     return QGuiApplication::primaryScreen()->size();
 }
 
-void LipstickSettings::exportScreenSize()
+void LipstickSettings::exportScreenProperties()
 {
     const int defaultValue = 0;
     MGConfItem widthConf("/lipstick/screen/primary/width");
-    if (widthConf.value(defaultValue) != QGuiApplication::primaryScreen()->size().width()) {
-        widthConf.set(QGuiApplication::primaryScreen()->size().width());
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    QSize primaryScreenSize = primaryScreen->size();
+    if (widthConf.value(defaultValue) != primaryScreenSize.width()) {
+        widthConf.set(primaryScreenSize.width());
         widthConf.sync();
     }
     MGConfItem heightConf("/lipstick/screen/primary/height");
-    if (heightConf.value(defaultValue) != QGuiApplication::primaryScreen()->size().height()) {
-        heightConf.set(QGuiApplication::primaryScreen()->size().height());
+    if (heightConf.value(defaultValue) != primaryScreenSize.height()) {
+        heightConf.set(primaryScreenSize.height());
         heightConf.sync();
+    }
+    MGConfItem physicalDotsPerInchConf("/lipstick/screen/primary/physicalDotsPerInch");
+    if (physicalDotsPerInchConf.value(defaultValue) != primaryScreen->physicalDotsPerInch()) {
+        physicalDotsPerInchConf.set(primaryScreen->physicalDotsPerInch());
+        physicalDotsPerInchConf.sync();
+    }
+    MGConfItem physicalDotsPerInchXConf("/lipstick/screen/primary/physicalDotsPerInchX");
+    if (physicalDotsPerInchXConf.value(defaultValue) != primaryScreen->physicalDotsPerInchX()) {
+        physicalDotsPerInchXConf.set(primaryScreen->physicalDotsPerInchX());
+        physicalDotsPerInchXConf.sync();
+    }
+    MGConfItem physicalDotsPerInchYConf("/lipstick/screen/primary/physicalDotsPerInchY");
+    if (physicalDotsPerInchYConf.value(defaultValue) != primaryScreen->physicalDotsPerInchY()) {
+        physicalDotsPerInchYConf.set(primaryScreen->physicalDotsPerInchY());
+        physicalDotsPerInchYConf.sync();
     }
 }
 

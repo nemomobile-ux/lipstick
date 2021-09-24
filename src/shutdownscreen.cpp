@@ -1,8 +1,8 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -22,17 +22,22 @@
 #include <QScreen>
 #include "utilities/closeeventeater.h"
 #include "notifications/notificationmanager.h"
+#include "notifications/lipsticknotification.h"
+#include "notifications/thermalnotifier.h"
 #include "homeapplication.h"
 #include "shutdownscreen.h"
 #include "lipstickqmlpath.h"
+#include <unistd.h>
 
 ShutdownScreen::ShutdownScreen(QObject *parent) :
     QObject(parent),
     QDBusContext(),
     m_window(0),
-    m_systemState(new MeeGo::QmSystemState(this))
+    m_systemState(new DeviceState::DeviceState(this)),
+    m_user(getuid())
 {
-    connect(m_systemState, SIGNAL(systemStateChanged(MeeGo::QmSystemState::StateIndication)), this, SLOT(applySystemState(MeeGo::QmSystemState::StateIndication)));
+    connect(m_systemState, &DeviceState::DeviceState::systemStateChanged, this, &ShutdownScreen::applySystemState);
+    connect(m_systemState, &DeviceState::DeviceState::nextUserChanged, this, &ShutdownScreen::setUser);
 }
 
 void ShutdownScreen::setWindowVisible(bool visible)
@@ -46,11 +51,13 @@ void ShutdownScreen::setWindowVisible(bool visible)
             m_window->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
             m_window->setContextProperty("shutdownScreen", this);
             m_window->setContextProperty("shutdownMode", m_shutdownMode);
+            m_window->setContextProperty("user", m_user);
             m_window->setSource(QmlPath::to("system/ShutdownScreen.qml"));
             m_window->installEventFilter(new CloseEventEater(this));
         }
 
         if (!m_window->isVisible()) {
+            m_window->setContextProperty("shutdownMode", m_shutdownMode);
             m_window->show();
             emit windowVisibleChanged();
         }
@@ -65,31 +72,31 @@ bool ShutdownScreen::windowVisible() const
     return m_window != 0 && m_window->isVisible();
 }
 
-void ShutdownScreen::applySystemState(MeeGo::QmSystemState::StateIndication what)
+void ShutdownScreen::applySystemState(DeviceState::DeviceState::StateIndication what)
 {
     switch (what) {
-        case MeeGo::QmSystemState::Shutdown:
+        case DeviceState::DeviceState::Shutdown:
             // To avoid early quitting on shutdown
             HomeApplication::instance()->restoreSignalHandlers();
             setWindowVisible(true);
             break;
 
-        case MeeGo::QmSystemState::ThermalStateFatal:
+        case DeviceState::DeviceState::ThermalStateFatal:
             //% "Temperature too high. Device shutting down."
-            createAndPublishNotification("x-nemo.battery.temperature", qtTrId("qtn_shut_high_temp"));
+            ThermalNotifier::publishTemperatureNotification(qtTrId("qtn_shut_high_temp"));
             break;
 
-        case MeeGo::QmSystemState::ShutdownDeniedUSB:
-            //% "USB cable plugged in. Unplug it to shut down device."
-            createAndPublishNotification("device.added", qtTrId("qtn_shut_unplug_usb"));
+        case DeviceState::DeviceState::ShutdownDeniedUSB:
+            //% "USB cable plugged in. Unplug the USB cable to shutdown."
+            publishNotification("icon-system-usb", "accessory_connected", qtTrId("qtn_shut_unplug_usb"));
             break;
 
-        case MeeGo::QmSystemState::BatteryStateEmpty:
+        case DeviceState::DeviceState::BatteryStateEmpty:
             //% "Battery empty. Device shutting down."
-            createAndPublishNotification("x-nemo.battery.shutdown", qtTrId("qtn_shut_batt_empty"));
+            publishNotification("icon-system-battery", "battery_empty", qtTrId("qtn_shut_batt_empty"));
             break;
 
-        case MeeGo::QmSystemState::Reboot:
+        case DeviceState::DeviceState::Reboot:
             // Set shutdown mode unless already set explicitly
             if (m_shutdownMode.isEmpty()) {
                 m_shutdownMode = "reboot";
@@ -97,18 +104,41 @@ void ShutdownScreen::applySystemState(MeeGo::QmSystemState::StateIndication what
             }
             break;
 
+        case DeviceState::DeviceState::UserSwitching:
+            m_shutdownMode = "userswitch";
+            applySystemState(DeviceState::DeviceState::Shutdown);
+            break;
+
+        case DeviceState::DeviceState::UserSwitchingFailed:
+            m_shutdownMode = "userswitchFailed";
+            m_window->setContextProperty("shutdownMode", m_shutdownMode);
+            emit userSwitchFailed();
+            QTimer::singleShot(10000, this, [this] {
+                // Allow for some time for the notification to be visible
+                setWindowVisible(false);
+                m_shutdownMode.clear();
+            });
+            break;
+
         default:
             break;
     }
 }
 
-void ShutdownScreen::createAndPublishNotification(const QString &category, const QString &body)
+void ShutdownScreen::setUser(uint uid)
 {
-    NotificationManager *manager = NotificationManager::instance();
+    m_user = uid;
+}
+
+void ShutdownScreen::publishNotification(const QString &icon, const QString &feedback, const QString &body)
+{
     QVariantHash hints;
-    hints.insert(NotificationManager::HINT_CATEGORY, category);
-    hints.insert(NotificationManager::HINT_PREVIEW_BODY, body);
-    manager->Notify(qApp->applicationName(), 0, QString(), QString(), QString(), QStringList(), hints, -1);
+    hints.insert(LipstickNotification::HINT_URGENCY, LipstickNotification::Critical);
+    hints.insert(LipstickNotification::HINT_TRANSIENT, true);
+    hints.insert(LipstickNotification::HINT_FEEDBACK, feedback);
+
+    NotificationManager *manager = NotificationManager::instance();
+    manager->Notify(manager->systemApplicationName(), 0, icon, QString(), body, QStringList(), hints, -1);
 }
 
 void ShutdownScreen::setShutdownMode(const QString &mode)
@@ -117,7 +147,7 @@ void ShutdownScreen::setShutdownMode(const QString &mode)
         return;
 
     m_shutdownMode = mode;
-    applySystemState(MeeGo::QmSystemState::Shutdown);
+    applySystemState(DeviceState::DeviceState::Shutdown);
 }
 
 bool ShutdownScreen::isPrivileged()

@@ -1,8 +1,7 @@
 /***************************************************************************
 **
-** Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-** Copyright (C) 2012 Jolla Ltd.
-** Contact: Robin Burchell <robin.burchell@jollamobile.com>
+** Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+** Copyright (c) 2012 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -15,35 +14,40 @@
 ****************************************************************************/
 
 #include <QTimer>
-#include <QDBusInterface>
+#include <QDBusConnection>
 #include <QDBusPendingCall>
 #include <QTextStream>
 #include <QCursor>
 #include <QDebug>
+#include <QTouchEvent>
 
 #include <mce/mode-names.h>
-#include <qmdisplaystate.h>
 
 #include "homeapplication.h"
 #include "screenlock.h"
+#include "touchscreen/touchscreen.h"
 #include "utilities/closeeventeater.h"
 
-ScreenLock::ScreenLock(QObject* parent) :
+ScreenLock::ScreenLock(TouchScreen *touch, QObject* parent) :
     QObject(parent),
-    m_callbackInterface(NULL),
+    m_touchScreen(touch),
     m_shuttingDown(false),
     m_lockscreenVisible(false),
-    m_eatEvents(false),
     m_lowPowerMode(false),
-    m_mceBlankingPolicy("default")
-{
-    // No explicit API in tklock for disabling event eater. Monitor display
-    // state changes, and remove event eater if display becomes undimmed.
-    MeeGo::QmDisplayState *displayState = new MeeGo::QmDisplayState(this);
-    connect(displayState, &MeeGo::QmDisplayState::displayStateChanged,
-            this, &ScreenLock::handleDisplayStateChange);
+    m_mceBlankingPolicy("default"),
+    m_interactionExpectedTimer(0),
+    m_interactionExpectedCurrent(false),
+    m_interactionExpectedEmitted(-1)
 
-    qApp->installEventFilter(this);
+{
+    /* Setup idle timer for signaling interaction expected changes on D-Bus */
+    m_interactionExpectedTimer = new QTimer(this);
+    m_interactionExpectedTimer->setSingleShot(true);
+    m_interactionExpectedTimer->setInterval(0);
+    connect(m_interactionExpectedTimer, &QTimer::timeout,
+            this, &ScreenLock::interactionExpectedBroadcast);
+
+    connect(m_touchScreen, SIGNAL(touchBlockedChanged()), this, SIGNAL(touchBlockedChanged()));
 
     auto systemBus = QDBusConnection::systemBus();
     systemBus.connect(QString(),
@@ -62,6 +66,7 @@ ScreenLock::ScreenLock(QObject* parent) :
 
 ScreenLock::~ScreenLock()
 {
+    m_touchScreen = 0;
 }
 
 int ScreenLock::tklock_open(const QString &service, const QString &path, const QString &interface, const QString &method, uint mode, bool, bool)
@@ -71,14 +76,8 @@ int ScreenLock::tklock_open(const QString &service, const QString &path, const Q
         return TkLockReplyOk;
     }
 
-    // Create a D-Bus interface if one doesn't exist or the D-Bus callback details have changed
-    if (m_callbackInterface == NULL || m_callbackInterface->service() != service || m_callbackInterface->path() != path || m_callbackInterface->interface() != interface) {
-        delete m_callbackInterface;
-        m_callbackInterface = new QDBusInterface(service, path, interface, QDBusConnection::systemBus(), this);
-    }
-
     // Store the callback method name
-    m_callbackMethod = method;
+    m_callbackMethod = QDBusMessage::createMethodCall(service, path, interface, method);
 
     // MCE needs a response ASAP, so the actions are executed with single shot timers
     switch (mode) {
@@ -120,6 +119,29 @@ int ScreenLock::tklock_close(bool)
     return TkLockReplyOk;
 }
 
+void ScreenLock::interactionExpectedBroadcast()
+{
+    if (m_interactionExpectedEmitted != m_interactionExpectedCurrent) {
+        m_interactionExpectedEmitted = m_interactionExpectedCurrent;
+        emit interaction_expected(m_interactionExpectedEmitted);
+    }
+}
+
+void ScreenLock::setInteractionExpected(bool expected)
+{
+    /* The qml side property evaluation produces some jitter.
+     * To avoid duplicating it at dbus level, delay signal
+     * broadcasting until we settle on some value. */
+
+    m_interactionExpectedCurrent = expected;
+
+    if (m_interactionExpectedEmitted != m_interactionExpectedCurrent) {
+        m_interactionExpectedTimer->start();
+    } else {
+        m_interactionExpectedTimer->stop();
+    }
+}
+
 void ScreenLock::lockScreen(bool immediate)
 {
     QDBusMessage message = QDBusMessage::createMethodCall("com.nokia.mce", "/com/nokia/mce/request", "com.nokia.mce.request", "req_tklock_mode_change");
@@ -133,88 +155,69 @@ void ScreenLock::unlockScreen()
 {
     hideScreenLockAndEventEater();
 
-    if (m_callbackInterface != NULL && !m_callbackMethod.isEmpty()) {
-        m_callbackInterface->call(QDBus::NoBlock, m_callbackMethod, TkLockUnlock);
+    if (m_callbackMethod.type() == QDBusMessage::MethodCallMessage) {
+        m_callbackMethod.setArguments({ TkLockUnlock });
+        QDBusConnection::systemBus().call(m_callbackMethod, QDBus::NoBlock);
     }
 }
 
 void ScreenLock::showScreenLock()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::showLowPowerMode()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::setDisplayOffMode()
 {
-    toggleScreenLockUI(true);
-    toggleEventEater(false);
+    setScreenLocked(true);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::hideScreenLock()
 {
-    toggleScreenLockUI(false);
+    setScreenLocked(false);
 }
 
 void ScreenLock::hideScreenLockAndEventEater()
 {
-    toggleScreenLockUI(false);
-    toggleEventEater(false);
+    setScreenLocked(false);
+    setEventEaterEnabled(false);
 }
 
 void ScreenLock::showEventEater()
 {
-    toggleEventEater(true);
+    setEventEaterEnabled(true);
 }
 
 void ScreenLock::hideEventEater()
 {
-    toggleEventEater(false);
+    setEventEaterEnabled(false);
 }
 
-void ScreenLock::handleDisplayStateChange(int displayState)
-{
-    MeeGo::QmDisplayState::DisplayState state = static_cast<MeeGo::QmDisplayState::DisplayState>(displayState);
-    if (state == MeeGo::QmDisplayState::Dimmed)
-        return;
-
-    // Eating an event is meaningful only when the display is dimmed
-    hideEventEater();
-}
-
-void ScreenLock::toggleScreenLockUI(bool toggle)
+void ScreenLock::setScreenLocked(bool value)
 {
     // TODO Make the view a lock screen view (title? stacking layer?)
-    if (m_lockscreenVisible != toggle) {
-        m_lockscreenVisible = toggle;
-        emit screenIsLocked(toggle);
+    if (m_lockscreenVisible != value) {
+        m_lockscreenVisible = value;
+        emit screenLockedChanged(value);
     }
 }
 
-void ScreenLock::toggleEventEater(bool toggle)
+void ScreenLock::setEventEaterEnabled(bool value)
 {
-    m_eatEvents = toggle;
+    Q_ASSERT(m_touchScreen);
+    m_touchScreen->setEnabled(!value);
 }
 
 bool ScreenLock::isScreenLocked() const
 {
     return m_lockscreenVisible;
-}
-
-bool ScreenLock::eventFilter(QObject *, QEvent *event)
-{
-    bool eat = m_eatEvents && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd);
-
-    if (eat) {
-        hideEventEater();
-    }
-
-    return eat;
 }
 
 bool ScreenLock::isLowPowerMode() const
@@ -225,6 +228,18 @@ bool ScreenLock::isLowPowerMode() const
 QString ScreenLock::blankingPolicy() const
 {
     return m_mceBlankingPolicy;
+}
+
+bool ScreenLock::touchBlocked() const
+{
+    Q_ASSERT(m_touchScreen);
+    return m_touchScreen->touchBlocked();
+}
+
+TouchScreen::DisplayState ScreenLock::displayState() const
+{
+    Q_ASSERT(m_touchScreen);
+    return m_touchScreen->currentDisplayState();
 }
 
 void ScreenLock::handleLpmModeChange(const QString &state)

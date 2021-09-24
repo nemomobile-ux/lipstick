@@ -1,7 +1,6 @@
 /***************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
-** Contact: Matt Vogt <matthew.vogt@jollamobile.com>
+** Copyright (c) 2015 Jolla Ltd.
 **
 ** This file is part of lipstick.
 **
@@ -27,8 +26,7 @@ const int StandardAndroidPriority = 50;
 AndroidPriorityStore::PriorityDetails detailsForFeedback(const QString &feedback)
 {
     if (!feedback.isEmpty()) {
-        QStringList feedbackEntries = feedback.split(",", QString::SkipEmptyParts);
-        QSet<QString> tokens(feedbackEntries.begin(), feedbackEntries.end());
+        QSet<QString> tokens(feedback.split(",", QString::SkipEmptyParts).toSet());
 
         // If the only feedback tokens are for email, this is a medium-priority notification
         tokens.remove(QStringLiteral("email"));

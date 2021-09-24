@@ -1,7 +1,6 @@
 // This file is part of lipstick, a QML desktop library
 //
-// Copyright (c) 2014 Jolla Ltd.
-// Contact: Martin Jones <martin.jones@jolla.com>
+// Copyright (c) 2014-2017 Jolla Ltd.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -76,7 +75,7 @@ struct FolderItem {
 // but handles only the basic elements, i.e. no merging, filtering, layout, etc. is supported.
 
 LauncherFolderItem::LauncherFolderItem(QObject *parent)
-    : QObjectListModel(parent), mIconId(DEFAULT_ICON_ID)
+    : QObjectListModel(parent), m_iconId(DEFAULT_ICON_ID)
 {
     connect(this, SIGNAL(itemRemoved(QObject*)), this, SLOT(handleRemoved(QObject*)));
     connect(this, SIGNAL(itemAdded(QObject*)), this, SLOT(handleAdded(QObject*)));
@@ -90,30 +89,30 @@ LauncherModel::ItemType LauncherFolderItem::type() const
 
 const QString &LauncherFolderItem::title() const
 {
-    return mTitle;
+    return m_title;
 }
 
 void LauncherFolderItem::setTitle(const QString &title)
 {
-    if (title == mTitle)
+    if (title == m_title)
         return;
 
-    mTitle = title;
+    m_title = title;
     emit titleChanged();
     emit saveNeeded();
 }
 
 const QString &LauncherFolderItem::iconId() const
 {
-    return mIconId;
+    return m_iconId;
 }
 
 void LauncherFolderItem::setIconId(const QString &icon)
 {
-    if (icon == mIconId)
+    if (icon == m_iconId)
         return;
 
-    mIconId = icon;
+    m_iconId = icon;
     saveDirectoryFile();
     emit iconIdChanged();
 }
@@ -151,15 +150,15 @@ int LauncherFolderItem::updatingProgress() const
 
 LauncherFolderItem *LauncherFolderItem::parentFolder() const
 {
-    return mParentFolder;
+    return m_parentFolder;
 }
 
 void LauncherFolderItem::setParentFolder(LauncherFolderItem *parent)
 {
-    if (parent == mParentFolder)
+    if (parent == m_parentFolder)
         return;
 
-    mParentFolder = parent;
+    m_parentFolder = parent;
     emit parentFolderChanged();
 }
 
@@ -188,10 +187,10 @@ void LauncherFolderItem::destroyFolder()
 {
     if (itemCount() != 0)
         qWarning() << "Removing a folder that is not empty.";
-    if (mParentFolder)
-        mParentFolder->removeItem(this);
-    if (!mDirectoryFile.isEmpty()) {
-        QFile file(mDirectoryFile);
+    if (m_parentFolder)
+        m_parentFolder->removeItem(this);
+    if (!m_directoryFile.isEmpty()) {
+        QFile file(m_directoryFile);
         file.remove();
     }
 
@@ -219,21 +218,21 @@ LauncherFolderItem *LauncherFolderItem::findContainer(QObject *item)
 
 QString LauncherFolderItem::directoryFile() const
 {
-    return mDirectoryFile;
+    return m_directoryFile;
 }
 
 void LauncherFolderItem::loadDirectoryFile(const QString &filename)
 {
-    mDirectoryFile = filename;
-    if (!mDirectoryFile.startsWith('/')) {
-        mDirectoryFile = absoluteConfigPath(mDirectoryFile);
+    m_directoryFile = filename;
+    if (!m_directoryFile.startsWith('/')) {
+        m_directoryFile = absoluteConfigPath(m_directoryFile);
     }
 
     GKeyFile *keyfile = g_key_file_new();
     GError *err = NULL;
 
-    if (g_key_file_load_from_file(keyfile, mDirectoryFile.toLatin1(), G_KEY_FILE_NONE, &err)) {
-        mIconId = QString::fromLatin1(g_key_file_get_string(keyfile, "Desktop Entry", "Icon", &err));
+    if (g_key_file_load_from_file(keyfile, m_directoryFile.toLatin1(), G_KEY_FILE_NONE, &err)) {
+        m_iconId = QString::fromLatin1(g_key_file_get_string(keyfile, "Desktop Entry", "Icon", &err));
         emit iconIdChanged();
     }
 
@@ -248,29 +247,29 @@ void LauncherFolderItem::loadDirectoryFile(const QString &filename)
 void LauncherFolderItem::saveDirectoryFile()
 {
     QScopedPointer<QFile> dirFile;
-    if (mDirectoryFile.isEmpty()) {
+    if (m_directoryFile.isEmpty()) {
         QTemporaryFile *tempFile = new QTemporaryFile(absoluteConfigPath("FolderXXXXXX.directory"));
         dirFile.reset(tempFile);
         tempFile->open();
         tempFile->setAutoRemove(false);
-        mDirectoryFile = tempFile->fileName();
+        m_directoryFile = tempFile->fileName();
         emit directoryFileChanged();
         emit saveNeeded();
     } else {
-        dirFile.reset(new QFile(mDirectoryFile));
+        dirFile.reset(new QFile(m_directoryFile));
         dirFile.data()->open(QIODevice::WriteOnly);
     }
 
     if (!dirFile.data()->isOpen()) {
-        qWarning() << "Cannot open" << mDirectoryFile;
+        qWarning() << "Cannot open" << m_directoryFile;
         return;
     }
 
     GKeyFile *keyfile = g_key_file_new();
     GError *err = NULL;
 
-    g_key_file_load_from_file(keyfile, mDirectoryFile.toLatin1(), G_KEY_FILE_NONE, &err);
-    g_key_file_set_string(keyfile, "Desktop Entry", "Icon", mIconId.toLatin1());
+    g_key_file_load_from_file(keyfile, m_directoryFile.toLatin1(), G_KEY_FILE_NONE, &err);
+    g_key_file_set_string(keyfile, "Desktop Entry", "Icon", m_iconId.toLatin1());
 
     gchar *data = g_key_file_to_data(keyfile, NULL, &err);
     dirFile.data()->write(data);
@@ -415,9 +414,9 @@ void LauncherFolderModel::initialize()
             this, SLOT(appAdded(QObject*)));
     connect(m_launcherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::notifyLaunching,
             this, &LauncherFolderModel::notifyLaunching);
-    connect(&m_saveTimer, SIGNAL(timeout()), this, SLOT(save()));
     connect(m_launcherModel, (void (LauncherModel::*)(LauncherItem *))&LauncherModel::canceledNotifyLaunching,
             this, &LauncherFolderModel::canceledNotifyLaunching);
+    connect(&m_saveTimer, SIGNAL(timeout()), this, SLOT(save()));
 
     QDir config;
     config.mkpath(configDir());
@@ -425,6 +424,11 @@ void LauncherFolderModel::initialize()
     load();
 
     connect(this, SIGNAL(saveNeeded()), this, SLOT(scheduleSave()));
+}
+
+LauncherModel *LauncherFolderModel::allItems() const
+{
+    return m_launcherModel;
 }
 
 QString LauncherFolderModel::scope() const
@@ -611,6 +615,10 @@ bool LauncherFolderModel::moveToFolder(QObject *item, LauncherFolderItem *folder
 // An app removed from system
 void LauncherFolderModel::appRemoved(QObject *item)
 {
+    if (LauncherItem *launcherItem = qobject_cast<LauncherItem*>(item)) {
+        emit applicationRemoved(launcherItem);
+    }
+
     LauncherFolderItem *folder = findContainer(item);
     if (folder) {
         folder->removeItem(item);
