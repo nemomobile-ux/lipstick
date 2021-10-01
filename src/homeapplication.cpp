@@ -129,9 +129,11 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
 
     // MCE and usb-moded expect services to be registered on the system bus
     QDBusConnection systemBus = QDBusConnection::systemBus();
+    QDBusConnection sessionBus = QDBusConnection::sessionBus();
+
     registerDBusObject(systemBus, LIPSTICK_DBUS_SCREENLOCK_PATH, m_screenLock);
     registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
-
+    registerDBusObject(sessionBus, LIPSTICK_DBUS_SCREENSHOT_PATH, m_screenshotService);
 
 
     if (!systemBus.registerService(LIPSTICK_DBUS_SERVICE_NAME)) {
