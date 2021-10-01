@@ -98,6 +98,7 @@ public:
     int topmostWindowId() const { return m_topmostWindowId; }
     void setTopmostWindowId(int id);
     int privateTopmostWindowProcessId() const { return m_topmostWindowProcessId; }
+    QString privateTopmostWindowPolicyApplicationId() const { return m_topmostWindowPolicyApplicationId; }
 
     Qt::ScreenOrientation topmostWindowOrientation() const { return m_topmostWindowOrientation; }
     void setTopmostWindowOrientation(Qt::ScreenOrientation topmostWindowOrientation);
@@ -160,6 +161,7 @@ signals:
     void directRenderingActiveChanged();
     void topmostWindowIdChanged();
     void privateTopmostWindowProcessIdChanged(int pid);
+    void privateTopmostWindowPolicyApplicationIdChanged(QString applicationId);
     void topmostWindowOrientationChanged();
     void screenOrientationChanged();
     void sensorOrientationChanged();
@@ -236,6 +238,7 @@ private:
 
     int m_topmostWindowId;
     int m_topmostWindowProcessId;
+    QString m_topmostWindowPolicyApplicationId;
     Qt::ScreenOrientation m_topmostWindowOrientation;
     Qt::ScreenOrientation m_screenOrientation;
     Qt::ScreenOrientation m_sensorOrientation;

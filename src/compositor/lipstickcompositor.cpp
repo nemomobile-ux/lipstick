@@ -325,15 +325,21 @@ void LipstickCompositor::setTopmostWindowId(int id)
         m_topmostWindowId = id;
         emit topmostWindowIdChanged();
 
-        int pid = -1;
-        QWaylandSurface *surface = surfaceForId(m_topmostWindowId);
+        LipstickCompositorWindow *window = m_windows.value(id);
 
-        if (surface)
-            pid = surface->client()->processId();
+        int pid = window ? window->processId() : -1;
 
         if (m_topmostWindowProcessId != pid) {
             m_topmostWindowProcessId = pid;
             emit privateTopmostWindowProcessIdChanged(m_topmostWindowProcessId);
+        }
+
+        QString applicationId = window && !window->policyApplicationId().isEmpty()
+                                ? window->policyApplicationId() : "none";
+
+        if (m_topmostWindowPolicyApplicationId != applicationId) {
+            m_topmostWindowPolicyApplicationId = applicationId;
+            emit privateTopmostWindowPolicyApplicationIdChanged(m_topmostWindowPolicyApplicationId);
         }
     }
 }

@@ -47,6 +47,7 @@ public:
 
     int windowId() const;
     qint64 processId() const;
+    QString policyApplicationId() const;
 
     bool delayRemove() const;
     void setDelayRemove(bool);
@@ -102,9 +103,11 @@ private:
     void handleTouchEvent(QTouchEvent *e);
 
     void setTitle(QString title);
-    QString m_title;
+    void updatePolicyApplicationId();
 
+    QString m_title;
     qint64 m_processId;
+    QString m_policyApplicationId;
     int m_windowId;
     QString m_category;
     bool m_delayRemove:1;
