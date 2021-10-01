@@ -485,10 +485,7 @@ void LipstickCompositor::surfaceMapped(QWaylandSurface *surface)
     if (item->m_mapped)
         return;
 
-    QVariantMap properties = item->windowProperties();
-
     item->m_mapped = true;
-    item->m_category = properties.value("CATEGORY").toString();
 
     if (!item->parentItem()) {
         // TODO why contentItem?

@@ -143,7 +143,7 @@ bool NotificationFeedbackPlayer::isEnabled(LipstickNotification *notification, i
     uint mode = AllNotificationsEnabled;
     LipstickCompositorWindow *win = LipstickCompositor::instance()->m_windows.value(LipstickCompositor::instance()->topmostWindowId());
     if (win != 0) {
-        mode = win->windowProperties().value("NOTIFICATION_PREVIEWS_DISABLED", uint(AllNotificationsEnabled)).toUInt();
+        mode = win->notificationMode();
     }
 
     int urgency = notification->urgency();

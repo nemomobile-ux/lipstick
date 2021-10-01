@@ -35,6 +35,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
                         , m_interceptingTouch(false)
                         , m_mapped(false)
                         , m_focusOnTouch(false)
+                        , m_notificationMode(0)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 
@@ -103,17 +104,6 @@ void LipstickCompositorWindow::setDelayRemove(bool delay)
 QString LipstickCompositorWindow::category() const
 {
     return m_category;
-}
-
-
-qint16 LipstickCompositorWindow::windowFlags()
-{
-    return 0;
-}
-
-QVariantMap LipstickCompositorWindow::windowProperties()
-{
-    return QVariantMap();
 }
 
 void LipstickCompositorWindow::setTitle(QString title)
@@ -386,4 +376,17 @@ void LipstickCompositorWindow::setFocusOnTouch(bool focusOnTouch)
 
     m_focusOnTouch = focusOnTouch;
     emit focusOnTouchChanged();
+}
+
+uint LipstickCompositorWindow::notificationMode()
+{
+    return m_notificationMode;
+}
+
+void LipstickCompositorWindow::setNotificationMode(uint mode)
+{
+    if(mode != m_notificationMode) {
+        m_notificationMode = mode;
+        emit notificationModeChanged();
+    }
 }

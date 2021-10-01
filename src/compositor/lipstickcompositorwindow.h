@@ -34,9 +34,9 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
     Q_PROPERTY(QString category READ category CONSTANT)
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(qint64 processId READ processId CONSTANT)
-    Q_PROPERTY(qint16 windowFlags READ windowFlags NOTIFY windowFlagsChanged)
 
     Q_PROPERTY(bool focusOnTouch READ focusOnTouch WRITE setFocusOnTouch NOTIFY focusOnTouchChanged)
+    Q_PROPERTY(uint notificationMode READ notificationMode WRITE setNotificationMode NOTIFY notificationModeChanged)
 
 public:
     LipstickCompositorWindow(int windowId, const QString &, QWaylandSurface *surface, QQuickItem *parent = 0);
@@ -54,7 +54,6 @@ public:
     QString category() const;
     virtual QString title() const;
     virtual bool isInProcess() const;
-    qint16 windowFlags();
 
     bool eventFilter(QObject *object, QEvent *event);
 
@@ -63,7 +62,8 @@ public:
     bool focusOnTouch() const;
     void setFocusOnTouch(bool focusOnTouch);
 
-    QVariantMap windowProperties();
+    uint notificationMode();
+    void setNotificationMode(uint mode);
 
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
@@ -82,6 +82,7 @@ signals:
     void committed();
     void focusOnTouchChanged();
     void windowFlagsChanged();
+    void notificationModeChanged();
 
 private slots:
     void handleTouchCancel();
@@ -114,6 +115,7 @@ private:
     bool m_focusOnTouch : 1;
     QVariant m_data;
     QVector<QQuickItem *> m_refs;
+    uint m_notificationMode;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H

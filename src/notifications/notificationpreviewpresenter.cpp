@@ -228,7 +228,7 @@ bool NotificationPreviewPresenter::notificationShouldBeShown(LipstickNotificatio
     uint mode = AllNotificationsEnabled;
     LipstickCompositorWindow *win = LipstickCompositor::instance()->m_windows.value(LipstickCompositor::instance()->topmostWindowId(), 0);
     if (win != 0) {
-        mode = win->windowProperties().value("NOTIFICATION_PREVIEWS_DISABLED", uint(AllNotificationsEnabled)).toUInt();
+        mode = win->notificationMode();
     }
 
     return (mode == AllNotificationsEnabled
