@@ -196,6 +196,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_qmlEngine->rootContext()->setContextProperty("localeManager", m_localeMngr);
     m_qmlEngine->rootContext()->setContextProperty("connectivityMonitor", m_connectivityMonitor);
     m_qmlEngine->rootContext()->setContextProperty("usbModeSelector", m_usbModeSelector);
+    m_qmlEngine->rootContext()->setContextProperty("bluetoothAgent", m_bluetoothAgent);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }
