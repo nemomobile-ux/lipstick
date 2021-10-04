@@ -64,6 +64,8 @@ signals:
     void availableChanged();
     void error(QString errorString);
     void showPinCode(QString code);
+    void requestConfirmationAccept();
+    void requestConfirmationReject();
 
 private:
     void initManagerJobResult(BluezQt::InitManagerJob *job);
