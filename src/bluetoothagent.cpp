@@ -1,260 +1,217 @@
 /*
- * Copyright (C) 2017 - Florent Revest <revestflo@gmail.com>
+ * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 
-#include <QDBusInterface>
-#include <QDBusPendingCall>
-#include <QGuiApplication>
-#include <QQmlContext>
-#include <QScreen>
-#include <QPoint>
-#include <QRect>
+#include <QDebug>
 
-#include "utilities/closeeventeater.h"
-#include "homewindow.h"
-#include "lipstickqmlpath.h"
 #include "bluetoothagent.h"
 
-#define AGENT_CAPABILITY        "KeyboardDisplay"
+# include <bluezqt/device.h>
+# include <bluezqt/initmanagerjob.h>
 
-BluetoothAgent::BluetoothAgent(QObject *parent) : QObject(parent), window(0)
+BluetoothAgent::BluetoothAgent(QObject *parent)
+    : BluezQt::Agent(parent)
+    , m_manager(new BluezQt::Manager(this))
+    , m_usableAdapter(nullptr)
+    , m_connected(false)
+    , m_available(false)
+    , m_registerAgent(false)
 {
-    QDBusConnection bus = QDBusConnection::systemBus();
-    mPath = "/org/nemomobile/lipstick/agent";
-    bus.registerObject(mPath, this, QDBusConnection::ExportAllSlots | QDBusConnection::ExportAllProperties);
+    BluezQt::InitManagerJob *job = m_manager->init();
+    job->start();
 
-    mWatcher = new QDBusServiceWatcher("org.bluez", bus);
-    connect(mWatcher, SIGNAL(serviceRegistered(const QString&)), this, SLOT(serviceRegistered(const QString&)));
-    connect(mWatcher, SIGNAL(serviceUnregistered(const QString&)), this, SLOT(serviceUnregistered(const QString&)));
+    connect(job, &BluezQt::InitManagerJob::result,
+            this, &BluetoothAgent::initManagerJobResult);
 
-    QDBusInterface remoteOm("org.bluez", "/", "org.bluez.AgentManager1", bus);
-    if(remoteOm.isValid())
-        serviceRegistered("org.bluez");
+    connect(m_manager,&BluezQt::Manager::usableAdapterChanged,
+            this, &BluetoothAgent::usableAdapterChanged);
 
-    state = Idle;
-    pinCode = "";
-    passkey = 0;
+    connect(m_manager, &BluezQt::Manager::adapterAdded,
+            this, &BluetoothAgent::calcAvailable);
+
+    connect(m_manager, &BluezQt::Manager::adapterRemoved,
+            this, &BluetoothAgent::calcAvailable);
+
+    usableAdapterChanged(m_usableAdapter);
 }
 
-void BluetoothAgent::serviceRegistered(const QString&)
+QDBusObjectPath BluetoothAgent::objectPath() const
 {
-    QDBusInterface agentManager("org.bluez", "/org/bluez", "org.bluez.AgentManager1", QDBusConnection::systemBus());
-    agentManager.call("RegisterAgent", QVariant::fromValue(getPath()), AGENT_CAPABILITY);
-    agentManager.asyncCall("RequestDefaultAgent", QVariant::fromValue(getPath()));
+    return QDBusObjectPath(QStringLiteral("/org/nemomobile/lipstick/agent"));
 }
 
-void BluetoothAgent::serviceUnregistered(const QString&)
+BluezQt::Agent::Capability BluetoothAgent::capability() const
 {
-    setWindowVisible(false);
-    setState(Idle);
+    return DisplayYesNo;
 }
 
-void BluetoothAgent::setTrusted(QDBusObjectPath path)
+void BluetoothAgent::registerAgent()
 {
-    QDBusInterface device("org.bluez", path.path(), "org.freedesktop.DBus.Properties", QDBusConnection::systemBus());
-    device.asyncCall("Set", "org.bluez.Device1", "Trusted", true);
+    BluezQt::PendingCall *call = m_manager->registerAgent(this);
+
+    qDebug() << "BT: bt agent registring";
+
+    connect(call, &BluezQt::PendingCall::finished,
+            this, &BluetoothAgent::registerAgentFinished);
+
 }
 
-void BluetoothAgent::reject()
+void BluetoothAgent::pair(const QString &btMacAddress)
 {
-    QDBusMessage pendingErrorReply = m_latestMessage.createErrorReply("org.bluez.Error.Rejected", "Rejected");
-    QDBusConnection::systemBus().send(pendingErrorReply);
-}
-
-QDBusObjectPath BluetoothAgent::getPath()
-{
-    return QDBusObjectPath(mPath);
-}
-
-BluetoothAgent::State BluetoothAgent::getState()
-{
-    return state;
-}
-
-void BluetoothAgent::setState(State s)
-{
-    if(state != s) {
-        state = s;
-        emit stateChanged();
+    BluezQt::DevicePtr device = m_manager->deviceForAddress(btMacAddress);
+    if(!device)
+    {
+        qWarning() << "BT: Device not found";
+        return;
     }
+
+    BluezQt::PendingCall *pcall = device->pair();
+    pcall->setUserData(btMacAddress);
+
+    connect(pcall, &BluezQt::PendingCall::finished,
+            this, &BluetoothAgent::connectToDevice);
 }
 
-QString BluetoothAgent::getPinCode()
+void BluetoothAgent::connectDevice(const QString &btMacAddress)
 {
-    return pinCode;
-}
-
-void BluetoothAgent::setPinCode(QString s)
-{
-    if(pinCode != s) {
-        pinCode = s;
-        emit pinCodeChanged();
+    BluezQt::DevicePtr device = m_manager->deviceForAddress(btMacAddress);
+    if(!device)
+    {
+        qWarning() << "BT: Device not found";
+        return;
     }
+
+    device->connectToDevice();
 }
 
-quint32 BluetoothAgent::getPasskey()
+void BluetoothAgent::connectToDevice(BluezQt::PendingCall *call)
 {
-    return passkey;
-}
-
-void BluetoothAgent::setPasskey(quint32 pk)
-{
-    if(passkey != pk) {
-        passkey = pk;
-        emit passkeyChanged();
-    }
-}
-
-bool BluetoothAgent::windowVisible() const
-{
-    return window != 0 && window->isVisible();
-}
-
-void BluetoothAgent::setWindowVisible(bool visible)
-{
-    if (visible) {
-        if (window == 0) {
-            window = new HomeWindow();
-            window->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
-            window->setCategory(QLatin1String("agent"));
-            window->setWindowTitle("Bluetooth Pairing");
-            window->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
-            window->setContextProperty("agent", this);
-            window->setSource(QmlPath::to("connectivity/BluetoothAgent.qml"));
-            window->installEventFilter(new CloseEventEater(this));
+    QString btMacAddress = call->userData().toString();
+    if(!call->error()) {
+        BluezQt::DevicePtr device = m_manager->deviceForAddress(btMacAddress);
+        if(device) {
+            device->connectToDevice();
         }
-
-        if (!window->isVisible()) {
-            window->show();
-            emit windowVisibleChanged();
-        }
-    } else if (window != 0 && window->isVisible()) {
-        window->hide();
-        emit windowVisibleChanged();
     }
 }
 
-void BluetoothAgent::userAccepts()
+void BluetoothAgent::unPair(const QString &btMacAddress)
 {
-    QDBusMessage pendingReply = m_latestMessage.createReply();
-    if(state == ReqPinCode)
-        pendingReply << pinCode;
-    else if(state == ReqPasskey)
-        pendingReply << passkey;
-    else if(state == ReqConfirmation)
-        setTrusted(device);
+    BluezQt::DevicePtr device = m_manager->deviceForAddress(btMacAddress);
+    if(!device)
+    {
+        return;
+    }
 
-    if(state == ReqPinCode || state == ReqPasskey || state == ReqConfirmation
-        || state == ReqAuthorization || state == AuthService)
-        QDBusConnection::systemBus().send(pendingReply);
-
-    setState(Idle);
+    m_usableAdapter->removeDevice(device);
 }
 
-void BluetoothAgent::userCancels()
+void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
 {
-    reject();
-    setState(Idle);
+    if(adapter && m_usableAdapter != adapter)
+    {
+        m_usableAdapter = adapter;
+
+        connect(m_usableAdapter.data(), &BluezQt::Adapter::deviceChanged,
+                this, &BluetoothAgent::updateConnectedStatus);
+        updateConnectedStatus();
+        emit adapterAdded(adapter);
+        if(!m_registerAgent) {
+            registerAgent();
+        }
+    }
 }
 
-/* Exposed slots */
-QString BluetoothAgent::RequestPinCode(QDBusObjectPath object, const QDBusMessage &message)
+void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device, const QString &passkey, const BluezQt::Request<> &request)
 {
-    device = object;
-    setTrusted(device);
-    setWindowVisible(true);
-    setState(ReqPinCode);
+    Q_UNUSED(request);
 
-    message.setDelayedReply(true);
-
-    return "";
+    emit showRequiesDialog(device->address() ,
+                           device->name() ,
+                           passkey);
 }
 
-quint32 BluetoothAgent::RequestPasskey(QDBusObjectPath object, const QDBusMessage &message)
+void BluetoothAgent::initManagerJobResult(BluezQt::InitManagerJob *job)
 {
-    device = object;
-    setTrusted(device);
-    setWindowVisible(true);
-    setState(ReqPasskey);
-
-    message.setDelayedReply(true);
-
-    return 0;
+    if (job->error())
+    {
+        qWarning() << "Error initializing Bluetooth manager:" << job->errorText();
+    }
 }
 
-void BluetoothAgent::DisplayPinCode(QDBusObjectPath object, QString pc)
+void BluetoothAgent::registerAgentFinished(BluezQt::PendingCall *call)
 {
-    device = object;
-    setPinCode(pc);
-    setWindowVisible(true);
-    setState(DispPinCode);
+    if (call->error())
+    {
+        qWarning() << "BT: registerAgent() call failed:" << call->errorText();
+        return;
+    }
+
+    BluezQt::PendingCall *pcall = m_manager->requestDefaultAgent(this);
+    connect(pcall, &BluezQt::PendingCall::finished,
+            this, &BluetoothAgent::requestDefaultAgentFinished);
+
 }
 
-void BluetoothAgent::DisplayPasskey(QDBusObjectPath object, quint32 pk, quint16)
+void BluetoothAgent::requestDefaultAgentFinished(BluezQt::PendingCall *call)
 {
-    device = object;
-    setPasskey(pk);
-    setWindowVisible(true);
-    setState(DispPasskey);
+    if (call->error())
+    {
+        qWarning() << "BT: requestDefaultAgent() call failed:" << call->errorText();
+    }
+    qDebug() << "BT: bt agent registring as system" << objectPath().path();
+    m_registerAgent = true;
 }
 
-void BluetoothAgent::RequestConfirmation(QDBusObjectPath object, quint32 pk, const QDBusMessage &message)
+void BluetoothAgent::updateConnectedStatus()
 {
-    device = object;
-    setPasskey(pk);
-    setWindowVisible(true);
-    setState(ReqConfirmation);
+    bool isSomebodyConnected = false;
+    for (const auto &device : m_usableAdapter->devices()) {
+        if (device->isConnected()) {
+            isSomebodyConnected = true;
+            break;
+        }
+    }
 
-    message.setDelayedReply(true);
-
-    m_latestMessage = message;
+    if(m_connected != isSomebodyConnected)
+    {
+        m_connected = isSomebodyConnected;
+        emit connectedChanged();
+    }
 }
 
-void BluetoothAgent::RequestAuthorization(QDBusObjectPath object, const QDBusMessage &message)
+void BluetoothAgent::calcAvailable(BluezQt::AdapterPtr adapter)
 {
-    device = object;
-    setWindowVisible(true);
-    setState(ReqAuthorization);
+    Q_UNUSED(adapter)
 
-    message.setDelayedReply(true);
-
-    m_latestMessage = message;
+    if(m_manager->adapters().count() > 0) {
+        m_available = true;
+    } else {
+        m_available = false;
+    }
 }
 
-void BluetoothAgent::AuthorizeService(QDBusObjectPath object, QString uuid, const QDBusMessage &message)
+bool BluetoothAgent::connected()
 {
-    device = object;
-    setWindowVisible(true);
-    setState(AuthService);
-    setPinCode(uuid);
-
-    message.setDelayedReply(true);
-
-    m_latestMessage = message;
+    return m_connected;
 }
 
-void BluetoothAgent::Cancel()
+bool BluetoothAgent::available()
 {
-    setWindowVisible(false);
-    setState(Idle);
+    return m_available;
 }
-
-void BluetoothAgent::Release()
-{
-    setWindowVisible(false);
-    setState(Idle);
-}
-

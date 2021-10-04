@@ -27,6 +27,10 @@ MOC_DIR = .moc
 
 INCLUDEPATH += utilities touchscreen components xtools 3rdparty devicestate
 
+#FOR BLUEZQT Wait https://invent.kde.org/frameworks/bluez-qt/-/merge_requests/14
+INCLUDEPATH += /usr/include/KF5/BluezQt
+LIBS += -lKF5BluezQt
+
 include(compositor/compositor.pri)
 
 PUBLICHEADERS += \

@@ -1,109 +1,78 @@
 /*
- * Copyright (C) 2017 - Florent Revest <revestflo@gmail.com>
+ * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 
 #ifndef BLUETOOTHAGENT_H
 #define BLUETOOTHAGENT_H
 
-#include <QObject>
-#include <QDBusConnection>
-#include <QDBusContext>
-#include <QDBusObjectPath>
-#include <QDBusServiceWatcher>
-#include <QDBusMessage>
+#include <bluezqt/agent.h>
+#include <bluezqt/adapter.h>
+#include <bluezqt/request.h>
+#include <bluezqt/manager.h>
+#include <bluezqt/pendingcall.h>
+
 #include "lipstickglobal.h"
 
-class HomeWindow;
-
-class LIPSTICK_EXPORT BluetoothAgent : public QObject, protected QDBusContext
+class LIPSTICK_EXPORT BluetoothAgent : public BluezQt::Agent
 {
     Q_OBJECT
-    Q_ENUMS(State);
-    Q_CLASSINFO("D-Bus Interface", "org.bluez.Agent1")
-    Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
-
-    Q_PROPERTY(State state READ getState NOTIFY stateChanged)
-    Q_PROPERTY(QString pinCode READ getPinCode WRITE setPinCode NOTIFY pinCodeChanged)
-    Q_PROPERTY(quint32 passkey READ getPasskey WRITE setPasskey NOTIFY passkeyChanged)
+    Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
+    Q_PROPERTY(bool available READ available NOTIFY availableChanged)
 
 public:
-    Q_INVOKABLE void userAccepts();
-    Q_INVOKABLE void userCancels();
+    BluetoothAgent(QObject *parent = Q_NULLPTR);
+    QDBusObjectPath objectPath() const;
+    Capability capability() const;
 
-    BluetoothAgent(QObject *parent = 0);
-    QDBusObjectPath getPath();
+    void requestConfirmation(BluezQt::DevicePtr device, const QString &passkey, const BluezQt::Request<> &request);
 
-    bool windowVisible() const;
-    void setWindowVisible(bool visible);
+    Q_INVOKABLE void pair(const QString &btMacAddress);
+    Q_INVOKABLE void unPair(const QString &btMacAddress);
+    Q_INVOKABLE void connectDevice(const QString &btMacAddress);
 
-    enum State
-    {
-        Idle,
-        ReqPinCode,
-        ReqPasskey,
-        DispPinCode,
-        DispPasskey,
-        ReqConfirmation,
-        ReqAuthorization,
-        AuthService
-    };
-
-    State getState();
-    void setState(State s);
-
-    QString getPinCode();
-    void setPinCode(QString);
-
-    quint32 getPasskey();
-    void setPasskey(quint32);
-
-signals:
-    void windowVisibleChanged();
-    void stateChanged();
-    void pinCodeChanged();
-    void passkeyChanged();
-
-private:
-    QString mPath;
-    HomeWindow *window;
-    State state;
-    bool reqConfirm, reqAuth;
-    QString pinCode;
-    quint32 passkey;
-    QDBusObjectPath device;
-    QDBusServiceWatcher *mWatcher;
-    QDBusMessage m_latestMessage;
-
-    void setTrusted(QDBusObjectPath path);
-    void reject();
-
-private slots:
-    void serviceRegistered(const QString& name);
-    void serviceUnregistered(const QString& name);
+    bool connected();
+    bool available();
 
 public slots:
-    void Release();
-    QString RequestPinCode(QDBusObjectPath object, const QDBusMessage &message);
-    void DisplayPinCode(QDBusObjectPath object, QString pinCode);
-    quint32 RequestPasskey(QDBusObjectPath object, const QDBusMessage &message);
-    void DisplayPasskey(QDBusObjectPath object, quint32 passkey, quint16 entered);
-    void RequestConfirmation(QDBusObjectPath object, quint32 passKey, const QDBusMessage &message);
-    void RequestAuthorization(QDBusObjectPath object, const QDBusMessage &message);
-    void AuthorizeService(QDBusObjectPath object, QString uuid, const QDBusMessage &message);
-    void Cancel();
+    void registerAgent();
+
+signals:
+    void adapterAdded(const BluezQt::AdapterPtr adapter);
+    void showRequiesDialog(const QString btMacAddres, const QString name, const QString code);
+    void connectedChanged();
+    void availableChanged();
+
+private:
+    void initManagerJobResult(BluezQt::InitManagerJob *job);
+    void registerAgentFinished(BluezQt::PendingCall *call);
+    void requestDefaultAgentFinished(BluezQt::PendingCall *call);
+
+    void usableAdapterChanged(BluezQt::AdapterPtr adapter);
+    void connectToDevice(BluezQt::PendingCall *call);
+    void updateConnectedStatus();
+
+    void calcAvailable(BluezQt::AdapterPtr adapter);
+
+    BluezQt::Manager *m_manager;
+    BluezQt::AdapterPtr m_usableAdapter;
+    bool m_connected;
+    bool m_available;
+    bool m_registerAgent;
 };
 
 #endif // BLUETOOTHAGENT_H
