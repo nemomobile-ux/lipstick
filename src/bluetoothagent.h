@@ -36,10 +36,16 @@ class LIPSTICK_EXPORT BluetoothAgent : public BluezQt::Agent
 
 public:
     BluetoothAgent(QObject *parent = Q_NULLPTR);
-    QDBusObjectPath objectPath() const;
-    Capability capability() const;
+    QDBusObjectPath objectPath() const override;
+    Capability capability() const override;
 
-    void requestConfirmation(BluezQt::DevicePtr device, const QString &passkey, const BluezQt::Request<> &request);
+    void requestPinCode(BluezQt::DevicePtr device, const BluezQt::Request<QString> &request) override;
+    void displayPinCode(BluezQt::DevicePtr device, const QString &pinCode) override;
+    void requestPasskey(BluezQt::DevicePtr device, const BluezQt::Request<quint32> &request) override;
+    void displayPasskey(BluezQt::DevicePtr device, const QString &passkey, const QString &entered) override;
+    void requestConfirmation(BluezQt::DevicePtr device, const QString &passkey, const BluezQt::Request<> &request) override;
+    void requestAuthorization(BluezQt::DevicePtr device, const BluezQt::Request<> &request) override;
+    void authorizeService(BluezQt::DevicePtr device, const QString &uuid, const BluezQt::Request<> &request) override;
 
     Q_INVOKABLE void pair(const QString &btMacAddress);
     Q_INVOKABLE void unPair(const QString &btMacAddress);
@@ -56,6 +62,8 @@ signals:
     void showRequiesDialog(const QString btMacAddres, const QString name, const QString code);
     void connectedChanged();
     void availableChanged();
+    void error(QString errorString);
+    void showPinCode(QString code);
 
 private:
     void initManagerJobResult(BluezQt::InitManagerJob *job);
@@ -63,11 +71,12 @@ private:
     void requestDefaultAgentFinished(BluezQt::PendingCall *call);
 
     void usableAdapterChanged(BluezQt::AdapterPtr adapter);
-    void connectToDevice(BluezQt::PendingCall *call);
+    void pairFinished(BluezQt::PendingCall *call);
     void updateConnectedStatus();
 
     void calcAvailable(BluezQt::AdapterPtr adapter);
 
+    BluezQt::DevicePtr m_device;
     BluezQt::Manager *m_manager;
     BluezQt::AdapterPtr m_usableAdapter;
     bool m_connected;
