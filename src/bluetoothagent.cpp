@@ -197,8 +197,9 @@ void BluetoothAgent::authorizeService(BluezQt::DevicePtr device, const QString &
 {
     qDebug() << Q_FUNC_INFO;
     Q_UNUSED(uuid);
-    Q_UNUSED(request);
+
     m_device = device;
+    request.accept();
 }
 
 void BluetoothAgent::initManagerJobResult(BluezQt::InitManagerJob *job)
