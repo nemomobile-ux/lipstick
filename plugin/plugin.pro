@@ -11,6 +11,10 @@ qmldirfile.files = qmldir
 qmldirfile.path = $$[QT_INSTALL_QML]/org/nemomobile/lipstick
 target.path = $$[QT_INSTALL_QML]/org/nemomobile/lipstick
 
+#FOR BLUEZQT Wait https://invent.kde.org/frameworks/bluez-qt/-/merge_requests/14
+INCLUDEPATH += /usr/include/KF5/BluezQt
+LIBS += -lKF5BluezQt
+
 DEPENDPATH += ../src
 INCLUDEPATH += ../src \
     ../src/utilities \

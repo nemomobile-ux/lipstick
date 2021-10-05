@@ -27,6 +27,10 @@ MOC_DIR = .moc
 
 INCLUDEPATH += utilities touchscreen components xtools 3rdparty devicestate
 
+#FOR BLUEZQT Wait https://invent.kde.org/frameworks/bluez-qt/-/merge_requests/14
+INCLUDEPATH += /usr/include/KF5/BluezQt
+LIBS += -lKF5BluezQt
+
 include(compositor/compositor.pri)
 
 PUBLICHEADERS += \
@@ -50,7 +54,6 @@ PUBLICHEADERS += \
     notifications/notificationlistmodel.h \
     notifications/notificationpreviewpresenter.h \
     usbmodeselector.h \
-    bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
     devicestate/displaystate.h \
@@ -69,6 +72,8 @@ HEADERS += \
     $$PUBLICHEADERS \
     3rdparty/synchronizelists.h \
     3rdparty/dbus-gmain/dbus-gmain.h \
+    bluetooth/bluetoothagent.h \
+    bluetooth/bluetoothobexagent.h \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
@@ -98,6 +103,8 @@ HEADERS += \
 
 SOURCES += \
     3rdparty/dbus-gmain/dbus-gmain.c \
+    bluetooth/bluetoothagent.cpp \
+    bluetooth/bluetoothobexagent.cpp \
     homeapplication.cpp \
     homewindow.cpp \
     lipsticksettings.cpp \
@@ -125,7 +132,6 @@ SOURCES += \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
     usbmodeselector.cpp \
-    bluetoothagent.cpp \
     localemanager.cpp \
     shutdownscreen.cpp \
     shutdownscreenadaptor.cpp \
