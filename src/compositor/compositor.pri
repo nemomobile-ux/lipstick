@@ -12,8 +12,7 @@ PUBLICHEADERS += \
     $$PWD/windowmodel.h \
 
 HEADERS += \
-    $$PWD/windowpixmapitem.h \
-    $$PWD/lipstickrecorder.h
+    $$PWD/windowpixmapitem.h
 
 SOURCES += \
     $$PWD/lipstickcompositor.cpp \

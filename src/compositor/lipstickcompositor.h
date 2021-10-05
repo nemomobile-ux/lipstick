@@ -41,7 +41,6 @@ class WindowModel;
 class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
-class LipstickRecorderManager;
 class QMceNameOwner;
 
 struct QueuedSetUpdatesEnabledCall
