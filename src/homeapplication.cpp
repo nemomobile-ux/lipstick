@@ -44,6 +44,7 @@
 #include "volume/volumecontrol.h"
 #include "usbmodeselector.h"
 #include "bluetooth/bluetoothagent.h"
+#include "bluetooth/bluetoothobexagent.h"
 #include "localemanager.h"
 #include "shutdownscreen.h"
 #include "shutdownscreenadaptor.h"
@@ -118,6 +119,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     new BatteryNotifier(this);
     new ThermalNotifier(this);
     m_bluetoothAgent = new BluetoothAgent(this);
+    m_bluetoothObexAgent = new BluetoothObexAgent(this);
     m_usbModeSelector = new USBModeSelector(deviceLock, this);
 
     m_screenshotService = new ScreenshotService(this);
@@ -197,6 +199,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_qmlEngine->rootContext()->setContextProperty("connectivityMonitor", m_connectivityMonitor);
     m_qmlEngine->rootContext()->setContextProperty("usbModeSelector", m_usbModeSelector);
     m_qmlEngine->rootContext()->setContextProperty("bluetoothAgent", m_bluetoothAgent);
+    m_qmlEngine->rootContext()->setContextProperty("bluetoothObexAgent", m_bluetoothObexAgent);
 
     connect(this, SIGNAL(homeReady()), this, SLOT(sendStartupNotifications()));
 }

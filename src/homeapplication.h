@@ -29,6 +29,7 @@ class ShutdownScreen;
 class ConnectionSelector;
 class ScreenshotService;
 class BluetoothAgent;
+class BluetoothObexAgent;
 class LocaleManager;
 class VpnAgent;
 class ConnmanVpnProxy;
@@ -186,6 +187,9 @@ private:
 
     //! Logic for showing the Bluetooth pairing dialog
     BluetoothAgent *m_bluetoothAgent;
+
+    //! Logic for showing the Bluetooth file sharing dialog
+    BluetoothObexAgent *m_bluetoothObexAgent;
 
     //! Logic for showing the Bluetooth pairing dialog
     LocaleManager *m_localeMngr;
