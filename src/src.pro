@@ -54,7 +54,6 @@ PUBLICHEADERS += \
     notifications/notificationlistmodel.h \
     notifications/notificationpreviewpresenter.h \
     usbmodeselector.h \
-    bluetoothagent.h \
     localemanager.h \
     shutdownscreen.h \
     devicestate/displaystate.h \
@@ -73,6 +72,7 @@ HEADERS += \
     $$PUBLICHEADERS \
     3rdparty/synchronizelists.h \
     3rdparty/dbus-gmain/dbus-gmain.h \
+    bluetooth/bluetoothagent.h \
     notifications/notificationmanageradaptor.h \
     notifications/categorydefinitionstore.h \
     notifications/batterynotifier.h \
@@ -102,6 +102,7 @@ HEADERS += \
 
 SOURCES += \
     3rdparty/dbus-gmain/dbus-gmain.c \
+    bluetooth/bluetoothagent.cpp \
     homeapplication.cpp \
     homewindow.cpp \
     lipsticksettings.cpp \
@@ -129,7 +130,6 @@ SOURCES += \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
     usbmodeselector.cpp \
-    bluetoothagent.cpp \
     localemanager.cpp \
     shutdownscreen.cpp \
     shutdownscreenadaptor.cpp \
