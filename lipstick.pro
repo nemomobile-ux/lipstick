@@ -17,4 +17,3 @@ QMAKE_DISTCLEAN += \
     *.log.xml \
     *.log
 
-TRANSLATIONS = $$files(i18n/$$TARGET.*.ts)
