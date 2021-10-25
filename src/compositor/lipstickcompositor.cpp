@@ -923,3 +923,35 @@ void LipstickCompositor::timerEvent(QTimerEvent *e)
     m_output->sendFrameCallbacks();
     killTimer(e->timerId());
 }
+
+bool LipstickCompositor::event(QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+
+        if (mouseEvent->button() == Qt::RightButton) {
+            // see xkeyboard-config/keycodes/evdev: Map to <I166> = 166; #define KEY_BACK
+            int scanCode = 166;
+            if (mouseEvent->type() == QEvent::MouseButtonPress) {
+                sendKeyEvent(QEvent::KeyPress, Qt::Key_Back, scanCode);
+            } else {
+                sendKeyEvent(QEvent::KeyRelease, Qt::Key_Back, scanCode);
+            }
+            return true;
+        }
+    }
+    return QObject::event(event);
+}
+
+void LipstickCompositor::sendKeyEvent(QEvent::Type type, Qt::Key key, quint32 nativeScanCode)
+{
+    QKeyEvent *event = new QKeyEvent(type, key, Qt::NoModifier, nativeScanCode, 0, 0);
+
+    // Not all Lipstick windows are real windows
+    LipstickCompositorWindow *topmostWindow = qobject_cast<LipstickCompositorWindow *>(windowForId(topmostWindowId()));
+    if (topmostWindow && topmostWindow->isInProcess()) {
+        QCoreApplication::sendEvent(m_window->activeFocusItem(), event);
+    } else {
+        seatFor(event)->sendFullKeyEvent(event);
+    }
+}
