@@ -237,6 +237,26 @@ engineering_english_install.path = /usr/share/translations
 engineering_english_install.files = $$EE_QM
 engineering_english_install.CONFIG += no_check_exist
 
+
+TRANSLATIONS = $$files(../i18n/$$TARGET.*.ts)
+
+for (translation, TRANSLATIONS) {
+    translation = $$basename(translation)
+    QM_FILES += $$OUT_PWD/$$replace(translation, \\..*$, .qm)
+}
+
+updateqm.input = TRANSLATIONS
+updateqm.output = $$OUT_PWD/${QMAKE_FILE_BASE}.qm
+updateqm.commands = lrelease -idbased -silent ${QMAKE_FILE_IN} -qm ${QMAKE_FILE_BASE}.qm
+updateqm.CONFIG += no_link target_predeps
+QMAKE_EXTRA_COMPILERS += updateqm
+
+qmfiles.files = $$QM_FILES
+qmfiles.path = /usr/share/translations
+qmfiles.CONFIG += no_check_exist
+
+INSTALLS += qmfiles
+
 QMAKE_EXTRA_TARGETS += ts engineering_english
 PRE_TARGETDEPS += ts engineering_english
 
