@@ -26,10 +26,6 @@ class MGConfItem;
 
 class QDBusPendingCallWatcher;
 
-namespace ResourcePolicy {
-    class ResourceSet;
-}
-
 /*!
  * \class VolumeControl
  *
@@ -177,12 +173,6 @@ private slots:
     //! Sets the volume and maximum volume
     void setVolume(int volume, int maximumVolume);
 
-    //! An internal slot to handle the case when we got the hardware volume keys resource
-    void hwKeyResourceAcquired();
-
-    //! An internal slot to handle the case when we lost the hardware volume keys resource
-    void hwKeyResourceLost();
-
     void hwKeysEnabled();
     void hwKeysDisabled();
 
@@ -216,13 +206,8 @@ private:
     //! PulseAudio volume controller
     PulseAudioControl *m_pulseAudioControl;
 
-    //! A resource object for access to the volume keys
-    ResourcePolicy::ResourceSet *m_hwKeyResource;
-
     //! Whether to react to volume key presses
-    bool m_hwKeysAcquired;
     bool m_hwKeysEnabled;
-    bool m_hwKeysActive;
 
     //! The current volume
     int m_volume;

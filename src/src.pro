@@ -159,7 +159,8 @@ PKGCONFIG += \
     dsme_dbus_if \
     glib-2.0 \
     keepalive \
-    libresourceqt5 \
+    libpulse \
+    libpulse-mainloop-glib \
     libsystemd \
     mlite5 \
     mce \

@@ -15,10 +15,9 @@
 #ifndef PULSEAUDIOCONTROL_H
 #define PULSEAUDIOCONTROL_H
 
-#include <QObject>
-#include <QDBusServiceWatcher>
-#include <dbus/dbus.h>
+#include <pulse/pulseaudio.h>
 
+#include <QObject>
 /*!
  * \class PulseAudioControl
  *
@@ -67,6 +66,10 @@ signals:
 
     void mediaStateChanged(const QString &state);
 
+
+    void pulseConnectFailed();
+    void defaultSourceIndexChanged();
+
 public slots:
     /*!
      * Queries the PulseAudio daemon for the volume levels (current and maximum).
@@ -100,27 +103,35 @@ private:
 
     //! Registers a signal handler to listen to the PulseAudio MainVolume1 StepsUpdated signal
     void addSignalMatch();
-
-    /*!
-     * The signal handler for PulseAudio's MainVolume1 signal
-     *
-     * \param conn D-Bus connection structure
-     * \param message signal message
-     * \param control PulseAudioControl instance handling this signal
-     */
-    static DBusHandlerResult signalHandler(DBusConnection *conn, DBusMessage *message, void *control);
-
-    //! D-Bus connection structure
-    DBusConnection *m_dbusConnection;
-    int m_reconnectTimeout;
-
-    QDBusServiceWatcher *m_serviceWatcher;
-
     Q_DISABLE_COPY(PulseAudioControl)
 
 #ifdef UNIT_TEST
     friend class Ut_PulseAudioControl;
 #endif
+    int paVolume2Percent(pa_volume_t vol);
+    pa_volume_t percent2PaVolume(int percent);
+
+    static void stateCallBack(pa_context *context, void *userdata);
+    static void subscribeCallBack(pa_context *context, pa_subscription_event_type_t t, uint32_t index, void *userdata);
+    static void clientCallback(pa_context *, const pa_client_info *i, int eol, void *userdata);
+    static void sinkCallBack(pa_context *, const pa_sink_info *i, int eol, void *userdata);
+    static void sourceCallBack(pa_context *, const pa_source_info *i, int eol, void *userdata);
+    static void sinkInputCallBack(pa_context *, const pa_sink_input_info *i, int eol, void *userdata);
+    static void sourceOutputCallBack(pa_context *, const pa_source_output_info *i, int eol, void *userdata);
+    static void serverInfoCallback(pa_context *, const pa_server_info *i, void *userdata);
+    static void cardCallBack(pa_context *, const pa_card_info *i, int eol, void *userdata);
+
+    pa_context* m_paContext;
+    pa_mainloop_api* m_paAPI;
+    void *userdata;
+
+    QString m_defaultSinkName;
+    QString m_defaultSourceName;
+
+    int m_defaultSinkNameID;
+    int m_defaultSourceNameID;
+
+    QList<pa_sink_info> m_sinks;
 };
 
 #endif
