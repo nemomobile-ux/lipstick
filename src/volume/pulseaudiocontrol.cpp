@@ -32,7 +32,6 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
 
 PulseAudioControl::~PulseAudioControl()
 {
-    qDebug() << Q_FUNC_INFO;
 }
 
 void PulseAudioControl::openConnection()
@@ -61,7 +60,6 @@ void PulseAudioControl::openConnection()
 
 void PulseAudioControl::update()
 {
-    qDebug() << Q_FUNC_INFO;
     openConnection();
 }
 
@@ -134,6 +132,7 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
     case PA_SUBSCRIPTION_EVENT_SINK:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
             qDebug() << "Remove sink" << index;
+            pac->m_sinksOutput.removeAt(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_sink_info_by_index(context, index, pac->sinkCallBack, pac))) {
@@ -158,6 +157,7 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
     case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
             qDebug() << "Remove input" << index;
+            pac->m_sinksInput.removeAt(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_sink_input_info(context, index, pac->sinkInputCallBack, pac))) {
@@ -270,7 +270,7 @@ void PulseAudioControl::sourceCallBack(pa_context *, const pa_source_info *i, in
         qDebug() << "=========== Added source ==================";
         qDebug() << "Name:          " << i->name;
         qDebug() << "Driver:        " << i->driver;
-        qDebug() << "Deskription:   " << i->description;
+        qDebug() << "Description:   " << i->description;
     }
 }
 
@@ -355,6 +355,8 @@ void PulseAudioControl::setVolumeCallBack(pa_context *, int success, void *)
 
 void PulseAudioControl::setVolume(int volume)
 {
+    pa_operation* o;
+
     pa_cvolume cvol;
     cvol.channels = m_defaultSink.volume.channels;
 
@@ -366,5 +368,10 @@ void PulseAudioControl::setVolume(int volume)
         cvol.values[i] = percent2PaVolume(volume);
     }
 
-    pa_context_set_sink_input_volume(m_paContext, m_defaultSink.index, &cvol, setVolumeCallBack, nullptr);
+    QString monitor = QString(m_defaultSink.name)+".monitor";
+
+    if (!(o = pa_context_set_source_volume_by_name(m_paContext, QString(monitor).toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
+            qWarning("pa_context_set_source_volume_by_name FAILED!");
+    }
+    pa_operation_unref(o);
 }
