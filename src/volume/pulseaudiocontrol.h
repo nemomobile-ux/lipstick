@@ -121,6 +121,8 @@ private:
     static void serverInfoCallback(pa_context *, const pa_server_info *i, void *userdata);
     static void cardCallBack(pa_context *, const pa_card_info *i, int eol, void *userdata);
 
+    static void setVolumeCallBack(pa_context *, int success, void *);
+
     pa_context* m_paContext;
     pa_mainloop_api* m_paAPI;
     void *userdata;
@@ -128,10 +130,10 @@ private:
     QString m_defaultSinkName;
     QString m_defaultSourceName;
 
-    int m_defaultSinkNameID;
-    int m_defaultSourceNameID;
+    pa_sink_info m_defaultSink;
 
-    QList<pa_sink_info> m_sinks;
+    QList<pa_sink_info> m_sinksOutput;
+    QList<pa_sink_input_info> m_sinksInput;
 };
 
 #endif

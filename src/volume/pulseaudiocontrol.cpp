@@ -261,11 +261,11 @@ void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eo
         qDebug() << "Deskription:   " << i->description;
 
         if(i->name == pac->m_defaultSinkName) {
-            pac->m_defaultSinkNameID = i->index;
+            pac->m_defaultSink = *i;
             emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), 100);
         }
 
-        pac->m_sinks.insert(i->index, *i);
+        pac->m_sinksOutput.insert(i->index, *i);
     }
 }
 
@@ -299,8 +299,11 @@ void PulseAudioControl::sinkInputCallBack(pa_context *, const pa_sink_input_info
 
     if(eol == 0) {
         qDebug() << "=========== Added sink input ==============";
+        qDebug() << "ID:            " << i->index;
         qDebug() << "Name:          " << i->name;
         qDebug() << "Driver:        " << i->driver;
+
+        pac->m_sinksInput.insert(i->index, *i);
     }
 }
 
@@ -331,7 +334,7 @@ void PulseAudioControl::serverInfoCallback(pa_context *, const pa_server_info *i
         return;
     }
 
-    qDebug() << "=========== Servier info output ==============";
+    qDebug() << "=========== Servier info  ==============";
     qDebug() << "default_sink_name:     " << i->default_sink_name;
     qDebug() << "default_source_name:   " << i->default_source_name;
 
@@ -356,6 +359,13 @@ void PulseAudioControl::cardCallBack(pa_context *, const pa_card_info *i, int eo
     }
 }
 
+void PulseAudioControl::setVolumeCallBack(pa_context *, int success, void *)
+{
+    if(success < 0) {
+        qWarning() << "Set volume falled";
+    }
+}
+
 void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
 {
     qDebug() << Q_FUNC_INFO;
@@ -366,9 +376,11 @@ void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
 void PulseAudioControl::setVolume(int volume)
 {
     pa_cvolume cvol;
-    cvol.channels = 2;
-    cvol.values[0] = percent2PaVolume(volume*10);
-    cvol.values[1] = percent2PaVolume(volume*10);
+    cvol.channels = m_defaultSink.volume.channels;
 
-    pa_context_set_sink_input_volume(m_paContext,m_defaultSinkNameID, &cvol, nullptr, nullptr);
+    for(int i=0; i < cvol.channels; i++) {
+        cvol.values[i] = percent2PaVolume(volume*10);
+    }
+
+    pa_context_set_sink_input_volume(m_paContext, m_defaultSink.index, &cvol, setVolumeCallBack, nullptr);
 }
