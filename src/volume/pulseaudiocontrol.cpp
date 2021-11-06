@@ -35,19 +35,6 @@ PulseAudioControl::~PulseAudioControl()
     qDebug() << Q_FUNC_INFO;
 }
 
-void PulseAudioControl::pulseRegistered(const QString &service)
-{
-    qDebug() << Q_FUNC_INFO;
-    Q_UNUSED(service);
-    openConnection();
-}
-
-void PulseAudioControl::pulseUnregistered(const QString &service)
-{
-    qDebug() << Q_FUNC_INFO;
-    Q_UNUSED(service);
-}
-
 void PulseAudioControl::openConnection()
 {
     qDebug() << Q_FUNC_INFO;
@@ -65,7 +52,7 @@ void PulseAudioControl::openConnection()
 
     if (pa_context_connect(m_paContext, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
         if (pa_context_errno(m_paContext) == PA_ERR_INVALID) {
-            qDebug() << "Connection to PulseAudio failed";
+            emit pulseConnectFailed();
         }
     } else {
         qDebug() << "Connection to PulseAudio success";
@@ -262,7 +249,7 @@ void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eo
 
         if(i->name == pac->m_defaultSinkName) {
             pac->m_defaultSink = *i;
-            emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), 100);
+            emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), pac->paVolume2Percent(PA_VOLUME_MAX));
         }
 
         pac->m_sinksOutput.insert(i->index, *i);
@@ -366,20 +353,17 @@ void PulseAudioControl::setVolumeCallBack(pa_context *, int success, void *)
     }
 }
 
-void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
-{
-    qDebug() << Q_FUNC_INFO;
-    // The pulseaudio API reports the step count (starting from 0), so the maximum volume is stepCount - 1
-    emit volumeChanged(currentStep, stepCount - 1);
-}
-
 void PulseAudioControl::setVolume(int volume)
 {
     pa_cvolume cvol;
     cvol.channels = m_defaultSink.volume.channels;
 
+    if(percent2PaVolume(volume) > percent2PaVolume(PA_VOLUME_NORM)) {
+        emit highVolume(paVolume2Percent(PA_VOLUME_NORM));
+    }
+
     for(int i=0; i < cvol.channels; i++) {
-        cvol.values[i] = percent2PaVolume(volume*10);
+        cvol.values[i] = percent2PaVolume(volume);
     }
 
     pa_context_set_sink_input_volume(m_paContext, m_defaultSink.index, &cvol, setVolumeCallBack, nullptr);
