@@ -245,10 +245,15 @@ void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eo
         qDebug() << "=========== Added sink output ============";
         qDebug() << "Name:          " << i->name;
         qDebug() << "Driver:        " << i->driver;
-        qDebug() << "Deskription:   " << i->description;
+        qDebug() << "Description:   " << i->description;
+        qDebug() << "Muted:         " << i->mute;
 
         if(i->name == pac->m_defaultSinkName) {
             pac->m_defaultSink = *i;
+            /*
+             * if default channel mutted - unmute it
+            */
+            pa_context_set_sink_mute_by_index(pac->m_paContext, i->index, 0, nullptr, nullptr);
             emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), pac->paVolume2Percent(PA_VOLUME_MAX));
         }
 
@@ -271,6 +276,7 @@ void PulseAudioControl::sourceCallBack(pa_context *, const pa_source_info *i, in
         qDebug() << "Name:          " << i->name;
         qDebug() << "Driver:        " << i->driver;
         qDebug() << "Description:   " << i->description;
+        qDebug() << "Muted:         " << i->mute;
     }
 }
 
@@ -368,9 +374,7 @@ void PulseAudioControl::setVolume(int volume)
         cvol.values[i] = percent2PaVolume(volume);
     }
 
-    QString monitor = QString(m_defaultSink.name)+".monitor";
-
-    if (!(o = pa_context_set_source_volume_by_name(m_paContext, QString(monitor).toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
+    if (!(o = pa_context_set_sink_volume_by_name(m_paContext, m_defaultSinkName.toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
             qWarning("pa_context_set_source_volume_by_name FAILED!");
     }
     pa_operation_unref(o);
