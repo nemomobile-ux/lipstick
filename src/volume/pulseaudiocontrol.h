@@ -17,6 +17,7 @@
 #define PULSEAUDIOCONTROL_H
 
 #include <pulse/pulseaudio.h>
+#include <pulse/glib-mainloop.h>
 
 #include <QMutex>
 #include <QObject>
@@ -85,9 +86,23 @@ signals:
     /*!
      * Pulseaudio Signals for models
     */
+    void sinkAdded(int index);
+    void sinkRemoved(int index);
 
     void sinkInputAdded(int index);
     void sinkInputRemoved(int index);
+
+    void sourceAdded(int index);
+    void sourceRemoved(int index);
+
+    void sourceOutputAdded(int index);
+    void sourceOutputRemoved(int index);
+
+    void clientAdded(int index);
+    void clientRemoved(int index);
+
+    void cardAdded(int index);
+    void cardRemoved(int index);
 
     void defaultSinkNameChanged();
     void defaultSourceNameChanged();
@@ -105,7 +120,6 @@ public slots:
      * \param volume The desired volume level
      */
     void setVolume(int volume);
-
 
 private:
     //! Opens connection to PulseAudio daemon.
@@ -136,13 +150,18 @@ private:
 
     pa_context* m_paContext;
     pa_mainloop_api* m_paAPI;
+    pa_glib_mainloop *m;
 
     QString m_defaultSinkName;
     QString m_defaultSourceName;
     int defaultSinkChannels;
 
-    QList<pa_sink_info> m_sinksOutput;
+    QList<pa_sink_info> m_sinks;
     QList<pa_sink_input_info> m_sinksInput;
+    QList<pa_card_info> m_cards;
+    QList<pa_client_info> m_clients;
+    QList<pa_source_info> m_sources;
+    QList<pa_source_output_info> m_sourceOutputs;
 
     QMutex lock;
 };

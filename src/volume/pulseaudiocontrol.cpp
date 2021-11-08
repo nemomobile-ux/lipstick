@@ -13,7 +13,6 @@
 **
 ****************************************************************************/
 
-#include <pulse/glib-mainloop.h>
 #include <pulse/operation.h>
 
 #include "pulseaudiocontrol.h"
@@ -23,15 +22,15 @@ static PulseAudioControl *pulseAudioControlInstance = 0;
 
 PulseAudioControl::PulseAudioControl(QObject *parent) :
     QObject(parent)
-    , m_paContext(nullptr)
-    , m_paAPI(nullptr)
-    , m_defaultSinkName("")
-    , m_defaultSourceName("")
-    , defaultSinkChannels(-1)
+  , m_paContext(nullptr)
+  , m_paAPI(nullptr)
+  , m_defaultSinkName("")
+  , m_defaultSourceName("")
+  , defaultSinkChannels(-1)
 {
     QMutexLocker locker(&lock);
 
-    pa_glib_mainloop *m = pa_glib_mainloop_new(g_main_context_default());
+    m = pa_glib_mainloop_new(g_main_context_default());
     g_assert(m);
     m_paAPI = pa_glib_mainloop_get_api(m);
 
@@ -40,6 +39,8 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
 
 PulseAudioControl::~PulseAudioControl()
 {
+    pa_context_unref(m_paContext);
+    pa_glib_mainloop_free(m);
 }
 
 PulseAudioControl &PulseAudioControl::instance()
@@ -150,8 +151,8 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
     switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
     case PA_SUBSCRIPTION_EVENT_SINK:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            qDebug() << "Remove sink" << index;
-            pac->m_sinksOutput.removeAt(index);
+            pac->m_sinks.removeAt(index);
+            emit pac->sinkRemoved(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_sink_info_by_index(context, index, pac->sinkCallBack, pac))) {
@@ -163,7 +164,8 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
         break;
     case PA_SUBSCRIPTION_EVENT_SOURCE:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            qDebug() << "Remove source" << index;
+            pac->m_sources.removeAt(index);
+            emit pac->sourceRemoved(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_source_info_by_index(context, index, pac->sourceCallBack, pac))) {
@@ -175,7 +177,6 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
         break;
     case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            qDebug() << "Remove input" << index;
             pac->m_sinksInput.removeAt(index);
             emit pac->sinkInputRemoved(index);
         } else {
@@ -189,19 +190,21 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
         break;
     case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
+            pac->m_sourceOutputs.removeAt(index);
+            emit pac->sourceOutputRemoved(index);
+        } else {
             pa_operation *o;
             if (!(o = pa_context_get_source_output_info(context, index, pac->sourceOutputCallBack, pac))) {
-                qDebug("pa_context_get_sink_input_info() failed");
+                qDebug("pa_context_get_source_output_info() failed");
                 return;
             }
             pa_operation_unref(o);
-        } else {
-            qDebug() << "Added output" << index;
         }
         break;
     case PA_SUBSCRIPTION_EVENT_CLIENT:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            qDebug() << "Remove client" << index;
+            pac->m_clients.removeAt(index);
+            emit pac->clientRemoved(index);
         } else {
             pa_operation *o;
             if(!(o = pa_context_get_client_info(context, index, pac->clientCallback, pac))) {
@@ -213,7 +216,8 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
         break;
     case PA_SUBSCRIPTION_EVENT_CARD:
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            qDebug() << "Remove card" << index;
+            pac->m_cards.removeAt(index);
+            emit pac->cardRemoved(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_card_info_by_index(context, index, pac->cardCallBack, pac))) {
@@ -245,9 +249,8 @@ void PulseAudioControl::clientCallback(pa_context *, const pa_client_info *i, in
     }
 
     if(eol == 0) {
-        qDebug() << "=========== Added client ==================";
-        qDebug() << "Name:      " << i->name;
-        qDebug() << "Driver:    " << i->driver;
+        pac->m_clients.insert(i->index, *i);
+        emit pac->clientAdded(i->index);
     }
 }
 
@@ -262,13 +265,8 @@ void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eo
     }
 
     if(eol == 0) {
-        qDebug() << "=========== Added sink output ============";
-        qDebug() << "Name:          " << i->name;
-        qDebug() << "Driver:        " << i->driver;
-        qDebug() << "Description:   " << i->description;
-        qDebug() << "Muted:         " << i->mute;
-
-        pac->m_sinksOutput.insert(i->index, *i);
+        pac->m_sinks.insert(i->index, *i);
+        emit pac->sinkRemoved(i->index);
     }
 }
 
@@ -283,11 +281,8 @@ void PulseAudioControl::sourceCallBack(pa_context *, const pa_source_info *i, in
     }
 
     if(eol == 0) {
-        qDebug() << "=========== Added source ==================";
-        qDebug() << "Name:          " << i->name;
-        qDebug() << "Driver:        " << i->driver;
-        qDebug() << "Description:   " << i->description;
-        qDebug() << "Muted:         " << i->mute;
+        pac->m_sources.insert(i->index, *i);
+        emit pac->sourceAdded(i->index);
     }
 }
 
@@ -302,11 +297,6 @@ void PulseAudioControl::sinkInputCallBack(pa_context *, const pa_sink_input_info
     }
 
     if(eol == 0) {
-        qDebug() << "=========== Added sink input ==============";
-        qDebug() << "ID:            " << i->index;
-        qDebug() << "Name:          " << i->name;
-        qDebug() << "Driver:        " << i->driver;
-
         pac->m_sinksInput.insert(i->index, *i);
         emit pac->sinkInputAdded(i->index);
     }
@@ -323,9 +313,8 @@ void PulseAudioControl::sourceOutputCallBack(pa_context *, const pa_source_outpu
     }
 
     if(eol == 0) {
-        qDebug() << "==========> Added source output <=============";
-        qDebug() << "Name:          " << i->name;
-        qDebug() << "Driver:        " << i->driver;
+        pac->m_sourceOutputs.insert(i->index, *i);
+        emit pac->sourceOutputAdded(i->index);
     }
 }
 
@@ -338,10 +327,6 @@ void PulseAudioControl::serverInfoCallback(pa_context *, const pa_server_info *i
         qWarning("Server info callback failure");
         return;
     }
-
-    qDebug() << "=========== Servier info  ==============";
-    qDebug() << "default_sink_name:     " << i->default_sink_name;
-    qDebug() << "default_source_name:   " << i->default_source_name;
 
     if(pac->m_defaultSinkName != i->default_sink_name) {
         pac->m_defaultSinkName = i->default_sink_name;
@@ -365,9 +350,8 @@ void PulseAudioControl::cardCallBack(pa_context *, const pa_card_info *i, int eo
     }
 
     if(eol == 0) {
-        qDebug() << "=========== Added card ==============";
-        qDebug() << "Name:          " << i->name;
-        qDebug() << "Driver:        " << i->driver;
+        pac->m_cards.insert(i->index, *i);
+        pac->cardAdded(i->index);
     }
 }
 
