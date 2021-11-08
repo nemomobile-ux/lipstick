@@ -1,6 +1,7 @@
 /***************************************************************************
 **
 ** Copyright (c) 2012 Jolla Ltd.
+** Copyright (c) 2021 Chupligin Sregey (NeoChapay) <neochapay@gmail.com>
 **
 ** This file is part of lipstick.
 **
@@ -18,12 +19,14 @@
 #include "pulseaudiocontrol.h"
 #include <QDebug>
 
+static PulseAudioControl *pulseAudioControlInstance = 0;
+
 PulseAudioControl::PulseAudioControl(QObject *parent) :
     QObject(parent),
     m_paContext(nullptr),
     m_paAPI(nullptr)
 {
-    qDebug() << Q_FUNC_INFO;
+    QMutexLocker locker(&lock);
 
     pa_glib_mainloop *m = pa_glib_mainloop_new(g_main_context_default());
     g_assert(m);
@@ -32,6 +35,16 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
 
 PulseAudioControl::~PulseAudioControl()
 {
+}
+
+PulseAudioControl &PulseAudioControl::instance()
+{
+    static QMutex mutex;
+    QMutexLocker locker(&mutex);
+    if(!pulseAudioControlInstance) {
+        pulseAudioControlInstance = new PulseAudioControl;
+    }
+    return *pulseAudioControlInstance;
 }
 
 void PulseAudioControl::openConnection()
@@ -158,6 +171,7 @@ void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_e
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
             qDebug() << "Remove input" << index;
             pac->m_sinksInput.removeAt(index);
+            emit pac->sinkInputRemoved(index);
         } else {
             pa_operation *o;
             if (!(o = pa_context_get_sink_input_info(context, index, pac->sinkInputCallBack, pac))) {
@@ -297,6 +311,7 @@ void PulseAudioControl::sinkInputCallBack(pa_context *, const pa_sink_input_info
         qDebug() << "Driver:        " << i->driver;
 
         pac->m_sinksInput.insert(i->index, *i);
+        emit pac->sinkInputAdded(i->index);
     }
 }
 
@@ -376,6 +391,7 @@ void PulseAudioControl::setVolume(int volume)
 
     if (!(o = pa_context_set_sink_volume_by_name(m_paContext, m_defaultSinkName.toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
             qWarning("pa_context_set_source_volume_by_name FAILED!");
+    } else {
+        pa_operation_unref(o);
     }
-    pa_operation_unref(o);
 }
