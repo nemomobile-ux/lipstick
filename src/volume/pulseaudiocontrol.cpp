@@ -22,15 +22,20 @@
 static PulseAudioControl *pulseAudioControlInstance = 0;
 
 PulseAudioControl::PulseAudioControl(QObject *parent) :
-    QObject(parent),
-    m_paContext(nullptr),
-    m_paAPI(nullptr)
+    QObject(parent)
+    , m_paContext(nullptr)
+    , m_paAPI(nullptr)
+    , m_defaultSinkName("")
+    , m_defaultSourceName("")
+    , defaultSinkChannels(-1)
 {
     QMutexLocker locker(&lock);
 
     pa_glib_mainloop *m = pa_glib_mainloop_new(g_main_context_default());
     g_assert(m);
     m_paAPI = pa_glib_mainloop_get_api(m);
+
+    connect(this, &PulseAudioControl::defaultSinkNameChanged, this, &PulseAudioControl::setupDefaultSink);
 }
 
 PulseAudioControl::~PulseAudioControl()
@@ -49,7 +54,6 @@ PulseAudioControl &PulseAudioControl::instance()
 
 void PulseAudioControl::openConnection()
 {
-    qDebug() << Q_FUNC_INFO;
     pa_proplist *proplist = pa_proplist_new();
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "lipstick");
     pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "org.PulseAudio.lipstick");
@@ -73,7 +77,9 @@ void PulseAudioControl::openConnection()
 
 void PulseAudioControl::update()
 {
-    openConnection();
+    if(m_paContext == nullptr) {
+        openConnection();
+    }
 }
 
 int PulseAudioControl::paVolume2Percent(pa_volume_t vol)
@@ -117,6 +123,7 @@ void PulseAudioControl::stateCallBack(pa_context *context, void *userdata)
             qWarning("PULSEAUDIOCONTROL: pa_context_subscribe() failed");
             return;
         }
+
         pa_operation_unref(o);
         pa_context_get_server_info(context, pac->serverInfoCallback, pac);
         pa_context_get_client_info_list(context, pac->clientCallback, pac);
@@ -125,7 +132,6 @@ void PulseAudioControl::stateCallBack(pa_context *context, void *userdata)
         pa_context_get_source_info_list(context, pac->sourceCallBack, pac);
         pa_context_get_sink_input_info_list(context, pac->sinkInputCallBack, pac);
         pa_context_get_source_output_info_list(context, pac->sourceOutputCallBack, pac);
-
         break;
     case PA_CONTEXT_FAILED:
         pa_context_unref(context);
@@ -262,15 +268,6 @@ void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eo
         qDebug() << "Description:   " << i->description;
         qDebug() << "Muted:         " << i->mute;
 
-        if(i->name == pac->m_defaultSinkName) {
-            pac->m_defaultSink = *i;
-            /*
-             * if default channel mutted - unmute it
-            */
-            pa_context_set_sink_mute_by_index(pac->m_paContext, i->index, 0, nullptr, nullptr);
-            emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), pac->paVolume2Percent(PA_VOLUME_MAX));
-        }
-
         pac->m_sinksOutput.insert(i->index, *i);
     }
 }
@@ -346,8 +343,15 @@ void PulseAudioControl::serverInfoCallback(pa_context *, const pa_server_info *i
     qDebug() << "default_sink_name:     " << i->default_sink_name;
     qDebug() << "default_source_name:   " << i->default_source_name;
 
-    pac->m_defaultSinkName = i->default_sink_name;
-    pac->m_defaultSourceName = i->default_source_name;
+    if(pac->m_defaultSinkName != i->default_sink_name) {
+        pac->m_defaultSinkName = i->default_sink_name;
+        emit pac->defaultSinkNameChanged();
+    }
+
+    if(pac->m_defaultSourceName != i->default_source_name) {
+        pac->m_defaultSourceName = i->default_source_name;
+        emit pac->defaultSourceNameChanged();
+    }
 }
 
 void PulseAudioControl::cardCallBack(pa_context *, const pa_card_info *i, int eol, void *userdata)
@@ -374,12 +378,43 @@ void PulseAudioControl::setVolumeCallBack(pa_context *, int success, void *)
     }
 }
 
+void PulseAudioControl::setupDefaultSink()
+{
+    pa_context_get_sink_info_by_name(m_paContext, m_defaultSinkName.toUtf8(), setupDefaultSinkCallBack, this);
+}
+
+void PulseAudioControl::setupDefaultSinkCallBack(pa_context *, const pa_sink_info *i, int eol, void *userdata)
+{
+    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
+    if(eol < 0) {
+        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
+            return;
+        }
+        qWarning("Source output callback failure");
+    }
+
+    if(i == nullptr) {
+        return;
+    }
+    pac->defaultSinkChannels = i->volume.channels;
+
+    /*
+     * if default channel mutted - unmute it
+    */
+    pa_context_set_sink_mute_by_name(pac->m_paContext, pac->m_defaultSinkName.toUtf8(), 0, nullptr, nullptr);
+    emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), pac->paVolume2Percent(PA_VOLUME_MAX));
+}
+
 void PulseAudioControl::setVolume(int volume)
 {
+    if(defaultSinkChannels == -1) {
+        return;
+    }
+
     pa_operation* o;
 
     pa_cvolume cvol;
-    cvol.channels = m_defaultSink.volume.channels;
+    cvol.channels = defaultSinkChannels;
 
     if(percent2PaVolume(volume) > percent2PaVolume(PA_VOLUME_NORM)) {
         emit highVolume(paVolume2Percent(PA_VOLUME_NORM));
@@ -390,7 +425,7 @@ void PulseAudioControl::setVolume(int volume)
     }
 
     if (!(o = pa_context_set_sink_volume_by_name(m_paContext, m_defaultSinkName.toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
-            qWarning("pa_context_set_source_volume_by_name FAILED!");
+        qWarning("pa_context_set_source_volume_by_name FAILED!");
     } else {
         pa_operation_unref(o);
     }
