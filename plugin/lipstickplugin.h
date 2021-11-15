@@ -13,6 +13,7 @@
 // GNU Lesser General Public License for more details.
 //
 // Copyright (c) 2012, Timur Kristóf <venemo@fedoraproject.org>
+// Copyright (c) 2021 Chupligin Sergey (NeoChapay) <neochapay@gmail.com>
 
 #ifndef LIPSTICKPLUGIN_H
 #define LIPSTICKPLUGIN_H

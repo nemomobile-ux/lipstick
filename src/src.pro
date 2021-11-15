@@ -82,6 +82,7 @@ HEADERS += \
     screenlock/screenlock.h \
     screenlock/screenlockadaptor.h \
     touchscreen/touchscreen_p.h \
+    volume/pulseaudiosinkinputmodel.h \
     volume/volumecontrol.h \
     volume/pulseaudiocontrol.h \
     lipstickapi.h \
@@ -128,6 +129,7 @@ SOURCES += \
     screenlock/screenlock.cpp \
     screenlock/screenlockadaptor.cpp \
     touchscreen/touchscreen.cpp \
+    volume/pulseaudiosinkinputmodel.cpp \
     volume/volumecontrol.cpp \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
@@ -159,7 +161,8 @@ PKGCONFIG += \
     dsme_dbus_if \
     glib-2.0 \
     keepalive \
-    libresourceqt5 \
+    libpulse \
+    libpulse-mainloop-glib \
     libsystemd \
     mlite5 \
     mce \

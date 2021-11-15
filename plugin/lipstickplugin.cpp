@@ -13,6 +13,7 @@
 // GNU Lesser General Public License for more details.
 //
 // Copyright (c) 2012, Timur Kristóf <venemo@fedoraproject.org>
+// Copyright (c) 2021 Chupligin Sergey (NeoChapay) <neochapay@gmail.com>
 
 #include "lipstickplugin.h"
 
@@ -32,6 +33,7 @@
 #include <compositor/lipstickcompositorwindow.h>
 #include <compositor/windowmodel.h>
 #include <compositor/windowpixmapitem.h>
+#include <volume/pulseaudiosinkinputmodel.h>
 #include <lipstickapi.h>
 
 static QObject *lipstickApi_callback(QQmlEngine *e, QJSEngine *)
@@ -55,6 +57,7 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterType<LauncherItem>("org.nemomobile.lipstick", 0, 1, "LauncherItem");
     qmlRegisterType<LauncherFolderModelType>("org.nemomobile.lipstick", 0, 1, "LauncherFolderModel");
     qmlRegisterType<LauncherFolderItem>("org.nemomobile.lipstick", 0, 1, "LauncherFolderItem");
+    qmlRegisterType<PulseaudioSinkInputModel>("org.nemomobile.lipstick", 0, 1, "PulseaudioSinkInputModel");
 
     qmlRegisterUncreatableType<NotificationPreviewPresenter>("org.nemomobile.lipstick", 0, 1, "NotificationPreviewPresenter", "This type is initialized by HomeApplication");
     qmlRegisterUncreatableType<NotificationFeedbackPlayer>("org.nemomobile.lipstick", 0, 1, "NotificationFeedbackPlayer", "This type is initialized by HomeApplication");
