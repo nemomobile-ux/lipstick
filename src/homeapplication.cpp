@@ -26,6 +26,7 @@
 #include <systemd/sd-daemon.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+#include <deviceinfo.h>
 
 #include "notifications/notificationmanager.h"
 #include "notifications/notificationpreviewpresenter.h"
@@ -116,7 +117,12 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     new NotificationPreviewPresenter(m_screenLock, deviceLock, this);
 
     m_volumeControl = new VolumeControl(this);
-    new BatteryNotifier(this);
+
+    DeviceInfo deviceInfo;
+    if (deviceInfo.hasFeature(DeviceInfo::FeatureBattery)) {
+        new BatteryNotifier(this);
+    }
+
     new ThermalNotifier(this);
     m_bluetoothAgent = new BluetoothAgent(this);
     m_bluetoothObexAgent = new BluetoothObexAgent(this);
