@@ -9,23 +9,23 @@
     <message id="qtn_ener_charging">
         <location filename="../src/notifications/batterynotifier.cpp" line="404"/>
         <source>Charging</source>
-        <translation>Заряджання</translation>
+        <translation>Зарядка</translation>
     </message>
     <message id="qtn_ener_charcomp">
         <location filename="../src/notifications/batterynotifier.cpp" line="409"/>
         <source>Charging complete</source>
-        <translation>Заряджання завершено</translation>
+        <translation>Зарядка завершена</translation>
     </message>
     <message id="qtn_ener_remcha">
         <location filename="../src/notifications/batterynotifier.cpp" line="414"/>
         <source>Disconnect charger from power supply to save energy</source>
-        <translation>Від&apos;єднайте зарядний пристрій, щоб зекономити енергію</translation>
+        <translation>Від&apos;єднайте зарядний пристрій, для економії енергії</translation>
     </message>
     <message id="qtn_ener_repcharger">
         <location filename="../src/notifications/batterynotifier.cpp" line="419"/>
         <source>Charging not started. Replace charger.</source>
         <oldsource>Not charging. Adjust or recycle charger.</oldsource>
-        <translation>Не заряджається. Поправте зарядний пристрій.</translation>
+        <translation>Не заряджається. Налаштуйте або утилізуйте зарядний пристрій.</translation>
     </message>
     <message id="qtn_ener_rebatt">
         <location filename="../src/notifications/batterynotifier.cpp" line="424"/>
@@ -40,7 +40,7 @@
     <message id="qtn_ener_exit_psnote">
         <location filename="../src/notifications/batterynotifier.cpp" line="434"/>
         <source>Exiting power save mode</source>
-        <translation>Вихід із режиму енергозбереження</translation>
+        <translation>Вихід з режиму енергозбереження</translation>
     </message>
     <message id="qtn_ener_lowbatt_with_percentage">
         <location filename="../src/notifications/batterynotifier.cpp" line="440"/>
