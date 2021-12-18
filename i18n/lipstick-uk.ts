@@ -9,7 +9,7 @@
     <message id="qtn_ener_charging">
         <location filename="../src/notifications/batterynotifier.cpp" line="404"/>
         <source>Charging</source>
-        <translation>Заряджання</translation>
+        <translation>Зарядка</translation>
     </message>
     <message id="qtn_ener_charcomp">
         <location filename="../src/notifications/batterynotifier.cpp" line="409"/>
