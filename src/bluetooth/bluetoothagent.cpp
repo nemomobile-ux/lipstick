@@ -61,14 +61,16 @@ BluezQt::Agent::Capability BluetoothAgent::capability() const
     return DisplayYesNo;
 }
 
-void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device, const BluezQt::Request<QString> &request)
+void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
+                                    const BluezQt::Request<QString> &request)
 {
     qDebug() << Q_FUNC_INFO;
     m_device = device;
     request.accept(QString());
 }
 
-void BluetoothAgent::displayPinCode(BluezQt::DevicePtr device, const QString &pinCode)
+void BluetoothAgent::displayPinCode(BluezQt::DevicePtr device,
+                                    const QString &pinCode)
 {
     qDebug() << Q_FUNC_INFO;
     m_device = device;
@@ -168,7 +170,9 @@ void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
     }
 }
 
-void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device, const QString &passkey, const BluezQt::Request<> &request)
+void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
+                                         const QString &passkey,
+                                         const BluezQt::Request<> &request)
 {
     Q_UNUSED(request);
     m_device = device;
@@ -186,14 +190,17 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device, const QStrin
     });
 }
 
-void BluetoothAgent::requestAuthorization(BluezQt::DevicePtr device, const BluezQt::Request<> &request)
+void BluetoothAgent::requestAuthorization(BluezQt::DevicePtr device,
+                                          const BluezQt::Request<> &request)
 {
     qDebug() << Q_FUNC_INFO;
     m_device = device;
     request.accept();
 }
 
-void BluetoothAgent::authorizeService(BluezQt::DevicePtr device, const QString &uuid, const BluezQt::Request<> &request)
+void BluetoothAgent::authorizeService(BluezQt::DevicePtr device,
+                                      const QString &uuid,
+                                      const BluezQt::Request<> &request)
 {
     qDebug() << Q_FUNC_INFO;
     Q_UNUSED(uuid);
