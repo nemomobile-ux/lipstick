@@ -73,7 +73,7 @@
         <location filename="../tests/ut_thermalnotifier/ut_thermalnotifier.cpp" line="84"/>
         <source>Low temperature warning</source>
         <oldsource>The device is too cold</oldsource>
-        <translation>Das gerät ist zu kalt.</translation>
+        <translation>Das Gerät ist zu kalt.</translation>
     </message>
     <message id="qtn_shut_high_temp">
         <location filename="../src/shutdownscreen.cpp" line="86"/>
