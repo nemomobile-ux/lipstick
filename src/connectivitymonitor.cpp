@@ -66,7 +66,7 @@ ConnectivityMonitor::~ConnectivityMonitor()
 
 QList<QString> ConnectivityMonitor::activeConnectionTypes() const
 {
-    return activeServices_.keys().toSet().values();
+    return QSet<QString>(activeServices_.keys().begin(), activeServices_.keys().end()).values();
 }
 
 void ConnectivityMonitor::fetchServiceList()

@@ -71,7 +71,7 @@ bool VpnAgent::windowVisible() const
 
 void VpnAgent::respond(const QString &path, const QVariantMap &details)
 {
-    //bool storeCredentials = false;
+    bool storeCredentials = false;
     bool keepCredentials = false;
 
     // Marshall our response
@@ -101,11 +101,11 @@ void VpnAgent::respond(const QString &path, const QVariantMap &details)
         }
     }
 
-    /*if (storeCredentials) {
+    if (storeCredentials) {
         m_connections->setConnectionCredentials(path, response);
     } else if (!keepCredentials) { // Clearing explicitly disabled
         m_connections->disableConnectionCredentials(path);
-    }*/
+    }
 
     QList<Request>::iterator it = m_pending.begin(), end = m_pending.end();
     for ( ; it != end; ++it) {
@@ -170,7 +170,7 @@ T extract(const QDBusArgument &arg)
 }
 
 // Extracts a boolean value and removes it from the map
-bool ExtractRequestBool(QVariantMap &extracted, const QString &key, bool defaultValue) {
+/*bool ExtractRequestBool(QVariantMap &extracted, const QString &key, bool defaultValue) {
     bool result = defaultValue;
     QVariantMap::iterator it = extracted.find(key);
     while ((it != extracted.end()) && (it.key() == key)) {
@@ -186,9 +186,9 @@ bool ExtractRequestBool(QVariantMap &extracted, const QString &key, bool default
         it++;
     }
     return result;
-}
+}*/
 
-void AddMissingAttributes(QVariantMap &field) {
+/*void AddMissingAttributes(QVariantMap &field) {
     if (!field.contains(QStringLiteral("Requirement"))) {
         field.insert(QStringLiteral("Requirement"), QVariant(QStringLiteral("optional")));
     }
@@ -204,7 +204,7 @@ void AddMissingAttributes(QVariantMap &field) {
             field.insert(QStringLiteral("Value"), QStringLiteral(""));
         }
     }
-}
+}*/
 
 }
 

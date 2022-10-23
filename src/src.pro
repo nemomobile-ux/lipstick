@@ -197,7 +197,9 @@ QMAKE_CXXFLAGS += \
     -g \
     -fPIC \
     -fvisibility=hidden \
-    -fvisibility-inlines-hidden
+    -fvisibility-inlines-hidden \
+    -Werror \
+    -Wno-deprecated-copy
 
 QMAKE_LFLAGS += \
     -pie \

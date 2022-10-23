@@ -670,7 +670,7 @@ void NotificationManager::handleCloseNotification(int clientPid, uint id, Notifi
 
 void NotificationManager::closeNotifications(const QList<uint> &ids, NotificationClosedReason closeReason)
 {
-    QSet<uint> uniqueIds = QSet<uint>::fromList(ids);
+    QSet<uint> uniqueIds = QSet<uint>(ids.begin(), ids.end());
     QList<uint> removedIds;
 
     foreach (uint id, uniqueIds) {
@@ -1478,7 +1478,7 @@ void NotificationManager::expire()
 void NotificationManager::reportModifications()
 {
     if (!m_modifiedIds.isEmpty()) {
-        emit notificationsModified(m_modifiedIds.toList());
+        emit notificationsModified(m_modifiedIds.values());
         m_modifiedIds.clear();
     }
 }

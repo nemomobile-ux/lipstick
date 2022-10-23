@@ -57,8 +57,6 @@ TouchScreenPrivate::TouchScreenPrivate(TouchScreen *q)
 
 void TouchScreenPrivate::handleDisplayStateChange(TouchScreen::DisplayState state)
 {
-    Q_Q(TouchScreen);
-
     currentDisplayState = state;
     if (state == TouchScreen::DisplayDimmed)
         return;

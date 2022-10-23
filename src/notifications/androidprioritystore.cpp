@@ -26,7 +26,8 @@ const int StandardAndroidPriority = 50;
 AndroidPriorityStore::PriorityDetails detailsForFeedback(const QString &feedback)
 {
     if (!feedback.isEmpty()) {
-        QSet<QString> tokens(feedback.split(",", QString::SkipEmptyParts).toSet());
+        QStringList fSplit = feedback.split(",", Qt::SkipEmptyParts);
+        QSet<QString> tokens(fSplit.begin(), fSplit.end());
 
         // If the only feedback tokens are for email, this is a medium-priority notification
         tokens.remove(QStringLiteral("email"));

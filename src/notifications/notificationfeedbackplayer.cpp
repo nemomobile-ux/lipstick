@@ -65,7 +65,7 @@ void NotificationFeedbackPlayer::addNotification(uint id)
 
         // Play the feedback related to the notification if any
         const QString feedback = notification->hints().value(LipstickNotification::HINT_FEEDBACK).toString();
-        QStringList feedbackItems = feedback.split(QStringLiteral(","), QString::SkipEmptyParts);
+        QStringList feedbackItems = feedback.split(QStringLiteral(","), Qt::SkipEmptyParts);
 
         int minimumPriority = m_minimumPriority;
 

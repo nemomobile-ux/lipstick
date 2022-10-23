@@ -43,6 +43,12 @@
 #endif
 
 #include <QDebug>
+static void g_free_wrapper (void *data, void *userdata)
+{
+    Q_UNUSED(userdata);
+    g_free (data);
+};
+
 
 const auto DesktopEntryGroup = QStringLiteral("Desktop Entry");
 const auto DBusActivatableKey = QStringLiteral("DBusActivatable");
@@ -386,7 +392,7 @@ void LauncherItem::launchWithArguments(const QStringList &arguments)
             qWarning() << "Failed to execute" << filename() << error->message;
             g_error_free(error);
         }
-        g_list_foreach(uris, (GFunc)g_free, NULL);
+        g_list_foreach(uris, (GFunc)g_free_wrapper, NULL);
         g_list_free(uris);
 
         g_object_unref(appInfo);

@@ -14,7 +14,6 @@
 **
 ****************************************************************************/
 
-#include "notificationmanager.h"
 #include "lipsticknotification.h"
 
 #include <QDBusArgument>
@@ -402,7 +401,7 @@ QVariantList LipstickNotification::remoteActions() const
             }
 
             // Extract the element of the DBus call
-            QStringList elements(hint.split(' ', QString::SkipEmptyParts));
+            QStringList elements(hint.split(' ', Qt::SkipEmptyParts));
             if (elements.size() <= 3) {
                 qWarning() << "Unable to decode invalid remote action:" << hint;
             } else {
