@@ -11,8 +11,20 @@ Makefile
 *.log.xml
 *.gcno
 *.gcda
-*.pro.user
+*.pro.user*
 configure-stamp
 build-stamp
 .project
 .cproject
+
+#dont store generated files
+src/compositor/fileserviceadaptor.cpp
+src/compositor/fileserviceadaptor.h
+src/connmanmanagerproxy.cpp
+src/connmanmanagerproxy.h
+src/connmanserviceproxy.cpp
+src/connmanserviceproxy.h
+src/connmanvpnagent.cpp
+src/connmanvpnagent.h
+src/connmanvpnproxy.cpp
+src/connmanvpnproxy.h
