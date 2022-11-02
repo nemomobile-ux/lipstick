@@ -1,6 +1,6 @@
 /***************************************************************************
 **
-** Copyright (c) 2012 Jolla Ltd.
+** Copyright (c) 2012 - 2022 Jolla Ltd.
 ** Copyright (c) 2021 Chupligin Sergey <neochapay@gmail.com>
 **
 ** This file is part of lipstick.
@@ -32,10 +32,17 @@
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
 
-VolumeControl::VolumeControl(QObject *parent) :
+static bool s_hwKeysCreated = false;
+
+VolumeControl::VolumeControl(QObject *parent)
+    : VolumeControl(false, parent)
+{
+}
+
+VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     QObject(parent),
-    m_window(0),
-    m_pulseAudioControl(),
+    m_window(nullptr),
+    m_pulseAudioControl(new PulseAudioControl(this)),
     m_hwKeysEnabled(false),
     m_volume(0),
     m_maximumVolume(0),
@@ -47,6 +54,32 @@ VolumeControl::VolumeControl(QObject *parent) :
     m_mediaState(MediaStateUnknown)
 {
     m_pulseAudioControl = &PulseAudioControl::instance();
+    if (hwKeysCapability) {
+        Q_ASSERT_X(!s_hwKeysCreated, Q_FUNC_INFO, "Hw key capable VolumeControl must be a singleton created from C++");
+
+        m_hwKeysEnabled = true;
+
+        qApp->installEventFilter(this);
+        QTimer::singleShot(0, this, SLOT(createWindow()));
+
+        QDBusConnection systemBus = QDBusConnection::systemBus();
+
+        systemBus.connect(MCE_SERVICE,
+                          MCE_SIGNAL_PATH,
+                          MCE_SIGNAL_IF,
+                          MCE_VOLKEY_INPUT_POLICY_SIG,
+                          this, SLOT(inputPolicyChanged(QString)));
+
+        QDBusPendingReply<QString> inputPolicy = systemBus.asyncCall(QDBusMessage::createMethodCall(
+                    MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_VOLKEY_INPUT_POLICY_GET));
+        QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(inputPolicy, this);
+        connect(watcher, &QDBusPendingCallWatcher::finished,
+                this, &VolumeControl::inputPolicyReply);
+
+        evaluateKeyState();
+
+        s_hwKeysCreated = true;
+    }
 
     setWarningAcknowledged(false);
     connect(m_audioWarning, SIGNAL(valueChanged()), this, SIGNAL(restrictedVolumeChanged()));
