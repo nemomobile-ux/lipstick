@@ -1,6 +1,7 @@
 /***************************************************************************
 **
-** Copyright (c) 2012 Jolla Ltd.
+** Copyright (c) 2012 - 2021 Jolla Ltd.
+** Copyright (c) 2021 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -19,6 +20,8 @@
 #include "lipsticknotification.h"
 #include "ngfclient_stub.h"
 #include "ut_notificationfeedbackplayer.h"
+
+#include <QWaylandSurface>
 
 NotificationManager::NotificationManager(QObject *parent, bool owner) : QObject(parent)
 {
@@ -59,6 +62,31 @@ void NotificationManager::expire()
 
 void NotificationManager::reportModifications()
 {
+}
+
+void NotificationManager::identifiedGetNotifications()
+{
+}
+
+void NotificationManager::identifiedGetNotificationsByCategory()
+{
+}
+
+void NotificationManager::identifiedCloseNotification()
+{
+}
+
+void NotificationManager::identifiedNotify()
+{
+}
+
+void ClientIdentifier::getPidReply(QDBusPendingCallWatcher *getPidWatcher)
+{
+    Q_UNUSED(getPidWatcher);
+}
+
+void ClientIdentifier::identifyReply(QDBusPendingCallWatcher *identifyWatcher) {
+    Q_UNUSED(identifyWatcher);
 }
 
 NotificationManager *notificationManagerInstance = 0;
@@ -140,16 +168,20 @@ void Ut_NotificationFeedbackPlayer::testAddAndRemoveNotification()
     QCOMPARE(gClientStub->stubCallCount("play"), 1);
     QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QString>(0), QString("feedback"));
 
+    // Stop has been called as well
+    QCOMPARE(gClientStub->stubCallCount("stop"), 1);
+    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<QString>(0), QString("feedback"));
+
     // Remove the notification
     player->removeNotification(1);
 
     // Check that NGFAdapter::stop() was called for the notification
-    QCOMPARE(gClientStub->stubCallCount("stop"), 1);
-    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<quint32>(0), (quint32)1);
+    QCOMPARE(gClientStub->stubCallCount("stop"), 2);
+    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<quint32>(0), 1u);
 
     // Check that NGFAdapter::stop() is not called for an already stopped notification
     player->removeNotification(1);
-    QCOMPARE(gClientStub->stubCallCount("stop"), 1);
+    QCOMPARE(gClientStub->stubCallCount("stop"), 2);
 }
 
 void Ut_NotificationFeedbackPlayer::testWithoutFeedbackId()
@@ -159,7 +191,7 @@ void Ut_NotificationFeedbackPlayer::testWithoutFeedbackId()
     notification->setHints(QVariantHash());
     player->addNotification(1);
 
-    // Check that NGFAdapter::play() was not called for the feedback
+    // Check that NGFAdapter::play() was not called
     QCOMPARE(gClientStub->stubCallCount("play"), 0);
 }
 
@@ -181,7 +213,7 @@ void Ut_NotificationFeedbackPlayer::testMultipleFeedbackIds()
     events.insert(gClientStub->stubCallsTo("play").at(1)->parameter<QString>(0));
     QCOMPARE(events, QSet<QString>() << QString("feedback") << QString("foldback"));
 
-    QCOMPARE(gClientStub->stubCallsTo("stop").count(), 0);
+    QCOMPARE(gClientStub->stubCallsTo("stop").count(), 2);
 
     // Remove the notification
     player->removeNotification(1);
@@ -189,10 +221,10 @@ void Ut_NotificationFeedbackPlayer::testMultipleFeedbackIds()
     QCOMPARE(gClientStub->stubCallsTo("play").count(), 2);
 
     // Check that NGFAdapter::stop() was called for the events
-    QCOMPARE(gClientStub->stubCallsTo("stop").count(), 2);
+    QCOMPARE(gClientStub->stubCallsTo("stop").count(), 4);
     QSet<quint32> eventIds;
-    eventIds.insert(gClientStub->stubCallsTo("stop").at(0)->parameter<quint32>(0));
-    eventIds.insert(gClientStub->stubCallsTo("stop").at(1)->parameter<quint32>(0));
+    eventIds.insert(gClientStub->stubCallsTo("stop").at(2)->parameter<quint32>(0));
+    eventIds.insert(gClientStub->stubCallsTo("stop").at(3)->parameter<quint32>(0));
     QCOMPARE(eventIds, QSet<quint32>() << 1 << 2);
 }
 
@@ -228,12 +260,14 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotification()
     QCOMPARE(gClientStub->stubCallCount("play"), 1);
     QCOMPARE(gClientStub->stubLastCallTo("play").parameter<QString>(0), QString("feedback"));
 
+    QCOMPARE(gClientStub->stubCallCount("stop"), 1);
+
     // Update the notification
     player->addNotification(1);
 
     // Check that NGFAdapter::stop() was called for the notification
-    QCOMPARE(gClientStub->stubCallCount("stop"), 1);
-    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<quint32>(0), (quint32)1);
+    QCOMPARE(gClientStub->stubCallCount("stop"), 3);
+    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<QString>(0), QString("feedback"));
 
     // Check that NGFAdapter::play() was called again for the feedback
     QCOMPARE(gClientStub->stubCallCount("play"), 2);
@@ -246,8 +280,8 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotification()
     player->addNotification(1);
 
     // Check that NGFAdapter::stop() was called again
-    QCOMPARE(gClientStub->stubCallCount("stop"), 2);
-    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<quint32>(0), (quint32)1);
+    QCOMPARE(gClientStub->stubCallCount("stop"), 5);
+    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<QString>(0), QString("foldback"));
 
     // Check that NGFAdapter::play() was called again
     QCOMPARE(gClientStub->stubCallCount("play"), 3);
@@ -259,12 +293,10 @@ void Ut_NotificationFeedbackPlayer::testUpdateNotification()
     notification->setHints(hints);
     player->addNotification(1);
 
-    // Check that NGFAdapter::stop() was called again
-    QCOMPARE(gClientStub->stubCallCount("stop"), 3);
-    QCOMPARE(gClientStub->stubLastCallTo("stop").parameter<quint32>(0), (quint32)1);
-
-    // Check that NGFAdapter::play() was not called again
     QCOMPARE(gClientStub->stubCallCount("play"), 3);
+
+    // Check that NGFAdapter::stop() was not called again
+    QCOMPARE(gClientStub->stubCallCount("stop"), 6);
 }
 
 void Ut_NotificationFeedbackPlayer::testUpdateNotificationAfterRestart()
@@ -325,35 +357,6 @@ void Ut_NotificationFeedbackPlayer::testNotificationPreviewsDisabled()
     qWaylandSurfaceWindowProperties = windowProperties;
 
     createNotification(1, urgency);
-    player->addNotification(1);
-
-    QCOMPARE(gClientStub->stubCallCount("play"), playCount);
-}
-
-void Ut_NotificationFeedbackPlayer::testNotificationPriority_data()
-{
-    QTest::addColumn<int>("minimumPriority");
-    QTest::addColumn<int>("urgency");
-    QTest::addColumn<QVariant>("priority");
-    QTest::addColumn<int>("playCount");
-
-    QTest::newRow("Minimum priority 50, urgency 1, priority not defined") << 50 << 1 << QVariant() << 0;
-    QTest::newRow("Minimum priority 50, urgency 1, priority 49") << 50 << 1 << QVariant(49) << 0;
-    QTest::newRow("Minimum priority 50, urgency 1, priority 50") << 50 << 1 << QVariant(50) << 1;
-    QTest::newRow("Minimum priority 50, urgency 2, priority not defined") << 50 << 2 << QVariant() << 1;
-    QTest::newRow("Minimum priority 50, urgency 2, priority 49") << 50 << 2 << QVariant(49) << 1;
-    QTest::newRow("Minimum priority 50, urgency 2, priority 50") << 50 << 2 << QVariant(50) << 1;
-}
-
-void Ut_NotificationFeedbackPlayer::testNotificationPriority()
-{
-    QFETCH(int, minimumPriority);
-    QFETCH(int, urgency);
-    QFETCH(QVariant, priority);
-    QFETCH(int, playCount);
-
-    player->setMinimumPriority(minimumPriority);
-    createNotification(1, urgency, priority);
     player->addNotification(1);
 
     QCOMPARE(gClientStub->stubCallCount("play"), playCount);
