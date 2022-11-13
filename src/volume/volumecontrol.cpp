@@ -113,6 +113,7 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
 
 VolumeControl::~VolumeControl()
 {
+    delete m_pulseAudioControl;
     delete m_window;
 }
 
