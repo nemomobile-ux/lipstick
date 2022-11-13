@@ -39,7 +39,9 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
 
 PulseAudioControl::~PulseAudioControl()
 {
-    pa_context_unref(m_paContext);
+    if(m_paContext != nullptr) {
+        pa_context_unref(m_paContext);
+    }
     pa_glib_mainloop_free(m);
 }
 
@@ -109,7 +111,6 @@ void PulseAudioControl::stateCallBack(pa_context *context, void *userdata)
         break;
 
     case PA_CONTEXT_READY:
-        qDebug() << "PA_CONTEXT_READY";
         pa_operation *o;
         pa_context_set_subscribe_callback(context, pac->subscribeCallBack, pac);
 
