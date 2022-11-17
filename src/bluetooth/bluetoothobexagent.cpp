@@ -25,6 +25,7 @@
 #include <QStandardPaths>
 
 #include <BluezQt/ObexManager>
+#include <BluezQt/ObexSession>
 
 BluetoothObexAgent::BluetoothObexAgent(QObject *parent)
     : BluezQt::ObexAgent(parent)

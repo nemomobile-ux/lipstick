@@ -20,6 +20,8 @@
 #ifndef BLUETOOTHAGENT_H
 #define BLUETOOTHAGENT_H
 
+#include <QDBusObjectPath>
+
 #include <bluezqt/agent.h>
 #include <bluezqt/adapter.h>
 #include <bluezqt/request.h>
