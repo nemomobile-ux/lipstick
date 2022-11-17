@@ -28,6 +28,6 @@ DEFINES += QT_COMPOSITOR_QUICK
 QT += waylandcompositor
 
 # needed for hardware compositor
-QT += quick-private gui-private core-private waylandcompositor-private qml-private
+QT += quick-private gui-private core-private qml-private
 
 OTHER_FILES += $$PWD/compositor.xml $$PWD/fileservice.xml
