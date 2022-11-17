@@ -2,7 +2,9 @@ include(../common.pri)
 TARGET = ut_notificationfeedbackplayer
 INCLUDEPATH += $$NOTIFICATIONSRCDIR $$COMPOSITORSRCDIR $$TOUCHSCREENSRCDIR /usr/include/ngf-qt5 $$DEVICESTATE
 CONFIG += link_pkgconfig
-QT += dbus quick compositor
+QT += dbus quick waylandcompositor
+
+PKGCONFIG += libngf0
 
 DEFINES += \
     LIPSTICK_UNIT_TEST_STUB

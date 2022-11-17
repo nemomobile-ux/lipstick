@@ -14,7 +14,7 @@
 #ifndef CLIENT_STUB
 #define CLIENT_STUB
 
-#include "ngfclient.h"
+#include <libngf/client.h>
 #include <stubbase.h>
 
 
