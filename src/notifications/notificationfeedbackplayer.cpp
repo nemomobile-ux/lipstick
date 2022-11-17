@@ -66,7 +66,11 @@ void NotificationFeedbackPlayer::addNotification(uint id)
 
         // Play the feedback related to the notification if any
         const QString feedback = notification->hints().value(LipstickNotification::HINT_FEEDBACK).toString();
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+        QStringList feedbackItems = feedback.split(QStringLiteral(","), QString::SkipEmptyParts);
+#else
         QStringList feedbackItems = feedback.split(QStringLiteral(","), Qt::SkipEmptyParts);
+#endif
 
         if (isEnabled(notification)) {
             QMap<QString, QVariant> properties;

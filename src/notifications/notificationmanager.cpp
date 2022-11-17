@@ -670,7 +670,11 @@ void NotificationManager::handleCloseNotification(int clientPid, uint id, Notifi
 
 void NotificationManager::closeNotifications(const QList<uint> &ids, NotificationClosedReason closeReason)
 {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+    QSet<uint> uniqueIds = QSet<uint>::fromList(ids);
+#else
     QSet<uint> uniqueIds = QSet<uint>(ids.begin(), ids.end());
+#endif
     QList<uint> removedIds;
 
     foreach (uint id, uniqueIds) {
