@@ -35,42 +35,41 @@ extern "C"
 
 bool acquireCalled = false;
 
-namespace ResourcePolicy
+namespace ResourcePolicy {
+ResourceSet::ResourceSet(const QString &, QObject *)
 {
-    ResourceSet::ResourceSet(const QString&, QObject*)
-    {
-    }
+}
 
-    bool ResourceSet::setAlwaysReply()
-    {
-        return true;
-    }
+bool ResourceSet::setAlwaysReply()
+{
+    return true;
+}
 
-    ScaleButtonResource::ScaleButtonResource()
-    {
-    }
+ScaleButtonResource::ScaleButtonResource()
+{
+}
 
-    void ResourceSet::addResourceObject(ResourcePolicy::Resource* rsc)
-    {
-        Q_UNUSED(rsc);
-        return;
-    }
+void ResourceSet::addResourceObject(ResourcePolicy::Resource *rsc)
+{
+    Q_UNUSED(rsc);
+    return;
+}
 
-    bool ResourceSet::acquire()
-    {
-        acquireCalled = true;
-        return true;
-    }
+bool ResourceSet::acquire()
+{
+    acquireCalled = true;
+    return true;
+}
 
-    bool ResourceSet::release()
-    {
-        return true;
-    }
+bool ResourceSet::release()
+{
+    return true;
+}
 
-    void ResourceSet::deleteResource(ResourcePolicy::ResourceType)
-    {
-        return;
-    }
+void ResourceSet::deleteResource(ResourcePolicy::ResourceType)
+{
+    return;
+}
 }
 
 void QObject::installEventFilter(QObject *filterObj)
@@ -113,8 +112,8 @@ void Ut_VolumeControl::cleanup()
 void Ut_VolumeControl::testConnections()
 {
     // Check that pulse audio and the volume bar are connected
-    QCOMPARE(disconnect(volumeControl->pulseAudioControl, SIGNAL(volumeChanged(int,int)), volumeControl, SLOT(setVolume(int,int))), true);
-    QCOMPARE(disconnect(volumeControl->pulseAudioControl, SIGNAL(callActiveChanged(bool)), volumeControl, SLOT(handleCallActive(bool))), true);
+    QCOMPARE(disconnect(volumeControl->m_pulseAudioControl, SIGNAL(volumeChanged(int,int)), volumeControl, SLOT(setVolume(int,int))), true);
+    QCOMPARE(disconnect(volumeControl->m_pulseAudioControl, SIGNAL(callActiveChanged(bool)), volumeControl, SLOT(handleCallActive(bool))), true);
 }
 
 Q_DECLARE_METATYPE(Qt::Key)

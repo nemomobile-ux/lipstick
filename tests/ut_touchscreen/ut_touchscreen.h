@@ -12,32 +12,33 @@
 ** of this file.
 **
 ****************************************************************************/
-#ifndef UT_CATEGORYDEFINITIONSTORE_H
-#define UT_CATEGORYDEFINITIONSTORE_H
+
+#ifndef UT_TOUCHSCREEN_H
+#define UT_TOUCHSCREEN_H
 
 #include <QObject>
 #include <displaystate.h>
 
-class CategoryDefinitionStore;
+class TouchScreen;
 
-class Ut_CategoryDefinitionStore : public QObject
+class Ut_TouchScreen : public QObject
 {
     Q_OBJECT
 
 private slots:
     void init();
     void cleanup();
+    void initTestCase();
+    void cleanupTestCase();
 
-    void testCategoryDefinitionSettingsValues();
-    void testCategoryDefinitionStoreMaxFileSizeHandling();
-    void testCategoryDefinitionUninstalling();
+    void testEnabled();
+    void testTouchBlocking();
 
 private:
     void updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState);
     void fakeDisplayOnAndReady();
 
-signals:
-    void directoryChanged(const QString &path);
+    TouchScreen *touchScreen;
 };
 
 #endif

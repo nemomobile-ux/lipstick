@@ -48,15 +48,15 @@ DeviceState::Thermal::ThermalState ThermalStub::get() const
 }
 void ThermalStub::connectNotify(const QMetaMethod &signal)
 {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<const QMetaMethod &>(signal));
-  stubMethodEntered("connectNotify",params);
+    QList<ParameterBase *> params;
+    params.append( new Parameter<const QMetaMethod &>(signal));
+    stubMethodEntered("connectNotify", params);
 }
 void ThermalStub::disconnectNotify(const QMetaMethod &signal)
 {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<const QMetaMethod &>(signal));
-  stubMethodEntered("disconnectNotify",params);
+    QList<ParameterBase *> params;
+    params.append( new Parameter<const QMetaMethod &>(signal));
+    stubMethodEntered("disconnectNotify", params);
 }
 
 
