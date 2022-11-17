@@ -5,7 +5,7 @@ INCLUDEPATH += $$COMPONENTSSRCDIR
 INCLUDEPATH += $$UTILITYSRCDIR
 INCLUDEPATH += $$3RDPARTYSRCDIR
 
-QMAKE_CXXFLAGS += `pkg-config --cflags-only-I mlite5`
+QMAKE_CXXFLAGS += $$system(pkg-config --cflags-only-I mlite5)
 
 QT += dbus qml
 
@@ -14,7 +14,7 @@ packagesExist(contentaction5) {
     DEFINES += HAVE_CONTENTACTION
 } else {
     PKGCONFIG += \
-        gio-2.0
+        gio-unix-2.0
 }
 
 SOURCES += \
