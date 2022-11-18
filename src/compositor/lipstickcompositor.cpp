@@ -192,13 +192,9 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
     QWaylandSurface *surface = shellSurface->surface();
     LipstickCompositorWindow *window = surfaceWindow(surface);
 
-    if(!topLevel->fullscreen()) {
-        qDebug() << "Make window fullscreen force";
-        topLevel->sendFullscreen(QGuiApplication::primaryScreen()->size());
-    }
-
     if(window) {
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
+        connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
     }
 }
 
@@ -524,6 +520,17 @@ void LipstickCompositor::surfaceTitleChanged()
         for (int ii = 0; ii < m_windowModels.count(); ++ii)
             m_windowModels.at(ii)->titleChanged(windowId);
     }
+}
+
+void LipstickCompositor::surfaceSetFullScreen(QWaylandOutput *output)
+{
+    QWaylandXdgToplevel *xdgShellSurface = qobject_cast<QWaylandXdgToplevel*>(sender());
+
+    QWaylandOutput *designatedOutput = output ? output : m_output;
+    if (!designatedOutput)
+        return;
+
+    xdgShellSurface->sendFullscreen(designatedOutput->geometry().size() / designatedOutput->scaleFactor());
 }
 
 void LipstickCompositor::windowSwapped()
