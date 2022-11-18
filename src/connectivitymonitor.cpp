@@ -70,9 +70,10 @@ QList<QString> ConnectivityMonitor::activeConnectionTypes() const
     return activeServices_.keys().toSet().values();
 #else
     if (!activeServices_.isEmpty()) {
-        return QSet<QString>(activeServices_.keys().begin(), activeServices_.keys().end()).values();
+        QList<QString> keys = activeServices_.keys();
+        return QSet<QString>(keys.begin(), keys.end()).values();
     } else {
-        return QSet<QString>().values();
+        return QList<QString>();
     }
 #endif
 }
