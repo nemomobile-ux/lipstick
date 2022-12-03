@@ -1,7 +1,6 @@
 /***************************************************************************
 **
 ** Copyright (c) 2012 Jolla Ltd.
-** Copyright (c) 2021 Chupligin Sregey (NeoChapay) <neochapay@gmail.com>
 **
 ** This file is part of lipstick.
 **
@@ -13,405 +12,310 @@
 **
 ****************************************************************************/
 
-#include <pulse/operation.h>
-
 #include "pulseaudiocontrol.h"
+#include "dbus-gmain/dbus-gmain.h"
+
+#include <QDBusMessage>
+#include <QDBusConnection>
+#include <QDBusArgument>
+#include <QDBusServiceWatcher>
+#include <QTimer>
 #include <QDebug>
 
-static PulseAudioControl *pulseAudioControlInstance = 0;
+
+#define DBUS_ERR_CHECK(err) \
+    if (dbus_error_is_set(&err)) \
+    { \
+        qWarning() << err.message; \
+        dbus_error_free(&err); \
+    }
+
+static const char *VOLUME_SERVICE = "com.Meego.MainVolume2";
+static const char *VOLUME_PATH = "/com/meego/mainvolume2";
+static const char *VOLUME_INTERFACE = "com.Meego.MainVolume2";
+
+#define PA_RECONNECT_TIMEOUT_MS (2000)
 
 PulseAudioControl::PulseAudioControl(QObject *parent) :
-    QObject(parent)
-  , m_paContext(nullptr)
-  , m_paAPI(nullptr)
-  , m_defaultSinkName("")
-  , m_defaultSourceName("")
-  , defaultSinkChannels(-1)
+    QObject(parent),
+    m_dbusConnection(NULL),
+    m_reconnectTimeout(PA_RECONNECT_TIMEOUT_MS),
+    m_serviceWatcher(0)
 {
-    QMutexLocker locker(&lock);
-
-    m = pa_glib_mainloop_new(g_main_context_default());
-    g_assert(m);
-    m_paAPI = pa_glib_mainloop_get_api(m);
-
-    connect(this, &PulseAudioControl::defaultSinkNameChanged, this, &PulseAudioControl::setupDefaultSink);
 }
 
 PulseAudioControl::~PulseAudioControl()
 {
-    if(m_paContext != nullptr) {
-        pa_context_unref(m_paContext);
+    if (m_dbusConnection != NULL) {
+        dbus_connection_remove_filter(m_dbusConnection, PulseAudioControl::signalHandler, (void *)this);
+        dbus_connection_unref(m_dbusConnection);
     }
-    pa_glib_mainloop_free(m);
 }
 
-PulseAudioControl &PulseAudioControl::instance()
+void PulseAudioControl::pulseRegistered(const QString &service)
 {
-    static QMutex mutex;
-    QMutexLocker locker(&mutex);
-    if(!pulseAudioControlInstance) {
-        pulseAudioControlInstance = new PulseAudioControl;
-    }
-    return *pulseAudioControlInstance;
+    Q_UNUSED(service);
+    openConnection();
+}
+
+void PulseAudioControl::pulseUnregistered(const QString &service)
+{
+    Q_UNUSED(service);
+    dbus_connection_unref(m_dbusConnection);
+    m_dbusConnection = NULL;
+    m_reconnectTimeout = PA_RECONNECT_TIMEOUT_MS;
 }
 
 void PulseAudioControl::openConnection()
 {
-    pa_proplist *proplist = pa_proplist_new();
-    pa_proplist_sets(proplist, PA_PROP_APPLICATION_NAME, "lipstick");
-    pa_proplist_sets(proplist, PA_PROP_APPLICATION_ID, "org.PulseAudio.lipstick");
-    pa_proplist_sets(proplist, PA_PROP_APPLICATION_ICON_NAME, "audio-card");
-    pa_proplist_sets(proplist, PA_PROP_APPLICATION_VERSION, "0.1");
+    // For the first time connection is opened connect to session bus
+    // for tracking PulseAudio server state and to do the peer to peer
+    // address lookup later
+    if (!m_serviceWatcher) {
+        m_serviceWatcher = new QDBusServiceWatcher(QStringLiteral("org.pulseaudio.Server"),
+                                                   QDBusConnection::sessionBus(),
+                                                   QDBusServiceWatcher::WatchForRegistration |
+                                                     QDBusServiceWatcher::WatchForUnregistration,
+                                                   this);
 
-    m_paContext = pa_context_new_with_proplist(m_paAPI, nullptr, proplist);
-    g_assert(m_paContext);
+        connect(m_serviceWatcher, SIGNAL(serviceRegistered(const QString&)),
+                this, SLOT(pulseRegistered(const QString&)));
+        connect(m_serviceWatcher, SIGNAL(serviceUnregistered(const QString&)),
+                this, SLOT(pulseUnregistered(const QString&)));
+    }
 
-    pa_proplist_free(proplist);
-    pa_context_set_state_callback(m_paContext, stateCallBack, this);
+    //! If the connection already exists, do nothing
+    if ((m_dbusConnection != NULL) && (dbus_connection_get_is_connected(m_dbusConnection))) {
+        return;
+    }
 
-    if (pa_context_connect(m_paContext, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
-        if (pa_context_errno(m_paContext) == PA_ERR_INVALID) {
-            emit pulseConnectFailed();
+    // Establish a connection to the server
+    char *pa_bus_address = getenv("PULSE_DBUS_SERVER");
+    QByteArray addressArray;
+    if (pa_bus_address == NULL) {
+        QDBusMessage message = QDBusMessage::createMethodCall("org.pulseaudio.Server", "/org/pulseaudio/server_lookup1",
+                                                              "org.freedesktop.DBus.Properties", "Get");
+        message.setArguments(QVariantList() << "org.PulseAudio.ServerLookup1" << "Address");
+        QDBusMessage reply = QDBusConnection::sessionBus().call(message);
+        if (reply.type() == QDBusMessage::ReplyMessage && reply.arguments().count() > 0) {
+            addressArray = reply.arguments().first().value<QDBusVariant>().variant().toString().toLatin1();
+            pa_bus_address = addressArray.data();
         }
-    } else {
-        qDebug() << "Connection to PulseAudio success";
+    }
+
+    if (pa_bus_address != NULL) {
+        DBusError dbus_err;
+        dbus_error_init(&dbus_err);
+
+        m_dbusConnection = dbus_connection_open(pa_bus_address, &dbus_err);
+
+        DBUS_ERR_CHECK(dbus_err);
+    }
+
+    if (m_dbusConnection != NULL) {
+        dbus_gmain_set_up_connection(m_dbusConnection, NULL);
+        dbus_connection_add_filter(m_dbusConnection, PulseAudioControl::signalHandler, (void *)this, NULL);
+
+        addSignalMatch();
+    }
+
+    if (!m_dbusConnection) {
+        QTimer::singleShot(m_reconnectTimeout, this, SLOT(update()));
+        m_reconnectTimeout += PA_RECONNECT_TIMEOUT_MS; // next reconnect waits for reconnect timeout longer
     }
 }
 
 void PulseAudioControl::update()
 {
-    if(m_paContext == nullptr) {
-        openConnection();
-    }
-}
+    openConnection();
 
-int PulseAudioControl::paVolume2Percent(pa_volume_t vol)
-{
-    if(vol > PA_VOLUME_UI_MAX) {
-        vol = PA_VOLUME_UI_MAX;
-    }
-    return qRound(static_cast<double>(vol - PA_VOLUME_MUTED) / PA_VOLUME_NORM * 100);
-}
-
-pa_volume_t PulseAudioControl::percent2PaVolume(int percent)
-{
-    return PA_VOLUME_MUTED + qRound(static_cast<double>(percent) / 100 * PA_VOLUME_NORM);
-}
-
-void PulseAudioControl::stateCallBack(pa_context *context, void *userdata)
-{
-    g_assert(context);
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-
-    switch (pa_context_get_state(context)) {
-    case PA_CONTEXT_UNCONNECTED:
-    case PA_CONTEXT_CONNECTING:
-    case PA_CONTEXT_AUTHORIZING:
-    case PA_CONTEXT_SETTING_NAME:
-        break;
-
-    case PA_CONTEXT_READY:
-        pa_operation *o;
-        pa_context_set_subscribe_callback(context, pac->subscribeCallBack, pac);
-
-        if(!(o = pa_context_subscribe(context, (pa_subscription_mask_t)
-                                      (PA_SUBSCRIPTION_MASK_SINK|
-                                       PA_SUBSCRIPTION_MASK_SOURCE|
-                                       PA_SUBSCRIPTION_MASK_SINK_INPUT|
-                                       PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT|
-                                       PA_SUBSCRIPTION_MASK_CLIENT|
-                                       PA_SUBSCRIPTION_MASK_SERVER|
-                                       PA_SUBSCRIPTION_MASK_CARD), nullptr, nullptr))) {
-            qWarning("PULSEAUDIOCONTROL: pa_context_subscribe() failed");
-            return;
-        }
-
-        pa_operation_unref(o);
-        pa_context_get_server_info(context, pac->serverInfoCallback, pac);
-        pa_context_get_client_info_list(context, pac->clientCallback, pac);
-        pa_context_get_card_info_list(context, pac->cardCallBack, pac);
-        pa_context_get_sink_info_list(context, pac->sinkCallBack, pac);
-        pa_context_get_source_info_list(context, pac->sourceCallBack, pac);
-        pa_context_get_sink_input_info_list(context, pac->sinkInputCallBack, pac);
-        pa_context_get_source_output_info_list(context, pac->sourceOutputCallBack, pac);
-        break;
-    case PA_CONTEXT_FAILED:
-        pa_context_unref(context);
-        pac->m_paContext = nullptr;
-        break;
-    case PA_CONTEXT_TERMINATED:
-    default:
-        qWarning() << "Something wrong!!!";
-        break;
-    }
-}
-
-void PulseAudioControl::subscribeCallBack(pa_context *context, pa_subscription_event_type_t t, uint32_t index, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
-    case PA_SUBSCRIPTION_EVENT_SINK:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_sinks.removeAt(index);
-            emit pac->sinkRemoved(index);
-        } else {
-            pa_operation *o;
-            if (!(o = pa_context_get_sink_info_by_index(context, index, pac->sinkCallBack, pac))) {
-                qWarning("pa_context_get_sink_info_by_index() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_SOURCE:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_sources.removeAt(index);
-            emit pac->sourceRemoved(index);
-        } else {
-            pa_operation *o;
-            if (!(o = pa_context_get_source_info_by_index(context, index, pac->sourceCallBack, pac))) {
-                qWarning("pa_context_get_source_info_by_index() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_sinksInput.removeAt(index);
-            emit pac->sinkInputRemoved(index);
-        } else {
-            pa_operation *o;
-            if (!(o = pa_context_get_sink_input_info(context, index, pac->sinkInputCallBack, pac))) {
-                qWarning("pa_context_get_sink_input_info() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_sourceOutputs.removeAt(index);
-            emit pac->sourceOutputRemoved(index);
-        } else {
-            pa_operation *o;
-            if (!(o = pa_context_get_source_output_info(context, index, pac->sourceOutputCallBack, pac))) {
-                qDebug("pa_context_get_source_output_info() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_CLIENT:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_clients.removeAt(index);
-            emit pac->clientRemoved(index);
-        } else {
-            pa_operation *o;
-            if(!(o = pa_context_get_client_info(context, index, pac->clientCallback, pac))) {
-                qWarning("pa_context_get_client_info() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_CARD:
-        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) {
-            pac->m_cards.removeAt(index);
-            emit pac->cardRemoved(index);
-        } else {
-            pa_operation *o;
-            if (!(o = pa_context_get_card_info_by_index(context, index, pac->cardCallBack, pac))) {
-                qWarning("pa_context_get_card_info_by_index() failed");
-                return;
-            }
-            pa_operation_unref(o);
-        }
-        break;
-    case PA_SUBSCRIPTION_EVENT_SERVER:
-        pa_operation *o;
-        if (!(o = pa_context_get_server_info(context, pac->serverInfoCallback, pac))) {
-            qDebug("pa_context_get_server_info() failed");
-            return;
-        }
-        pa_operation_unref(o);
-        break;
-    }
-}
-
-void PulseAudioControl::clientCallback(pa_context *, const pa_client_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
-        }
-        qWarning("Client callback failure");
-    }
-
-    if(eol == 0) {
-        pac->m_clients.insert(i->index, *i);
-        emit pac->clientAdded(i->index);
-    }
-}
-
-void PulseAudioControl::sinkCallBack(pa_context *, const pa_sink_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
-        }
-        qWarning("Sink callback failure");
-    }
-
-    if(eol == 0) {
-        pac->m_sinks.insert(i->index, *i);
-        emit pac->sinkRemoved(i->index);
-    }
-}
-
-void PulseAudioControl::sourceCallBack(pa_context *, const pa_source_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
-        }
-        qWarning("Source callback failure");
-    }
-
-    if(eol == 0) {
-        pac->m_sources.insert(i->index, *i);
-        emit pac->sourceAdded(i->index);
-    }
-}
-
-void PulseAudioControl::sinkInputCallBack(pa_context *, const pa_sink_input_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
-        }
-        qWarning("Sink input callback failure");
-    }
-
-    if(eol == 0) {
-        pac->m_sinksInput.insert(i->index, *i);
-        emit pac->sinkInputAdded(i->index);
-    }
-}
-
-void PulseAudioControl::sourceOutputCallBack(pa_context *, const pa_source_output_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
-        }
-        qWarning("Source output callback failure");
-    }
-
-    if(eol == 0) {
-        pac->m_sourceOutputs.insert(i->index, *i);
-        emit pac->sourceOutputAdded(i->index);
-    }
-}
-
-void PulseAudioControl::serverInfoCallback(pa_context *, const pa_server_info *i, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    Q_UNUSED(pac);
-
-    if(!i) {
-        qWarning("Server info callback failure");
+    if (m_dbusConnection == NULL) {
         return;
     }
 
-    if(pac->m_defaultSinkName != i->default_sink_name) {
-        pac->m_defaultSinkName = i->default_sink_name;
-        emit pac->defaultSinkNameChanged();
+    DBusError error;
+    dbus_error_init(&error);
+
+    DBusMessage *reply = NULL;
+    DBusMessage *msg = dbus_message_new_method_call(VOLUME_SERVICE, VOLUME_PATH, "org.freedesktop.DBus.Properties", "GetAll");
+    if (msg != NULL) {
+        dbus_message_append_args(msg, DBUS_TYPE_STRING, &VOLUME_INTERFACE, DBUS_TYPE_INVALID);
+
+        reply = dbus_connection_send_with_reply_and_block(m_dbusConnection, msg, -1, &error);
+
+        DBUS_ERR_CHECK (error);
+
+        dbus_message_unref(msg);
     }
 
-    if(pac->m_defaultSourceName != i->default_source_name) {
-        pac->m_defaultSourceName = i->default_source_name;
-        emit pac->defaultSourceNameChanged();
-    }
-}
+    int currentStep = -1, stepCount = -1, highVolumeStep = -1;
+    QString mediaState;
 
-void PulseAudioControl::cardCallBack(pa_context *, const pa_card_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
+    if (reply != NULL) {
+        if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_METHOD_RETURN) {
+            DBusMessageIter iter;
+            dbus_message_iter_init(reply, &iter);
+            // Recurse into the array [array of dicts]
+            while (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INVALID) {
+                DBusMessageIter dict_entry;
+                dbus_message_iter_recurse(&iter, &dict_entry);
+
+                // Recurse into the dict [ dict_entry (string, variant) ]
+                while (dbus_message_iter_get_arg_type(&dict_entry) != DBUS_TYPE_INVALID) {
+                    DBusMessageIter in_dict;
+                    // Recurse into the dict_entry [ string, variant ]
+                    dbus_message_iter_recurse(&dict_entry, &in_dict);
+                    {
+                        const char *prop_name = NULL;
+                        // Get the string value, "property name"
+                        dbus_message_iter_get_basic(&in_dict, &prop_name);
+
+                        dbus_message_iter_next(&in_dict);
+
+                        DBusMessageIter variant;
+                        // Recurse into the variant [ variant ]
+                        dbus_message_iter_recurse(&in_dict, &variant);
+
+                        if (prop_name == NULL) {
+                        } else if (dbus_message_iter_get_arg_type(&variant) == DBUS_TYPE_UINT32) {
+                            quint32 value;
+                            dbus_message_iter_get_basic(&variant, &value);
+
+                            if (strcmp(prop_name, "StepCount") == 0) {
+                                stepCount = value;
+                            } else if (strcmp(prop_name, "CurrentStep") == 0) {
+                                currentStep = value;
+                            } else if (strcmp(prop_name, "HighVolumeStep") == 0) {
+                                highVolumeStep = value;
+                            }
+                        } else if (dbus_message_iter_get_arg_type(&variant) == DBUS_TYPE_STRING) {
+                            const char *value = NULL;
+                            dbus_message_iter_get_basic(&variant, &value);
+                            if (strcmp(prop_name, "MediaState") == 0) {
+                                mediaState = QString(value);
+                            }
+                        }
+                    }
+
+                    dbus_message_iter_next(&dict_entry);
+                }
+                dbus_message_iter_next(&iter);
+            }
         }
-        qWarning("Source output callback failure");
+        dbus_message_unref(reply);
     }
 
-    if(eol == 0) {
-        pac->m_cards.insert(i->index, *i);
-        pac->cardAdded(i->index);
+    if (currentStep != -1 && stepCount != -1) {
+        setSteps(currentStep, stepCount);
+    }
+
+    if (highVolumeStep != -1) {
+        emit highVolume(highVolumeStep);
+    }
+
+    if (!mediaState.isEmpty()) {
+        emit mediaStateChanged(mediaState);
     }
 }
 
-void PulseAudioControl::setVolumeCallBack(pa_context *, int success, void *)
+void PulseAudioControl::addSignalMatch()
 {
-    if(success < 0) {
-        qWarning() << "Set volume falled";
-    }
-}
-
-void PulseAudioControl::setupDefaultSink()
-{
-    pa_context_get_sink_info_by_name(m_paContext, m_defaultSinkName.toUtf8(), setupDefaultSinkCallBack, this);
-}
-
-void PulseAudioControl::setupDefaultSinkCallBack(pa_context *, const pa_sink_info *i, int eol, void *userdata)
-{
-    PulseAudioControl *pac = static_cast<PulseAudioControl*>(userdata);
-    if(eol < 0) {
-        if (pa_context_errno(pac->m_paContext) == PA_ERR_NOENTITY) {
-            return;
+    static const char *signalNames []  = {"com.Meego.MainVolume2.StepsUpdated", "com.Meego.MainVolume2.NotifyHighVolume",
+                                          "com.Meego.MainVolume2.NotifyListeningTime", "com.Meego.MainVolume2.CallStateChanged",
+                                          "com.Meego.MainVolume2.MediaStateChanged"};
+    for (int index = 0; index < 5; ++index) {
+        DBusMessage *message = dbus_message_new_method_call(NULL, "/org/pulseaudio/core1", NULL, "ListenForSignal");
+        if (message != NULL) {
+            const char *signalPtr = signalNames[index];
+            char **emptyarray = { NULL };
+            dbus_message_append_args(message, DBUS_TYPE_STRING, &signalPtr, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH,
+                                     &emptyarray, 0, DBUS_TYPE_INVALID);
+            dbus_connection_send(m_dbusConnection, message, NULL);
+            dbus_message_unref(message);
         }
-        qWarning("Source output callback failure");
+    }
+}
+
+DBusHandlerResult PulseAudioControl::signalHandler(DBusConnection *, DBusMessage *message, void *control)
+{
+    if (!message)
+        return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+    DBusError error;
+    dbus_error_init(&error);
+
+    if (dbus_message_has_member(message, "StepsUpdated")) {
+        quint32 currentStep = 0;
+        quint32 stepCount = 0;
+
+        if (dbus_message_get_args(message, &error, DBUS_TYPE_UINT32, &stepCount, DBUS_TYPE_UINT32, &currentStep, DBUS_TYPE_INVALID)) {
+            static_cast<PulseAudioControl*>(control)->setSteps(currentStep, stepCount);
+        }
+    } else if (dbus_message_has_member(message, "NotifyHighVolume")) {
+        quint32 highestSafeVolume = 0;
+
+        if (dbus_message_get_args(message, &error, DBUS_TYPE_UINT32, &highestSafeVolume, DBUS_TYPE_INVALID)) {
+            static_cast<PulseAudioControl*>(control)->highVolume(highestSafeVolume);
+        }
+    } else if (dbus_message_has_member(message, "NotifyListeningTime")) {
+        quint32 listeningTime = 0;
+
+        if (dbus_message_get_args(message, &error, DBUS_TYPE_UINT32, &listeningTime, DBUS_TYPE_INVALID)) {
+            static_cast<PulseAudioControl*>(control)->longListeningTime(listeningTime);
+        }
+    } else if (dbus_message_has_member(message, "CallStateChanged")) {
+        const char *state;
+
+        if (dbus_message_get_args(message, &error, DBUS_TYPE_STRING, &state, DBUS_TYPE_INVALID)) {
+            emit static_cast<PulseAudioControl*>(control)->callActiveChanged(strcmp(state, "active") == 0);
+        }
+    } else if (dbus_message_has_member(message, "MediaStateChanged")) {
+        const char *state;
+        if (dbus_message_get_args(message, &error, DBUS_TYPE_STRING, &state, DBUS_TYPE_INVALID)) {
+            emit static_cast<PulseAudioControl*>(control)->mediaStateChanged(QString(state));
+        }
     }
 
-    if(i == nullptr) {
-        return;
-    }
-    pac->defaultSinkChannels = i->volume.channels;
+    DBUS_ERR_CHECK (error);
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
 
-    /*
-     * if default channel mutted - unmute it
-    */
-    pa_context_set_sink_mute_by_name(pac->m_paContext, pac->m_defaultSinkName.toUtf8(), 0, nullptr, nullptr);
-    emit pac->volumeChanged(pac->paVolume2Percent(i->volume.values[0]), pac->paVolume2Percent(PA_VOLUME_MAX));
+void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
+{
+    // The pulseaudio API reports the step count (starting from 0), so the maximum volume is stepCount - 1
+    emit volumeChanged(currentStep, stepCount - 1);
 }
 
 void PulseAudioControl::setVolume(int volume)
 {
-    if(defaultSinkChannels == -1) {
+    // Check the connection, maybe PulseAudio restarted meanwhile
+    openConnection();
+
+    // Don't try to set the volume via D-bus when it isn't available
+    if (m_dbusConnection == NULL) {
         return;
     }
 
-    pa_operation* o;
+    DBusMessage *message = dbus_message_new_method_call(VOLUME_SERVICE, VOLUME_PATH, "org.freedesktop.DBus.Properties", "Set");
+    if (message != NULL) {
+        static const char *method = "CurrentStep";
+        if (dbus_message_append_args(message, DBUS_TYPE_STRING, &VOLUME_INTERFACE, DBUS_TYPE_STRING, &method, DBUS_TYPE_INVALID)) {
+            DBusMessageIter append;
+            DBusMessageIter sub;
 
-    pa_cvolume cvol;
-    cvol.channels = defaultSinkChannels;
+            // Create and append the variant argument ...
+            dbus_message_iter_init_append(message, &append);
 
-    if(percent2PaVolume(volume) > percent2PaVolume(PA_VOLUME_NORM)) {
-        emit highVolume(paVolume2Percent(PA_VOLUME_NORM));
-    }
+            dbus_message_iter_open_container(&append, DBUS_TYPE_VARIANT, DBUS_TYPE_UINT32_AS_STRING, &sub);
+            // Set the variant argument value:
+            dbus_message_iter_append_basic(&sub, DBUS_TYPE_UINT32, &volume);
+            // Close the append iterator
+            dbus_message_iter_close_container(&append, &sub);
 
-    for(int i=0; i < cvol.channels; i++) {
-        cvol.values[i] = percent2PaVolume(volume);
-    }
+            // Send/flush the message immediately:
+            dbus_connection_send(m_dbusConnection, message, NULL);
+        }
 
-    if (!(o = pa_context_set_sink_volume_by_name(m_paContext, m_defaultSinkName.toUtf8(), &cvol, setVolumeCallBack, nullptr))) {
-        qWarning("pa_context_set_source_volume_by_name FAILED!");
-    } else {
-        pa_operation_unref(o);
+        dbus_message_unref(message);
     }
 }

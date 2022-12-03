@@ -1,7 +1,6 @@
 /***************************************************************************
 **
 ** Copyright (c) 2012 - 2022 Jolla Ltd.
-** Copyright (c) 2021 Chupligin Sergey <neochapay@gmail.com>
 **
 ** This file is part of lipstick.
 **
@@ -14,7 +13,7 @@
 ****************************************************************************/
 
 #include <dbus/dbus.h>
-#include <QDebug>
+#include <policy/resource-set.h>
 #include <linux/input.h>
 #include <QGuiApplication>
 #include "homewindow.h"
@@ -43,7 +42,10 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     QObject(parent),
     m_window(nullptr),
     m_pulseAudioControl(new PulseAudioControl(this)),
+    m_hwKeyResource(nullptr),
+    m_hwKeysAcquired(false),
     m_hwKeysEnabled(false),
+    m_hwKeysActive(false),
     m_volume(0),
     m_maximumVolume(0),
     m_audioWarning(new MGConfItem("/desktop/nemo/audiowarning", this)),
@@ -53,11 +55,16 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     m_downPressed(false),
     m_mediaState(MediaStateUnknown)
 {
-    m_pulseAudioControl = &PulseAudioControl::instance();
     if (hwKeysCapability) {
         Q_ASSERT_X(!s_hwKeysCreated, Q_FUNC_INFO, "Hw key capable VolumeControl must be a singleton created from C++");
 
+        m_hwKeyResource = new ResourcePolicy::ResourceSet("event");
         m_hwKeysEnabled = true;
+        m_hwKeyResource->setAlwaysReply();
+        m_hwKeyResource->addResourceObject(new ResourcePolicy::ScaleButtonResource);
+        connect(m_hwKeyResource, SIGNAL(resourcesGranted(QList<ResourcePolicy::ResourceType>)), this, SLOT(hwKeyResourceAcquired()));
+        connect(m_hwKeyResource, SIGNAL(lostResources()), this, SLOT(hwKeyResourceLost()));
+        m_hwKeyResource->acquire();
 
         qApp->installEventFilter(this);
         QTimer::singleShot(0, this, SLOT(createWindow()));
@@ -91,29 +98,13 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     connect(m_pulseAudioControl, SIGNAL(mediaStateChanged(QString)), SLOT(handleMediaStateChanged(QString)));
     m_pulseAudioControl->update();
 
-    qApp->installEventFilter(this);
-    QTimer::singleShot(0, this, SLOT(createWindow()));
-
-    QDBusConnection systemBus = QDBusConnection::systemBus();
-
-    systemBus.connect(MCE_SERVICE,
-                      MCE_SIGNAL_PATH,
-                      MCE_SIGNAL_IF,
-                      MCE_VOLKEY_INPUT_POLICY_SIG,
-                      this, SLOT(inputPolicyChanged(QString)));
-
-    QDBusPendingReply<QString> inputPolicy = systemBus.asyncCall(QDBusMessage::createMethodCall(
-                                                                     MCE_SERVICE, MCE_REQUEST_PATH, MCE_REQUEST_IF, MCE_VOLKEY_INPUT_POLICY_GET));
-    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(inputPolicy, this);
-    connect(watcher, &QDBusPendingCallWatcher::finished,
-            this, &VolumeControl::inputPolicyReply);
-
-    evaluateKeyState();
 }
 
 VolumeControl::~VolumeControl()
 {
-    delete m_pulseAudioControl;
+    if (m_hwKeyResource) {
+        m_hwKeyResource->deleteResource(ResourcePolicy::ScaleButtonType);
+    }
     delete m_window;
 }
 
@@ -150,6 +141,7 @@ void VolumeControl::setVolume(int volume)
 {
     int newVolume = qBound(0, volume, maximumVolume());
 
+    // This must always clamp the volume.
     if (!warningAcknowledged() && m_safeVolume != 0 && newVolume > m_safeVolume) {
         emit showAudioWarning(false);
         newVolume = safeVolume();
@@ -227,6 +219,11 @@ void VolumeControl::setVolume(int volume, int maximumVolume)
     bool volumeUpdated = false;
     bool maxVolumeUpdated = false;
 
+    if (m_hwKeyResource && !warningAcknowledged() && m_safeVolume != 0 && clampedVolume+1 > m_safeVolume) {
+        emit showAudioWarning(false);
+        clampedVolume = safeVolume();
+    }
+
     if (m_maximumVolume != clampedMaxVolume) {
         m_maximumVolume = clampedMaxVolume;
         maxVolumeUpdated = true;
@@ -272,9 +269,14 @@ void VolumeControl::setVolumeDownKeyState(bool pressed)
 
 void VolumeControl::evaluateKeyState()
 {
-    if (!m_hwKeysEnabled) {
-        setVolumeUpKeyState(false);
-        setVolumeDownKeyState(false);
+    bool hwKeysActive = m_hwKeysAcquired && m_hwKeysEnabled;
+
+    if (m_hwKeysActive != hwKeysActive) {
+        m_hwKeysActive = hwKeysActive;
+        if (!m_hwKeysActive) {
+            setVolumeUpKeyState(false);
+            setVolumeDownKeyState(false);
+        }
     }
 }
 
@@ -289,6 +291,22 @@ void VolumeControl::hwKeysDisabled()
 {
     if (m_hwKeysEnabled) {
         m_hwKeysEnabled = false;
+        evaluateKeyState();
+    }
+}
+
+void VolumeControl::hwKeyResourceAcquired()
+{
+    if (!m_hwKeysAcquired ) {
+        m_hwKeysAcquired = true;
+        evaluateKeyState();
+    }
+}
+
+void VolumeControl::hwKeyResourceLost()
+{
+    if (m_hwKeysAcquired) {
+        m_hwKeysAcquired = false;
         evaluateKeyState();
     }
 }
@@ -367,8 +385,8 @@ bool VolumeControl::eventFilter(QObject *, QEvent *event)
 {
     bool handled = false;
 
-    if (m_hwKeysEnabled && (event->type() == QEvent::KeyPress ||
-                            event->type() == QEvent::KeyRelease)) {
+    if (m_hwKeysActive && (event->type() == QEvent::KeyPress ||
+                           event->type() == QEvent::KeyRelease)) {
         bool pressed = (event->type() == QEvent::KeyPress);
 
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
