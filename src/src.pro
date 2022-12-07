@@ -129,7 +129,6 @@ SOURCES += \
     screenlock/screenlock.cpp \
     screenlock/screenlockadaptor.cpp \
     touchscreen/touchscreen.cpp \
-    volume/pulseaudiosinkinputmodel.cpp \
     volume/volumecontrol.cpp \
     volume/pulseaudiocontrol.cpp \
     notifications/notificationfeedbackplayer.cpp \
@@ -161,8 +160,7 @@ PKGCONFIG += \
     dsme_dbus_if \
     glib-2.0 \
     keepalive \
-    libpulse \
-    libpulse-mainloop-glib \
+    libresourceqt5 \
     libsystemd \
     mlite5 \
     mce \

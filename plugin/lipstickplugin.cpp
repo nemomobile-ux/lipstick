@@ -33,7 +33,6 @@
 #include <compositor/lipstickcompositorwindow.h>
 #include <compositor/windowmodel.h>
 #include <compositor/windowpixmapitem.h>
-#include <volume/pulseaudiosinkinputmodel.h>
 #include <lipstickapi.h>
 
 static QObject *lipstickApi_callback(QQmlEngine *e, QJSEngine *)
@@ -57,7 +56,6 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterType<LauncherItem>("org.nemomobile.lipstick", 0, 1, "LauncherItem");
     qmlRegisterType<LauncherFolderModelType>("org.nemomobile.lipstick", 0, 1, "LauncherFolderModel");
     qmlRegisterType<LauncherFolderItem>("org.nemomobile.lipstick", 0, 1, "LauncherFolderItem");
-    qmlRegisterType<PulseaudioSinkInputModel>("org.nemomobile.lipstick", 0, 1, "PulseaudioSinkInputModel");
     qmlRegisterType<VolumeControl>("org.nemomobile.lipstick", 0, 1, "VolumeControl");
 
     qmlRegisterUncreatableType<NotificationPreviewPresenter>("org.nemomobile.lipstick", 0, 1, "NotificationPreviewPresenter", "This type is initialized by HomeApplication");
