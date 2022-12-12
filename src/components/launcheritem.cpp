@@ -42,6 +42,10 @@
 #include <glib.h>
 #endif
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define QRegExp QRegularExpression
+#endif
+
 #include <QDebug>
 static void g_free_wrapper (void *data, void *userdata)
 {
@@ -482,12 +486,20 @@ bool LauncherItem::canOpenMimeType(const QString &mimeType)
         m_mimeTypesPopulated = true;
 
         for (const QString &mimeType : m_desktopEntry->mimeType()) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             m_mimeTypes.append(QRegExp(mimeType, Qt::CaseInsensitive, QRegExp::Wildcard));
+#else
+            m_mimeTypes.append(QRegularExpression(QRegularExpression::wildcardToRegularExpression(mimeType)));
+#endif
         }
     }
 
     for (const QRegExp &candidate : m_mimeTypes) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         if (candidate.exactMatch(mimeType)) {
+#else
+        if (candidate.anchoredPattern(mimeType).length() > 0) {
+#endif
             return true;
         }
     }

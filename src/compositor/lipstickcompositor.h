@@ -16,9 +16,7 @@
 #ifndef LIPSTICKCOMPOSITOR_H
 #define LIPSTICKCOMPOSITOR_H
 
-#include <QQuickWindow>
 #include "lipstickglobal.h"
-#include "homeapplication.h"
 #include <QQmlParserStatus>
 #include <QWaylandQuickCompositor>
 #include <QWaylandQuickOutput>
@@ -33,9 +31,16 @@
 #include <QDBusContext>
 #include <QDBusMessage>
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <timed-qt5/interface>
 #include <timed-qt5/exception>
 #include <timed-qt5/event-declarations.h>
+#else
+#include <timed-qt6/interface>
+#include <timed-qt6/exception>
+#include <timed-qt6/event-declarations.h>
+#endif
+#include <touchscreen.h>
 
 class WindowModel;
 class LipstickCompositorWindow;
@@ -143,8 +148,13 @@ public:
     QQuickWindow *quickWindow() { return m_window; }
 
 protected:
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void timerEvent(QTimerEvent *e) override;
+    bool event(QEvent *e) override;
+#else
     void timerEvent(QTimerEvent *e) Q_DECL_OVERRIDE;
     bool event(QEvent *e) Q_DECL_OVERRIDE;
+#endif
     void sendKeyEvent(QEvent::Type type, Qt::Key key, quint32 nativeScanCode);
 
 signals:

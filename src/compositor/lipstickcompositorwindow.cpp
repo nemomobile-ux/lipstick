@@ -19,6 +19,7 @@
 #include <QTimer>
 #include <QEvent>
 #include <sys/types.h>
+#include <QFile>
 #include <signal.h>
 #include "lipstickcompositor.h"
 #include "lipstickcompositorwindow.h"

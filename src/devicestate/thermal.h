@@ -36,8 +36,6 @@
 
 #include <QtCore/qobject.h>
 
-QT_BEGIN_HEADER
-
 namespace DeviceState{
 
 class ThermalPrivate;
@@ -103,7 +101,5 @@ private:
 };
 
 } // DeviceState namespace
-
-QT_END_HEADER
 
 #endif // THERMAL_H

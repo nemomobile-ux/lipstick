@@ -8,15 +8,15 @@ system(qdbusxml2cpp -c ConnmanManagerProxy -p connmanmanagerproxy net.connman.ma
 system(qdbusxml2cpp -c ConnmanServiceProxy -p connmanserviceproxy net.connman.service.xml -i qdbusxml2cpp_dbus_types.h)
 
 TEMPLATE = lib
-TARGET = lipstick-qt5
+TARGET = lipstick-qt$${QT_MAJOR_VERSION}
 
 DEFINES += LIPSTICK_BUILD_LIBRARY
 DEFINES += VERSION=\\\"$${VERSION}\\\"
 DEFINES += MESA_EGL_NO_X11_HEADERS
 DEFINES += EGL_NO_X11
 
-CONFIG += qt wayland-scanner c++11
-PKGCONFIG += timed-qt5 wayland-server
+CONFIG += qt wayland-scanner c++17
+PKGCONFIG += timed-qt$${QT_MAJOR_VERSION} wayland-server
 
 INSTALLS = target ts_install engineering_english_install
 target.path = $$[QT_INSTALL_LIBS]
@@ -64,7 +64,7 @@ PUBLICHEADERS += \
 
 INSTALLS += publicheaderfiles dbus_policy
 publicheaderfiles.files = $$PUBLICHEADERS
-publicheaderfiles.path = /usr/include/lipstick-qt5
+publicheaderfiles.path = /usr/include/lipstick-qt$${QT_MAJOR_VERSION}
 dbus_policy.files += lipstick.conf
 dbus_policy.path = /etc/dbus-1/system.d
 
@@ -160,16 +160,16 @@ PKGCONFIG += \
     dsme_dbus_if \
     glib-2.0 \
     keepalive \
-    libresourceqt5 \
+    libresourceqt$${QT_MAJOR_VERSION} \
     libsystemd \
-    mlite5 \
+    mlite$${QT_MAJOR_VERSION} \
     mce \
-    mce-qt5 \
+    mce-qt$${QT_MAJOR_VERSION} \
     nemodevicelock \
-    ngf-qt5 \
+    ngf-qt$${QT_MAJOR_VERSION} \
     systemsettings \
     thermalmanager_dbus_if \
-    usb-moded-qt5
+    usb-moded-qt$${QT_MAJOR_VERSION}
 
 LIBS += -lrt -lEGL
 
@@ -191,13 +191,10 @@ packagesExist(sailfishusermanager) {
 QT += dbus xml qml quick sql gui gui-private sensors
 
 QMAKE_CXXFLAGS += \
-    -Wfatal-errors \
     -g \
     -fPIC \
     -fvisibility=hidden \
-    -fvisibility-inlines-hidden \
-    -Werror \
-    -Wno-deprecated-copy
+    -fvisibility-inlines-hidden
 
 QMAKE_LFLAGS += \
     -pie \

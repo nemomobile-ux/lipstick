@@ -36,8 +36,6 @@
 #define DISPLAYSTATE_H
 #include <QtCore/qobject.h>
 
-QT_BEGIN_HEADER
-
 namespace DeviceState {
 
 class DisplayStateMonitorPrivate;
@@ -103,7 +101,5 @@ private:
 };
 
 } //DeviceState namespace
-
-QT_END_HEADER
 
 #endif /* DISPLAYSTATE_H */

@@ -47,30 +47,28 @@ LipstickPlugin::LipstickPlugin(QObject *parent) :
 
 void LipstickPlugin::registerTypes(const char *uri)
 {
-    Q_UNUSED(uri);
+    qmlRegisterType<LauncherModelType>(uri, 0, 1, "LauncherModel");
+    qmlRegisterType<LauncherWatcherModel>(uri, 0, 1, "LauncherWatcherModel");
+    qmlRegisterType<NotificationListModel>(uri, 0, 1, "NotificationListModel");
+    qmlRegisterType<LipstickNotification>(uri, 0, 1, "Notification");
+    qmlRegisterType<LauncherItem>(uri, 0, 1, "LauncherItem");
+    qmlRegisterType<LauncherFolderModelType>(uri, 0, 1, "LauncherFolderModel");
+    qmlRegisterType<LauncherFolderItem>(uri, 0, 1, "LauncherFolderItem");
+    qmlRegisterType<VolumeControl>(uri, 0, 1, "VolumeControl");
 
-    qmlRegisterType<LauncherModelType>("org.nemomobile.lipstick", 0, 1, "LauncherModel");
-    qmlRegisterType<LauncherWatcherModel>("org.nemomobile.lipstick", 0, 1, "LauncherWatcherModel");
-    qmlRegisterType<NotificationListModel>("org.nemomobile.lipstick", 0, 1, "NotificationListModel");
-    qmlRegisterType<LipstickNotification>("org.nemomobile.lipstick", 0, 1, "Notification");
-    qmlRegisterType<LauncherItem>("org.nemomobile.lipstick", 0, 1, "LauncherItem");
-    qmlRegisterType<LauncherFolderModelType>("org.nemomobile.lipstick", 0, 1, "LauncherFolderModel");
-    qmlRegisterType<LauncherFolderItem>("org.nemomobile.lipstick", 0, 1, "LauncherFolderItem");
-    qmlRegisterType<VolumeControl>("org.nemomobile.lipstick", 0, 1, "VolumeControl");
+    qmlRegisterUncreatableType<NotificationPreviewPresenter>(uri, 0, 1, "NotificationPreviewPresenter", "This type is initialized by HomeApplication");
+    qmlRegisterUncreatableType<NotificationFeedbackPlayer>(uri, 0, 1, "NotificationFeedbackPlayer", "This type is initialized by HomeApplication");
+    qmlRegisterUncreatableType<USBModeSelector>(uri, 0, 1, "USBModeSelector", "This type is initialized by HomeApplication");
+    qmlRegisterUncreatableType<ShutdownScreen>(uri, 0, 1, "ShutdownScreen", "This type is initialized by HomeApplication");
 
-    qmlRegisterUncreatableType<NotificationPreviewPresenter>("org.nemomobile.lipstick", 0, 1, "NotificationPreviewPresenter", "This type is initialized by HomeApplication");
-    qmlRegisterUncreatableType<NotificationFeedbackPlayer>("org.nemomobile.lipstick", 0, 1, "NotificationFeedbackPlayer", "This type is initialized by HomeApplication");
-    qmlRegisterUncreatableType<USBModeSelector>("org.nemomobile.lipstick", 0, 1, "USBModeSelector", "This type is initialized by HomeApplication");
-    qmlRegisterUncreatableType<ShutdownScreen>("org.nemomobile.lipstick", 0, 1, "ShutdownScreen", "This type is initialized by HomeApplication");
+    qmlRegisterType<LipstickCompositor>(uri, 0, 1, "Compositor");
+    qmlRegisterUncreatableType<QWaylandSurface>(uri, 0, 1, "WaylandSurface", "This type is created by the compositor");
+    qmlRegisterType<WindowModel>(uri, 0, 1, "WindowModel");
+    qmlRegisterType<WindowPixmapItem>(uri, 0, 1, "WindowPixmapItem");
+    qmlRegisterSingletonType<LipstickApi>(uri, 0, 1, "Lipstick", lipstickApi_callback);
+    qmlRegisterUncreatableType<ScreenshotResult>(uri, 0, 1, "ScreenshotResult", "This type is initialized by LipstickApi");
+    qmlRegisterUncreatableType<BluetoothAgent>(uri, 0, 1, "BluetoothAgent", "This type is created by lipstick");
+    qmlRegisterUncreatableType<BluetoothObexAgent>(uri, 0, 1, "BluetoothObexAgent", "This type is created by lipstick");
 
-    qmlRegisterType<LipstickCompositor>("org.nemomobile.lipstick", 0, 1, "Compositor");
-    qmlRegisterUncreatableType<QWaylandSurface>("org.nemomobile.lipstick", 0, 1, "WaylandSurface", "This type is created by the compositor");
-    qmlRegisterType<WindowModel>("org.nemomobile.lipstick", 0, 1, "WindowModel");
-    qmlRegisterType<WindowPixmapItem>("org.nemomobile.lipstick", 0, 1, "WindowPixmapItem");
-    qmlRegisterSingletonType<LipstickApi>("org.nemomobile.lipstick", 0, 1, "Lipstick", lipstickApi_callback);
-    qmlRegisterUncreatableType<ScreenshotResult>("org.nemomobile.lipstick", 0, 1, "ScreenshotResult", "This type is initialized by LipstickApi");
-    qmlRegisterUncreatableType<BluetoothAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothAgent", "This type is created by lipstick");
-    qmlRegisterUncreatableType<BluetoothObexAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothObexAgent", "This type is created by lipstick");
-
-    qmlRegisterRevision<QQuickWindow,1>("org.nemomobile.lipstick", 0, 1);
+    qmlRegisterRevision<QQuickWindow,1>(uri, 0, 1);
 }

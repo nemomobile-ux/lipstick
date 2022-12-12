@@ -2,9 +2,9 @@ TEMPLATE = lib
 TARGET = lipstickplugin
 VERSION = 0.1
 
-CONFIG += qt plugin link_pkgconfig
+CONFIG += qt plugin link_pkgconfig c++17
 QT += core gui qml quick waylandcompositor dbus
-PKGCONFIG += mlite5 dsme_dbus_if thermalmanager_dbus_if usb-moded-qt5 glib-2.0 systemsettings
+PKGCONFIG += mlite$${QT_MAJOR_VERSION} dsme_dbus_if thermalmanager_dbus_if usb-moded-qt$${QT_MAJOR_VERSION} glib-2.0 systemsettings
 
 INSTALLS = target qmldirfile
 qmldirfile.files = qmldir
@@ -23,7 +23,7 @@ INCLUDEPATH += ../src \
     ../src/devicestate \
     ../src/touchscreen
 
-LIBS += -L../src -llipstick-qt5
+LIBS += -L../src -llipstick-qt$${QT_MAJOR_VERSION}
 
 HEADERS += \
     lipstickplugin.h
@@ -35,7 +35,6 @@ OTHER_FILES += \
     qmldir
 
 QMAKE_CXXFLAGS += \
-    -Werror \
     -g \
     -std=c++0x \
     -fPIC \

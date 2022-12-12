@@ -64,7 +64,6 @@ BluezQt::Agent::Capability BluetoothAgent::capability() const
 void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
                                     const BluezQt::Request<QString> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     m_device = device;
     request.accept(QString());
 }
@@ -72,21 +71,18 @@ void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
 void BluetoothAgent::displayPinCode(BluezQt::DevicePtr device,
                                     const QString &pinCode)
 {
-    qDebug() << Q_FUNC_INFO;
     m_device = device;
     emit showPinCode(pinCode);
 }
 
 void BluetoothAgent::requestPasskey(BluezQt::DevicePtr device, const BluezQt::Request<quint32> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(request)
     m_device = device;
 }
 
 void BluetoothAgent::displayPasskey(BluezQt::DevicePtr device, const QString &passkey, const QString &entered)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(passkey)
     Q_UNUSED(entered)
     m_device = device;
@@ -155,8 +151,6 @@ void BluetoothAgent::unPair(const QString &btMacAddress)
 
 void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
 {
-    qDebug() << Q_FUNC_INFO;
-
     if(adapter && m_usableAdapter != adapter) {
         m_usableAdapter = adapter;
 
@@ -202,7 +196,6 @@ void BluetoothAgent::authorizeService(BluezQt::DevicePtr device,
                                       const QString &uuid,
                                       const BluezQt::Request<> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(uuid);
 
     m_device = device;

@@ -15,6 +15,7 @@
 #ifndef NOTIFICATIONPREVIEWPRESENTER_H
 #define NOTIFICATIONPREVIEWPRESENTER_H
 
+#include "lipsticknotification.h"
 #include "lipstickglobal.h"
 #include <QObject>
 
