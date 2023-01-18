@@ -10,52 +10,50 @@
 **
 ****************************************************************************/
 
-#include <QSocketNotifier>
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusServiceWatcher>
+#include <QDebug>
+#include <QEvent>
+#include <QIcon>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QScreen>
+#include <QSocketNotifier>
 #include <QTimer>
-#include <QDBusMessage>
-#include <QDBusConnection>
-#include <QDBusServiceWatcher>
-#include <QIcon>
 #include <QTranslator>
-#include <QDebug>
-#include <QEvent>
-#include <systemd/sd-daemon.h>
-#include <sys/eventfd.h>
-#include <unistd.h>
 #include <deviceinfo.h>
+#include <sys/eventfd.h>
+#include <systemd/sd-daemon.h>
+#include <unistd.h>
 
+#include "compositor/lipstickcompositor.h"
+#include "compositor/lipstickcompositorwindow.h"
+#include "homeapplication.h"
+#include "homewindow.h"
+#include "lipstickdbus.h"
+#include "lipsticksettings.h"
+#include "notifications/batterynotifier.h"
 #include "notifications/notificationmanager.h"
 #include "notifications/notificationpreviewpresenter.h"
-#include "notifications/batterynotifier.h"
 #include "notifications/thermalnotifier.h"
 #include "screenlock/screenlock.h"
 #include "screenlock/screenlockadaptor.h"
 #include "touchscreen/touchscreen.h"
-#include "lipsticksettings.h"
-#include "homeapplication.h"
-#include "homewindow.h"
-#include "compositor/lipstickcompositor.h"
-#include "compositor/lipstickcompositorwindow.h"
-#include "lipstickdbus.h"
 
-#include "volume/volumecontrol.h"
-#include "usbmodeselector.h"
 #include "bluetooth/bluetoothagent.h"
 #include "bluetooth/bluetoothobexagent.h"
-#include "localemanager.h"
-#include "shutdownscreen.h"
-#include "shutdownscreenadaptor.h"
-#include "screenshotservice.h"
-#include "screenshotserviceadaptor.h"
-#include "vpnagent.h"
 #include "connmanvpnagent.h"
 #include "connmanvpnproxy.h"
-#include "connectivitymonitor.h"
+#include "localemanager.h"
 #include "screenshotservice.h"
+#include "screenshotserviceadaptor.h"
+#include "shutdownscreen.h"
+#include "shutdownscreenadaptor.h"
+#include "usbmodeselector.h"
+#include "volume/volumecontrol.h"
+#include "vpnagent.h"
 
 #include <nemo-devicelock/devicelock.h>
 
@@ -68,14 +66,14 @@ void HomeApplication::quitSignalHandler(int)
 
 int HomeApplication::s_quitSignalFd = -1;
 
-static void registerDBusObject(QDBusConnection &bus, const char *path, QObject *object)
+static void registerDBusObject(QDBusConnection& bus, const char* path, QObject* object)
 {
     if (!bus.registerObject(path, object)) {
         qWarning("Unable to register object at path %s: %s", path, bus.lastError().message().toUtf8().constData());
     }
 }
 
-HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
+HomeApplication::HomeApplication(int& argc, char** argv, const QString& qmlPath)
     : QGuiApplication(argc, argv)
     , m_quitSignalNotifier(0)
     , m_mainWindowInstance(0)
@@ -86,10 +84,10 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
 {
     setUpSignalHandlers();
 
-    QTranslator *engineeringEnglish = new QTranslator(this);
+    QTranslator* engineeringEnglish = new QTranslator(this);
     engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
     installTranslator(engineeringEnglish);
-    QTranslator *translator = new QTranslator(this);
+    QTranslator* translator = new QTranslator(this);
     translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
     installTranslator(translator);
 
@@ -110,7 +108,7 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     LipstickSettings::instance()->setScreenLock(m_screenLock);
     new ScreenLockAdaptor(m_screenLock);
 
-    NemoDeviceLock::DeviceLock *deviceLock = new NemoDeviceLock::DeviceLock(this);
+    NemoDeviceLock::DeviceLock* deviceLock = new NemoDeviceLock::DeviceLock(this);
 
     // Initialize the notification manager
     NotificationManager::instance();
@@ -143,29 +141,9 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     registerDBusObject(systemBus, LIPSTICK_DBUS_SHUTDOWN_PATH, m_shutdownScreen);
     registerDBusObject(sessionBus, LIPSTICK_DBUS_SCREENSHOT_PATH, m_screenshotService);
 
-
     if (!systemBus.registerService(LIPSTICK_DBUS_SERVICE_NAME)) {
         qWarning("Unable to register D-Bus service %s: %s", LIPSTICK_DBUS_SERVICE_NAME, systemBus.lastError().message().toUtf8().constData());
     }
-
-    // Bring automatic VPNs up and down when connectivity state changes
-    auto performUpDown = [this](const QList<QString> &activeTypes) {
-        const bool state(!activeTypes.isEmpty());
-        if (state != m_online) {
-            m_online = state;
-            QDBusConnection sessionBus = QDBusConnection::sessionBus();
-            QDBusMessage method = QDBusMessage::createMethodCall(
-                        QStringLiteral("org.freedesktop.systemd1"),
-                        QStringLiteral("/org/freedesktop/systemd1"),
-                        QStringLiteral("org.freedesktop.systemd1.Manager"),
-                        m_online ? QStringLiteral("StartUnit") : QStringLiteral("StopUnit"));
-            method.setArguments({ QStringLiteral("vpn-updown.service"), QStringLiteral("replace") });
-            sessionBus.call(method, QDBus::NoBlock);
-        }
-    };
-
-    m_connectivityMonitor = new ConnectivityMonitor(this);
-    connect(m_connectivityMonitor, &ConnectivityMonitor::connectivityChanged, this, [performUpDown](const QList<QString> &activeTypes){ performUpDown(activeTypes); });
 
     // Respond to requests for VPN user input
     m_vpnAgent = new VpnAgent(this);
@@ -173,15 +151,11 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
 
     registerDBusObject(systemBus, LIPSTICK_DBUS_VPNAGENT_PATH, m_vpnAgent);
 
-    auto registerVpnAgent = [this, performUpDown]() {
+    auto registerVpnAgent = [this]() {
         if (!m_connmanVpn) {
             if (QDBusConnection::systemBus().interface()->isServiceRegistered(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE)) {
                 m_connmanVpn = new ConnmanVpnProxy(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE, "/", QDBusConnection::systemBus());
                 m_connmanVpn->RegisterAgent(QDBusObjectPath(LIPSTICK_DBUS_VPNAGENT_PATH));
-
-                // Connman has restarted - VPNs must be brought up if possible
-                performUpDown(QList<QString>());
-                performUpDown(m_connectivityMonitor->activeConnectionTypes());
             }
         }
     };
@@ -190,9 +164,12 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
         m_connmanVpn = 0;
     };
 
-    QDBusServiceWatcher *connmanVpnWatcher = new QDBusServiceWatcher(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE, systemBus, QDBusServiceWatcher::WatchForRegistration | QDBusServiceWatcher::WatchForUnregistration, this);
-    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceRegistered, this, [registerVpnAgent](const QString &){ registerVpnAgent(); });
-    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [unregisterVpnAgent](const QString &){ unregisterVpnAgent(); });
+    QDBusServiceWatcher* connmanVpnWatcher
+        = new QDBusServiceWatcher(LIPSTICK_DBUS_CONNMAN_VPN_SERVICE, systemBus,
+            QDBusServiceWatcher::WatchForRegistration | QDBusServiceWatcher::WatchForUnregistration,
+            this);
+    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceRegistered, this, [registerVpnAgent](const QString&) { registerVpnAgent(); });
+    connect(connmanVpnWatcher, &QDBusServiceWatcher::serviceUnregistered, this, [unregisterVpnAgent](const QString&) { unregisterVpnAgent(); });
 
     registerVpnAgent();
 
@@ -202,7 +179,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
     m_qmlEngine->rootContext()->setContextProperty("LipstickSettings", LipstickSettings::instance());
     m_qmlEngine->rootContext()->setContextProperty("volumeControl", m_volumeControl);
     m_qmlEngine->rootContext()->setContextProperty("localeManager", m_localeMngr);
-    m_qmlEngine->rootContext()->setContextProperty("connectivityMonitor", m_connectivityMonitor);
     m_qmlEngine->rootContext()->setContextProperty("usbModeSelector", m_usbModeSelector);
     m_qmlEngine->rootContext()->setContextProperty("bluetoothAgent", m_bluetoothAgent);
     m_qmlEngine->rootContext()->setContextProperty("bluetoothObexAgent", m_bluetoothObexAgent);
@@ -226,9 +202,9 @@ HomeApplication::~HomeApplication()
     m_qmlEngine = nullptr;
 }
 
-HomeApplication *HomeApplication::instance()
+HomeApplication* HomeApplication::instance()
 {
-    return qobject_cast<HomeApplication *>(qApp);
+    return qobject_cast<HomeApplication*>(qApp);
 }
 
 void HomeApplication::setUpSignalHandlers()
@@ -288,10 +264,9 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 void HomeApplication::sendStartupNotifications()
 {
     static QDBusConnection systemBus = QDBusConnection::systemBus();
-    QDBusMessage homeReadySignal =
-        QDBusMessage::createSignal("/com/nokia/duihome",
-                                   "com.nokia.duihome.readyNotifier",
-                                   "ready");
+    QDBusMessage homeReadySignal = QDBusMessage::createSignal("/com/nokia/duihome",
+        "com.nokia.duihome.readyNotifier",
+        "ready");
     systemBus.send(homeReadySignal);
 
     /* Let systemd know that we are initialized */
@@ -305,11 +280,11 @@ void HomeApplication::sendStartupNotifications()
 
 bool HomeApplication::homeActive() const
 {
-    LipstickCompositor *c = LipstickCompositor::instance();
+    LipstickCompositor* c = LipstickCompositor::instance();
     return c ? c->homeActive() : (QGuiApplication::focusWindow() != 0);
 }
 
-TouchScreen *HomeApplication::touchScreen() const
+TouchScreen* HomeApplication::touchScreen() const
 {
     return m_touchScreen;
 }
@@ -326,22 +301,20 @@ void HomeApplication::setDisplayOff()
     m_touchScreen->setDisplayOff();
 }
 
-bool HomeApplication::event(QEvent *e)
+bool HomeApplication::event(QEvent* e)
 {
     bool rv = QGuiApplication::event(e);
-    if (LipstickCompositor::instance() == 0 &&
-        (e->type() == QEvent::ApplicationActivate ||
-         e->type() == QEvent::ApplicationDeactivate))
+    if (LipstickCompositor::instance() == 0 && (e->type() == QEvent::ApplicationActivate || e->type() == QEvent::ApplicationDeactivate))
         emit homeActiveChanged();
     return rv;
 }
 
-const QString &HomeApplication::qmlPath() const
+const QString& HomeApplication::qmlPath() const
 {
     return m_qmlPath;
 }
 
-void HomeApplication::setQmlPath(const QString &path)
+void HomeApplication::setQmlPath(const QString& path)
 {
     m_qmlPath = path;
 
@@ -354,12 +327,12 @@ void HomeApplication::setQmlPath(const QString &path)
     }
 }
 
-const QString &HomeApplication::compositorPath() const
+const QString& HomeApplication::compositorPath() const
 {
     return m_compositorPath;
 }
 
-void HomeApplication::setCompositorPath(const QString &path)
+void HomeApplication::setCompositorPath(const QString& path)
 {
     if (path.isEmpty()) {
         qWarning() << "HomeApplication: Invalid empty compositor path";
@@ -377,16 +350,16 @@ void HomeApplication::setCompositorPath(const QString &path)
         qWarning() << "HomeApplication: Errors while loading compositor from" << path;
         qWarning() << component.errors();
         return;
-    } 
+    }
 
-    QQuickItem *compositor = qobject_cast<QQuickItem*>(component.beginCreate(m_qmlEngine->rootContext()));
+    QQuickItem* compositor = qobject_cast<QQuickItem*>(component.beginCreate(m_qmlEngine->rootContext()));
     if (compositor) {
         compositor->setParent(this);
 
         if (LipstickCompositor::instance()) {
             LipstickCompositor::instance()->quickWindow()->setGeometry(QRect(QPoint(0, 0), QGuiApplication::primaryScreen()->size()));
             connect(m_usbModeSelector, SIGNAL(showUnlockScreen()),
-                    LipstickCompositor::instance(), SIGNAL(showUnlockScreen()));
+                LipstickCompositor::instance(), SIGNAL(showUnlockScreen()));
             compositor->setParentItem(LipstickCompositor::instance()->quickWindow()->contentItem());
         }
 
@@ -402,7 +375,7 @@ void HomeApplication::setCompositorPath(const QString &path)
     }
 }
 
-HomeWindow *HomeApplication::mainWindowInstance()
+HomeWindow* HomeApplication::mainWindowInstance()
 {
     if (m_mainWindowInstance)
         return m_mainWindowInstance;
@@ -420,7 +393,7 @@ HomeWindow *HomeApplication::mainWindowInstance()
     return m_mainWindowInstance;
 }
 
-QQmlEngine *HomeApplication::engine() const
+QQmlEngine* HomeApplication::engine() const
 {
     return m_qmlEngine;
 }
@@ -432,9 +405,9 @@ void HomeApplication::connectFrameSwappedSignal(bool mainWindowVisible)
     }
 }
 
-bool HomeApplication::takeScreenshot(const QString &path)
+bool HomeApplication::takeScreenshot(const QString& path)
 {
-    if (ScreenshotResult *result = ScreenshotService::saveScreenshot(path)) {
+    if (ScreenshotResult* result = ScreenshotService::saveScreenshot(path)) {
         result->waitForFinished();
 
         return result->status() == ScreenshotResult::Finished;
@@ -443,7 +416,7 @@ bool HomeApplication::takeScreenshot(const QString &path)
     }
 }
 
-LocaleManager *HomeApplication::localeManager()
+LocaleManager* HomeApplication::localeManager()
 {
     return m_localeMngr;
 }
