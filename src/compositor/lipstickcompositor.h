@@ -230,6 +230,8 @@ private slots:
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
 
+    void onWindowActivated();
+
 private:
     friend class LipstickCompositorWindow;
     friend class LipstickCompositorProcWindow;

@@ -38,7 +38,7 @@ public:
     virtual void removeNotificationsWithCategory(const QString &category);
     virtual void updateNotificationsWithCategory(const QString &category);
     virtual void commit();
-    virtual void invokeAction(const QString &action);
+    virtual void invokeAction(const QString &action, const QString &actionText);
     virtual void removeNotificationIfUserRemovable(uint id);
     virtual void removeUserRemovableNotifications();
     virtual void expire();
@@ -138,10 +138,12 @@ void NotificationManagerStub::commit() {
   stubMethodEntered("commit");
 }
 
-void NotificationManagerStub::invokeAction(const QString &action) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(action));
-  stubMethodEntered("invokeAction",params);
+void NotificationManagerStub::invokeAction(const QString &action, const QString &actionText)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(action));
+    params.append( new Parameter<QString >(actionText));
+    stubMethodEntered("invokeAction", params);
 }
 
 void NotificationManagerStub::removeNotificationIfUserRemovable(uint id)
@@ -237,8 +239,14 @@ void NotificationManager::commit() {
   gNotificationManagerStub->commit();
 }
 
+<<<<<<< HEAD
 void NotificationManager::invokeAction(const QString &action) {
   gNotificationManagerStub->invokeAction(action);
+=======
+void NotificationManager::invokeAction(const QString &action, const QString &actionText)
+{
+    gNotificationManagerStub->invokeAction(action, actionText);
+>>>>>>> 50084853 ([lipstick] Support text parameter on invokeAction. JB#55557)
 }
 
 void NotificationManager::removeNotificationIfUserRemovable(uint id) {

@@ -192,10 +192,22 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
     QWaylandSurface *surface = shellSurface->surface();
     LipstickCompositorWindow *window = surfaceWindow(surface);
 
+    surface->client();
+
     if(window) {
         window->setTopLevel(topLevel);
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
         connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
+        connect(topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositor::onWindowActivated);
+    }
+}
+
+void LipstickCompositor::onWindowActivated()
+{
+    LipstickCompositorWindow *window = qobject_cast<LipstickCompositorWindow *>(sender());
+
+    if(window && !window->activated()) {
+        emit windowRaised(window);
     }
 }
 

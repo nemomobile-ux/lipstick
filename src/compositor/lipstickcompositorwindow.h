@@ -40,6 +40,8 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
     Q_PROPERTY(bool focusOnTouch READ focusOnTouch WRITE setFocusOnTouch NOTIFY focusOnTouchChanged)
     Q_PROPERTY(uint notificationMode READ notificationMode WRITE setNotificationMode NOTIFY notificationModeChanged)
 
+    Q_PROPERTY(bool activated READ activated NOTIFY activatedChanged)
+
 public:
     LipstickCompositorWindow(int windowId, const QString &, QWaylandSurface *surface, QQuickItem *parent = 0);
     ~LipstickCompositorWindow();
@@ -68,6 +70,8 @@ public:
     uint notificationMode();
     void setNotificationMode(uint mode);
 
+    bool activated();
+
     void setTopLevel(QWaylandXdgToplevel *topLevel);
     Q_INVOKABLE void setMinimized(const QSize &size);
     Q_INVOKABLE void setMaximized(const QSize &size);
@@ -95,6 +99,7 @@ signals:
     void windowFlagsChanged();
     void notificationModeChanged();
     void resized();
+    void activatedChanged();
 
 private slots:
     void handleTouchCancel();

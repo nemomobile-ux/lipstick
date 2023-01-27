@@ -52,6 +52,12 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
         m_processId = surface->client()->processId();
         setSurface(surface);
     }
+
+    QQuickWindow *window = qobject_cast<QQuickWindow *>(this);
+    if(window) {
+        qDebug() << "YES QQuickWindow";
+    }
+
     Q_UNUSED(parent)
     updatePolicyApplicationId();
 }
@@ -435,9 +441,20 @@ void LipstickCompositorWindow::setNotificationMode(uint mode)
     }
 }
 
+bool LipstickCompositorWindow::activated()
+{
+    if(!m_topLevel) {
+        return false;
+    }
+
+    return m_topLevel->activated();
+}
+
 void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
 {
+    m_topLevel->disconnect();
     m_topLevel = topLevel;
+    connect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
 }
 
 void LipstickCompositorWindow::setMinimized(const QSize &size)
