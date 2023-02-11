@@ -79,7 +79,6 @@ HEADERS += \
     screenlock/screenlock.h \
     screenlock/screenlockadaptor.h \
     touchscreen/touchscreen_p.h \
-    volume/pulseaudiosinkinputmodel.h \
     volume/volumecontrol.h \
     volume/pulseaudiocontrol.h \
     lipstickapi.h \
