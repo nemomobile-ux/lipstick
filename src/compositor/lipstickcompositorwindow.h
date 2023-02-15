@@ -17,6 +17,8 @@
 
 #include <QWaylandQuickItem>
 #include <QWaylandBufferRef>
+#include <QWaylandXdgToplevel>
+
 #include "lipstickglobal.h"
 
 class LipstickCompositorWindowHwcNode;
@@ -66,6 +68,14 @@ public:
     uint notificationMode();
     void setNotificationMode(uint mode);
 
+    void setTopLevel(QWaylandXdgToplevel *topLevel);
+    Q_INVOKABLE void setMinimized(const QSize &size);
+    Q_INVOKABLE void setMaximized(const QSize &size);
+    Q_INVOKABLE void setFullscreen(const QSize &size);
+    Q_INVOKABLE void unsetMaximized();
+    Q_INVOKABLE void unsetFullscreen();
+    Q_INVOKABLE void resize(const QSize &size);
+
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
 
@@ -84,6 +94,7 @@ signals:
     void focusOnTouchChanged();
     void windowFlagsChanged();
     void notificationModeChanged();
+    void resized();
 
 private slots:
     void handleTouchCancel();
@@ -119,6 +130,7 @@ private:
     QVariant m_data;
     QVector<QQuickItem *> m_refs;
     uint m_notificationMode;
+    QWaylandXdgToplevel* m_topLevel;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H

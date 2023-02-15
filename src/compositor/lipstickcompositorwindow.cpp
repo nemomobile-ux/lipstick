@@ -433,3 +433,75 @@ void LipstickCompositorWindow::setNotificationMode(uint mode)
         emit notificationModeChanged();
     }
 }
+
+void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
+{
+    m_topLevel = topLevel;
+}
+
+void LipstickCompositorWindow::setMinimized(const QSize &size)
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(m_topLevel->maximized()) {
+        m_topLevel->sendUnmaximized(size);
+    }
+}
+
+void LipstickCompositorWindow::setMaximized(const QSize &size)
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(!m_topLevel->maximized()) {
+        m_topLevel->sendMaximized(size);
+    }
+}
+
+void LipstickCompositorWindow::setFullscreen(const QSize &size)
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(!m_topLevel->fullscreen()) {
+        m_topLevel->sendFullscreen(size);
+    }
+}
+
+void LipstickCompositorWindow::unsetMaximized()
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(m_topLevel->maximized()) {
+        m_topLevel->unsetMaximized();
+    }
+}
+
+void LipstickCompositorWindow::unsetFullscreen()
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(m_topLevel->fullscreen()) {
+        m_topLevel->unsetFullscreen();
+    }
+}
+
+void LipstickCompositorWindow::resize(const QSize &size)
+{
+    if(!m_topLevel) {
+        return;
+    }
+
+    if(this->size() != size) {
+        m_topLevel->sendResizing(size);
+        emit resized();
+    }
+}
