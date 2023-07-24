@@ -19,7 +19,9 @@
 
 WindowPixmapItem::WindowPixmapItem() : m_id(0)
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     setSizeFollowsSurface(false);
+#endif
     setEnabled(false);
 }
 

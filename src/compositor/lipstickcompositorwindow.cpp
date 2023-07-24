@@ -18,6 +18,7 @@
 #include <QWaylandSeat>
 #include <QTimer>
 #include <QEvent>
+#include <QFile>
 #include <sys/types.h>
 #include <signal.h>
 #include "lipstickcompositor.h"

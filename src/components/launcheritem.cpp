@@ -293,7 +293,11 @@ void LauncherItem::setIsLaunching(bool isLaunching)
 {
     if (isLaunching) {
         // This is a failsafe to allow launching again after 5 seconds in case the application crashes on startup and no window is ever created
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         m_launchingTimeout.start(5000, this);
+#else
+        m_launchingTimeout.start(5000, this);
+#endif
     } else {
         m_launchingTimeout.stop();
     }
@@ -482,12 +486,20 @@ bool LauncherItem::canOpenMimeType(const QString &mimeType)
         m_mimeTypesPopulated = true;
 
         for (const QString &mimeType : m_desktopEntry->mimeType()) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             m_mimeTypes.append(QRegExp(mimeType, Qt::CaseInsensitive, QRegExp::Wildcard));
+#else
+            m_mimeTypes.append(QRegularExpression::fromWildcard(mimeType, Qt::CaseInsensitive, QRegularExpression::DefaultWildcardConversion));
+#endif
         }
     }
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     for (const QRegExp &candidate : m_mimeTypes) {
         if (candidate.exactMatch(mimeType)) {
+#else
+    for (const QRegularExpression &candidate : m_mimeTypes) {
+        if (candidate.match(mimeType).hasMatch()) {
+#endif
             return true;
         }
     }

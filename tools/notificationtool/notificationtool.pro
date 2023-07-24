@@ -4,8 +4,8 @@ TEMPLATE = app
 TARGET = notificationtool
 
 QT += core dbus
-CONFIG += link_pkgconfig
-PKGCONFIG += mlite5 dsme_dbus_if thermalmanager_dbus_if usb_moded
+CONFIG += link_pkgconfig c++17
+PKGCONFIG += mlite$${QT_MAJOR_VERSION} dsme_dbus_if thermalmanager_dbus_if usb_moded
 
 INSTALLS = target
 target.path = /usr/bin
@@ -13,7 +13,7 @@ target.path = /usr/bin
 DEPENDPATH += "../../src"
 INCLUDEPATH += "../../src" "../../src/notifications" "../../src/devicestate"
 QMAKE_LIBDIR = ../../src
-LIBS = -llipstick-qt5
+LIBS = -llipstick-qt$${QT_MAJOR_VERSION}
 
 HEADERS += \
      notificationmanagerproxy.h
@@ -24,6 +24,5 @@ SOURCES += \
 QMAKE_CXXFLAGS += \
     -Werror \
     -g \
-    -std=c++0x \
     -fvisibility=hidden \
     -fvisibility-inlines-hidden
