@@ -1,5 +1,5 @@
-system(qdbusxml2cpp compositor.xml -a lipstickcompositoradaptor -c LipstickCompositorAdaptor -l LipstickCompositor -i lipstickcompositor.h)
-system(qdbusxml2cpp fileservice.xml -a fileserviceadaptor -c FileServiceAdaptor)
+system($$[QT_INSTALL_BINS]/qdbuscpp2xml compositor.xml -a lipstickcompositoradaptor -c LipstickCompositorAdaptor -l LipstickCompositor -i lipstickcompositor.h)
+system($$[QT_INSTALL_BINS]/qdbuscpp2xml fileservice.xml -a fileserviceadaptor -c FileServiceAdaptor)
 
 INCLUDEPATH += $$PWD
 

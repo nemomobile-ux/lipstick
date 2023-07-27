@@ -27,6 +27,13 @@ class LipstickNotification;
 class NotificationFeedbackPlayer;
 class ScreenLock;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifndef OPAQUE_PTR_LipstickNotification
+#define OPAQUE_PTR_LipstickNotification
+Q_DECLARE_OPAQUE_POINTER(LipstickNotification*)
+#endif // OPAQUE_PTR_LipstickNotification
+#endif
+
 /*!
  * \class NotificationPreviewPresenter
  *

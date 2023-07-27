@@ -1,20 +1,22 @@
-system(qdbusxml2cpp notifications/notificationmanager.xml -a notifications/notificationmanageradaptor -c NotificationManagerAdaptor -l NotificationManager -i notificationmanager.h)
-system(qdbusxml2cpp screenlock/screenlock.xml -a screenlock/screenlockadaptor -c ScreenLockAdaptor -l ScreenLock -i screenlock.h)
-system(qdbusxml2cpp screenshotservice.xml -a screenshotserviceadaptor -c ScreenshotServiceAdaptor -l ScreenshotService -i screenshotservice.h)
-system(qdbusxml2cpp shutdownscreen.xml -a shutdownscreenadaptor -c ShutdownScreenAdaptor -l ShutdownScreen -i shutdownscreen.h)
-system(qdbusxml2cpp net.connman.vpn.Agent.xml -a connmanvpnagent -c ConnmanVpnAgentAdaptor -l VpnAgent -i vpnagent.h)
-system(qdbusxml2cpp -c ConnmanVpnProxy -p connmanvpnproxy net.connman.vpn.xml -i qdbusxml2cpp_dbus_types.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp notifications/notificationmanager.xml -a notifications/notificationmanageradaptor -c NotificationManagerAdaptor -l NotificationManager -i notificationmanager.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp screenlock/screenlock.xml -a screenlock/screenlockadaptor -c ScreenLockAdaptor -l ScreenLock -i screenlock.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp screenshotservice.xml -a screenshotserviceadaptor -c ScreenshotServiceAdaptor -l ScreenshotService -i screenshotservice.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp shutdownscreen.xml -a shutdownscreenadaptor -c ShutdownScreenAdaptor -l ShutdownScreen -i shutdownscreen.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp net.connman.vpn.Agent.xml -a connmanvpnagent -c ConnmanVpnAgentAdaptor -l VpnAgent -i vpnagent.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanVpnProxy -p connmanvpnproxy net.connman.vpn.xml -i qdbusxml2cpp_dbus_types.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanManagerProxy -p connmanmanagerproxy net.connman.manager.xml -i qdbusxml2cpp_dbus_types.h)
+system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanServiceProxy -p connmanserviceproxy net.connman.service.xml -i qdbusxml2cpp_dbus_types.h)
 
 TEMPLATE = lib
-TARGET = lipstick-qt5
+TARGET = lipstick-qt$${QT_MAJOR_VERSION}
 
 DEFINES += LIPSTICK_BUILD_LIBRARY
 DEFINES += VERSION=\\\"$${VERSION}\\\"
 DEFINES += MESA_EGL_NO_X11_HEADERS
 DEFINES += EGL_NO_X11
 
-CONFIG += qt wayland-scanner c++11
-PKGCONFIG += timed-qt5 wayland-server
+CONFIG += qt wayland-scanner c++17
+PKGCONFIG += timed-qt$${QT_MAJOR_VERSION} wayland-server
 
 INSTALLS = target ts_install engineering_english_install
 target.path = $$[QT_INSTALL_LIBS]
@@ -26,8 +28,8 @@ MOC_DIR = .moc
 INCLUDEPATH += utilities touchscreen components xtools 3rdparty devicestate
 
 #FOR BLUEZQT Wait https://invent.kde.org/frameworks/bluez-qt/-/merge_requests/14
-INCLUDEPATH += /usr/include/KF5/BluezQt
-LIBS += -lKF5BluezQt
+INCLUDEPATH += /usr/include/KF$${QT_MAJOR_VERSION}/BluezQt
+LIBS += -lKF$${QT_MAJOR_VERSION}BluezQt
 
 include(compositor/compositor.pri)
 
@@ -60,7 +62,7 @@ PUBLICHEADERS += \
 
 INSTALLS += publicheaderfiles dbus_policy
 publicheaderfiles.files = $$PUBLICHEADERS
-publicheaderfiles.path = /usr/include/lipstick-qt5
+publicheaderfiles.path = /usr/include/lipstick-qt$${QT_MAJOR_VERSION}
 dbus_policy.files += lipstick.conf
 dbus_policy.path = /etc/dbus-1/system.d
 
@@ -146,16 +148,21 @@ PKGCONFIG += \
     dsme_dbus_if \
     glib-2.0 \
     keepalive \
-    libresourceqt5 \
+    libresourceqt$${QT_MAJOR_VERSION} \
     libsystemd \
-    mlite5 \
+    mlite$${QT_MAJOR_VERSION} \
     mce \
-    mce-qt5 \
+    mce-qt$${QT_MAJOR_VERSION} \
     nemodevicelock \
-    ngf-qt5 \
-    systemsettings \
+    ngf-qt$${QT_MAJOR_VERSION} \
     thermalmanager_dbus_if \
-    usb-moded-qt5
+    usb-moded-qt$${QT_MAJOR_VERSION}
+
+equals(QT_MAJOR_VERSION, 6) {
+    PKGCONFIG += systemsettings-qt6
+} else {
+    PKGCONFIG += systemsettings
+}
 
 LIBS += -lrt -lEGL
 
@@ -182,7 +189,6 @@ QMAKE_CXXFLAGS += \
     -fPIC \
     -fvisibility=hidden \
     -fvisibility-inlines-hidden \
-    -Werror \
     -Wno-deprecated-copy
 
 QMAKE_LFLAGS += \
