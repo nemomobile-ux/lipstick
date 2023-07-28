@@ -277,8 +277,9 @@ QObject *LipstickCompositor::windowForId(int id) const
 void LipstickCompositor::closeClientForWindowId(int id)
 {
     LipstickCompositorWindow *window = m_windows.value(id, 0);
-    if (window && window->surface())
-        destroyClientForSurface(window->surface());
+    if (window && window->surface()) {
+        window->surface()->client()->close();
+    }
 }
 
 QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
