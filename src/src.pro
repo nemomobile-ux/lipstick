@@ -4,8 +4,6 @@ system($$[QT_INSTALL_BINS]/qdbusxml2cpp screenshotservice.xml -a screenshotservi
 system($$[QT_INSTALL_BINS]/qdbusxml2cpp shutdownscreen.xml -a shutdownscreenadaptor -c ShutdownScreenAdaptor -l ShutdownScreen -i shutdownscreen.h)
 system($$[QT_INSTALL_BINS]/qdbusxml2cpp net.connman.vpn.Agent.xml -a connmanvpnagent -c ConnmanVpnAgentAdaptor -l VpnAgent -i vpnagent.h)
 system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanVpnProxy -p connmanvpnproxy net.connman.vpn.xml -i qdbusxml2cpp_dbus_types.h)
-system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanManagerProxy -p connmanmanagerproxy net.connman.manager.xml -i qdbusxml2cpp_dbus_types.h)
-system($$[QT_INSTALL_BINS]/qdbusxml2cpp -c ConnmanServiceProxy -p connmanserviceproxy net.connman.service.xml -i qdbusxml2cpp_dbus_types.h)
 
 TEMPLATE = lib
 TARGET = lipstick-qt$${QT_MAJOR_VERSION}
