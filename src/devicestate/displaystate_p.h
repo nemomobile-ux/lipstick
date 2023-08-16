@@ -56,7 +56,7 @@ namespace DeviceState
         size_t connectCount[1];
 
     Q_SIGNALS:
-        void displayStateChanged(DeviceState::DisplayStateMonitor::DisplayState);
+        void displayStateChanged(DisplayStateMonitor::DisplayState);
 
     private Q_SLOTS:
 
