@@ -69,4 +69,6 @@ pkg_check_modules(USB_MODED_QT usb-moded-qt6 REQUIRED IMPORTED_TARGET)
 add_subdirectory(src)
 add_subdirectory(plugin)
 
+add_dependencies(lipstickplugin lipstick-qt6)
+
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
