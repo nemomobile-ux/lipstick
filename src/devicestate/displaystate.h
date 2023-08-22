@@ -88,7 +88,7 @@ Q_SIGNALS:
      * @brief Sent when display state has changed.
      * @param state Current display state
      */
-    void displayStateChanged(DeviceState::DisplayStateMonitor::DisplayState state);
+    void displayStateChanged(DisplayState state);
 
 protected:
     void connectNotify(const QMetaMethod &signal);

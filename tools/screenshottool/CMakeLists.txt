@@ -1,0 +1,1 @@
+install(FILES screenshottool DESTINATION ${CMAKE_INSTALL_BINDIR})

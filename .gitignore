@@ -16,6 +16,7 @@ configure-stamp
 build-stamp
 .project
 .cproject
+*.user
 
 #dont store generated files
 src/compositor/fileserviceadaptor.cpp
