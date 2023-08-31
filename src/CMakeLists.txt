@@ -160,7 +160,10 @@ include_directories(utilities
     components
     compositor
     3rdparty
-    devicestate)
+    devicestate
+    ${CMAKE_CURRENT_BINARY_DIR}/notifications
+    ${CMAKE_CURRENT_BINARY_DIR}/screenlock
+    ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PACKAGE} PUBLIC
     Qt6::DBus
