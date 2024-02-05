@@ -452,7 +452,13 @@ bool LipstickCompositorWindow::activated()
 
 void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
 {
-    m_topLevel->disconnect();
+    if(topLevel == nullptr) {
+        return;
+    }
+
+    if(m_topLevel != nullptr) {
+        m_topLevel->disconnect();
+    }
     m_topLevel = topLevel;
     connect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
 }
