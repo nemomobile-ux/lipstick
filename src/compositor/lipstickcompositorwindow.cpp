@@ -37,6 +37,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
                         , m_mapped(false)
                         , m_focusOnTouch(false)
                         , m_notificationMode(0)
+                        , m_topLevel(nullptr)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 
@@ -452,12 +453,12 @@ bool LipstickCompositorWindow::activated()
 
 void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
 {
-    if(topLevel == nullptr) {
+    if(!topLevel) {
         return;
     }
 
     if(m_topLevel != nullptr) {
-        m_topLevel->disconnect();
+        m_topLevel->disconnect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
     }
     m_topLevel = topLevel;
     connect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
