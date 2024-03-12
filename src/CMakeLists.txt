@@ -105,9 +105,6 @@ add_definitions(-DMESA_EGL_NO_X11_HEADERS)
 add_definitions(-DQT_COMPOSITOR_QUICK)
 add_definitions(-DEGL_NO_X11)
 add_definitions(-Wfatal-errors)
-add_definitions(-g)
-add_definitions(-fPIC)
-add_definitions(-fvisibility=hidden)
 add_definitions(-DVERSION="${CMAKE_PROJECT_VERSION}")
 
 set_source_files_properties("${CMAKE_SOURCE_DIR}/src/net.connman.vpn.xml"
