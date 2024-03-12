@@ -183,6 +183,7 @@ target_link_libraries(${PACKAGE} PUBLIC
     PkgConfig::MCE
     PkgConfig::MCE_QT
     PkgConfig::NEMODEVICELOCK
+    PkgConfig::NEMOCONNECTIVITY
     PkgConfig::NGF_QT6
     PkgConfig::THERMALMANAGER_DBUS
     PkgConfig::SYSTEMSETTINGS
