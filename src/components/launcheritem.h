@@ -14,6 +14,7 @@
 //
 // Copyright (c) 2011, Robin Burchell
 // Copyright (c) 2012, Timur Kristóf <venemo@fedoraproject.org>
+// Copyright (c) 2024 Chupligin Sergey <neochapay@gmail.com>
 
 #ifndef LAUNCHERITEM_H
 #define LAUNCHERITEM_H
@@ -26,16 +27,6 @@
 #include <QRegExp>
 #else
 #include <QRegularExpression>
-#endif
-
-// Define DEBUG_LAUNCHER if you'd like to see debug messages from the launcher
-// #define DEBUG_LAUNCHER
-
-#ifdef DEBUG_LAUNCHER
-#include <QDebug>
-#define LAUNCHER_DEBUG(things) qDebug() << Q_FUNC_INFO << things
-#else
-#define LAUNCHER_DEBUG(things)
 #endif
 
 #include "launchermodel.h"

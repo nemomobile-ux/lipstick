@@ -2,6 +2,7 @@
 // This file is part of lipstick, a QML desktop library
 //
 // Copyright (c) 2012 Jolla Ltd.
+// Copyright (c) 2024 Chupligin Sergey <neochapay@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -17,6 +18,8 @@
 #include "launchermonitor.h"
 
 #include "launcheritem.h"
+
+#include <logging.h>
 
 #include <QDir>
 
@@ -234,11 +237,11 @@ void LauncherMonitor::onHoldbackTimerTimeout()
         return;
     }
 
-    LAUNCHER_DEBUG("=========");
-    LAUNCHER_DEBUG("Added:" << m_addedFiles);
-    LAUNCHER_DEBUG("Modified:" << m_modifiedFiles);
-    LAUNCHER_DEBUG("Removed:" << m_removedFiles);
-    LAUNCHER_DEBUG("=========");
+    qCDebug(lcLipstickAppLaunchLog) << "=========";
+    qCDebug(lcLipstickAppLaunchLog) << "Added:" << m_addedFiles;
+    qCDebug(lcLipstickAppLaunchLog) << "Modified:" << m_modifiedFiles;
+    qCDebug(lcLipstickAppLaunchLog) << "Removed:" << m_removedFiles;
+    qCDebug(lcLipstickAppLaunchLog) << "=========";
 
     emit filesUpdated(m_addedFiles, m_modifiedFiles, m_removedFiles);
     m_addedFiles.clear();

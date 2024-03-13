@@ -13,6 +13,7 @@
 // GNU Lesser General Public License for more details.
 //
 // Copyright (c) 2012, Timur Kristóf <venemo@fedoraproject.org>
+// Copyright (c) 2024 Chupligin Sergey <neochapay@gmail.com>
 
 #include <QDir>
 #include <QFileSystemWatcher>
@@ -21,6 +22,8 @@
 #include <QFile>
 #include <QSettings>
 #include <QStandardPaths>
+
+#include <logging.h>
 
 #include "launcheritem.h"
 #include "launchermodel.h"
@@ -173,7 +176,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
             // Desktop file has been removed - remove launcher
             LauncherItem *item = itemInModel(filename);
             if (item != NULL) {
-                LAUNCHER_DEBUG("Removing launcher item:" << filename);
+                qCDebug(lcLipstickAppLaunchLog) << "Removing launcher item:" << filename;
                 unsetTemporary(item);
                 removeItem(item);
             } else {
@@ -207,7 +210,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
             }
 
             if (item == NULL) {
-                LAUNCHER_DEBUG("Trying to add launcher item:" << filename);
+                qCDebug(lcLipstickAppLaunchLog) << "Trying to add launcher item:" << filename;
                 item = addItemIfValid(filename);
 
                 if (item != NULL) {
@@ -261,7 +264,7 @@ void LauncherModel::onFilesUpdated(const QStringList &added,
 
 void LauncherModel::updateItemsWithIcon(const QString &iconId, const QString &filename)
 {
-    LAUNCHER_DEBUG("updateItemsWithIcon: iconId=" << iconId << "filename=" << filename);
+    qCDebug(lcLipstickAppLaunchLog) << "updateItemsWithIcon: iconId=" << iconId << "filename=" << filename;
 
     QStringList iconDirectories = m_launcherMonitor.iconDirectories();
 
@@ -291,7 +294,7 @@ void LauncherModel::updateItemsWithIcon(const QString &iconId, const QString &fi
         for (LauncherItem *item : *getList<LauncherItem>()) {
             if (id == item->getOriginalIconId()) {
                 item->setIconFilename(scalableIconFilename);
-                LAUNCHER_DEBUG("Scalable icon" << scalableIconFilename << "was updated for id" << id);
+                qCDebug(lcLipstickAppLaunchLog) << "Scalable icon" << scalableIconFilename << "was updated for id" << id;
             }
         }
     }
@@ -334,7 +337,7 @@ void LauncherModel::reorderItems()
         // Order the positioned items into contiguous order
         QMap<int, LauncherItem *>::const_iterator it = itemsWithPositions.constBegin(), end = itemsWithPositions.constEnd();
         for ( ; it != end; ++it) {
-            LAUNCHER_DEBUG("Planned move of" << it.value()->title() << "to" << reordered.count());
+            qCDebug(lcLipstickAppLaunchLog) << "Planned move of" << it.value()->title() << "to" << reordered.count();
             reordered.append(it.value());
         }
     }
@@ -342,17 +345,17 @@ void LauncherModel::reorderItems()
         // Append the un-positioned items in sorted-by-title order
         QMap<QString, LauncherItem *>::const_iterator it = itemsWithoutPositions.constBegin(), end = itemsWithoutPositions.constEnd();
         for ( ; it != end; ++it) {
-            LAUNCHER_DEBUG("Planned move of" << it.value()->title() << "to" << reordered.count());
+            qCDebug(lcLipstickAppLaunchLog) << "Planned move of" << it.value()->title() << "to" << reordered.count();
             reordered.append(it.value());
         }
     }
 
     for (int gridPos = 0; gridPos < reordered.count(); ++gridPos) {
         LauncherItem *item = reordered.at(gridPos);
-        LAUNCHER_DEBUG("Moving" << item->filePath() << "to" << gridPos);
+        qCDebug(lcLipstickAppLaunchLog) << "Moving" << item->filePath() << "to" << gridPos;
 
         if (gridPos < 0 || gridPos >= itemCount()) {
-            LAUNCHER_DEBUG("Invalid planned position for" << item->filePath());
+            qCDebug(lcLipstickAppLaunchLog) << "Invalid planned position for" << item->filePath();
             continue;
         }
 
@@ -491,8 +494,8 @@ static QString desktopFileFromPackageName(const QStringList &directories, const 
 void LauncherModel::updatingStarted(const QString &packageName, const QString &label,
                                     const QString &iconPath, QString desktopFile, const QString &serviceName)
 {
-    LAUNCHER_DEBUG("Update started:" << packageName << label
-                   << iconPath << desktopFile);
+    qCDebug(lcLipstickAppLaunchLog) << "Update started:" << packageName << label
+                   << iconPath << desktopFile;
 
     // Remember which service notified us about this package, so we can
     // clean up existing updates when the service vanishes from D-Bus.
@@ -568,7 +571,7 @@ void LauncherModel::updatingStarted(const QString &packageName, const QString &l
 void LauncherModel::updatingProgress(const QString &packageName, int progress,
                                      const QString &serviceName)
 {
-    LAUNCHER_DEBUG("Update progress:" << packageName << progress);
+    qCDebug(lcLipstickAppLaunchLog) << "Update progress:" << packageName << progress;
 
     QString expectedServiceName = m_packageNameToDBusService[packageName];
     if (expectedServiceName != serviceName) {
@@ -590,7 +593,7 @@ void LauncherModel::updatingProgress(const QString &packageName, int progress,
 void LauncherModel::updatingFinished(const QString &packageName,
                                      const QString &serviceName)
 {
-    LAUNCHER_DEBUG("Update finished:" << packageName);
+    qCDebug(lcLipstickAppLaunchLog) << "Update finished:" << packageName;
 
     QString expectedServiceName = m_packageNameToDBusService[packageName];
     if (expectedServiceName != serviceName) {
@@ -648,7 +651,7 @@ void LauncherModel::updateWatchedDBusServices()
 
     foreach (const QString &service, m_dbusWatcher.watchedServices()) {
         if (!requiredServices.contains(service)) {
-            LAUNCHER_DEBUG("Don't need to watch service anymore:" << service);
+            qCDebug(lcLipstickAppLaunchLog) << "Don't need to watch service anymore:" << service;
             m_dbusWatcher.removeWatchedService(service);
         }
     }
@@ -669,7 +672,7 @@ void LauncherModel::onServiceUnregistered(const QString &serviceName)
     }
 
     foreach (const QString &packageName, packagesToRemove) {
-        LAUNCHER_DEBUG("Fabricating updatingFinished for" << packageName);
+        qCDebug(lcLipstickAppLaunchLog) << "Fabricating updatingFinished for" << packageName;
         updatingFinished(packageName, serviceName);
     }
 }
@@ -680,7 +683,7 @@ void LauncherModel::removeTemporaryLaunchers()
     foreach (LauncherItem *item, iterationCopy) {
         if (!item->isUpdating()) {
             // Temporary item that is not updating at the moment
-            LAUNCHER_DEBUG("Removing temporary launcher");
+            qCDebug(lcLipstickAppLaunchLog) << "Removing temporary launcher";
             // Will remove it from _temporaryLaunchers
             unsetTemporary(item);
             removeItem(item);
@@ -829,7 +832,7 @@ QVariant LauncherModel::launcherPos(const QString &path)
 
 LauncherItem *LauncherModel::addItemIfValid(const QString &path)
 {
-    LAUNCHER_DEBUG("Creating LauncherItem for desktop entry" << path);
+    qCDebug(lcLipstickAppLaunchLog) << "Creating LauncherItem for desktop entry" << path;
     LauncherItem *item = new LauncherItem(path, this);
 
     bool isValid = item->isValid();
@@ -843,7 +846,7 @@ LauncherItem *LauncherModel::addItemIfValid(const QString &path)
         m_hiddenLaunchers.append(item);
         item = NULL;
     } else {
-        LAUNCHER_DEBUG("Item" << path << (!isValid ? "is not valid" : "should not be displayed"));
+        qCDebug(lcLipstickAppLaunchLog) << "Item" << path << (!isValid ? "is not valid" : "should not be displayed");
         delete item;
         item = NULL;
     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2012 - 2022 Jolla Ltd.
 // Copyright (c) 2019 - 2021 Open Mobile Platform LLC.
+// Copyright (c) 2024 Chupligin Sergey <neochapay@gmail.com>
 //
 // This file is part of lipstick, a QML desktop library
 //
@@ -32,6 +33,7 @@
 
 #include "launcheritem.h"
 #include "launchermodel.h"
+#include <logging.h>
 
 #ifdef HAVE_CONTENTACTION
 #include <contentaction.h>
@@ -367,11 +369,11 @@ void LauncherItem::launchWithArguments(const QStringList &arguments)
     }
 
 #if defined(HAVE_CONTENTACTION)
-    LAUNCHER_DEBUG("launching content action for" << m_desktopEntry->name());
+    qCDebug(lcLipstickAppLaunchLog) << "launching content action for" << m_desktopEntry->name();
     ContentAction::Action action = ContentAction::Action::launcherAction(m_desktopEntry, arguments);
     action.trigger();
 #else
-    LAUNCHER_DEBUG("launching exec line for" << m_desktopEntry->name());
+    qCDebug(lcLipstickAppLaunchLog) << "launching exec line for" << m_desktopEntry->name();
 
     if (GDesktopAppInfo *appInfo = g_desktop_app_info_new_from_filename(
                 m_desktopEntry->fileName().toUtf8().constData())) {
