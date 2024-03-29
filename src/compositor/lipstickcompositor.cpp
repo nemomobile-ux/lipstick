@@ -289,9 +289,14 @@ QObject *LipstickCompositor::windowForId(int id) const
 void LipstickCompositor::closeClientForWindowId(int id)
 {
     LipstickCompositorWindow *window = m_windows.value(id, 0);
+
     if (window && window->surface()) {
-        window->surface()->client()->close();
-    }
+        QWaylandQtWindowManager *wmExtension = QWaylandQtWindowManager::findIn(this);
+        if (wmExtension)
+            wmExtension->sendQuitMessage(window->surface()->client());
+        else
+            window->surface()->client()->close();
+    }   
 }
 
 QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
