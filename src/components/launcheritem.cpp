@@ -501,6 +501,10 @@ bool LauncherItem::canOpenMimeType(const QString &mimeType)
     return false;
 }
 
+void LauncherItem::invalidateCaches()
+{
+    m_mimeTypesPopulated = false;
+}
 
 void LauncherItem::timerEvent(QTimerEvent *event)
 {

@@ -120,6 +120,8 @@ public:
 
     Q_INVOKABLE bool canOpenMimeType(const QString &mimeType);
 
+    void invalidateCaches();
+
 signals:
     void itemChanged();
     void isLaunchingChanged();
