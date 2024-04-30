@@ -269,7 +269,11 @@ QString LauncherItem::titleUnlocalized() const
 
 bool LauncherItem::shouldDisplay() const
 {
-    return !m_desktopEntry.isNull() ? !m_desktopEntry->noDisplay() : m_isTemporary;
+    if (m_desktopEntry.isNull()) {
+        return m_isTemporary;
+    } else {
+        return !m_desktopEntry->noDisplay() && !m_desktopEntry->notShowIn().contains(QStringLiteral("X-MeeGo"));
+    }
 }
 
 bool LauncherItem::isValid() const
