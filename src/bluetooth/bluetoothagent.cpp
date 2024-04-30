@@ -126,14 +126,15 @@ void BluetoothAgent::connectDevice(const QString &btMacAddress)
 
 void BluetoothAgent::pairFinished(BluezQt::PendingCall *call)
 {
-    QString btMacAddress = call->userData().toString();
-    if(!call->error()) {
+    if(call->error()) {
+        qCWarning(lcLipstickBtAgentLog) << "BT: pairFinished error" << call->errorText();
+        emit error(call->errorText());
+    } else {
+        QString btMacAddress = call->userData().toString();
         m_device = m_manager->deviceForAddress(btMacAddress);
         if(m_device) {
             m_device->connectToDevice();
         }
-    } else {
-        emit error(call->errorText());
     }
 
 }
@@ -175,7 +176,7 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
                            passkey);
 
     connect(this, &BluetoothAgent::requestConfirmationAccept, this, [=] {
-       request.accept();
+        request.accept();
     });
 
     connect(this, &BluetoothAgent::requestConfirmationReject, this, [=] {
