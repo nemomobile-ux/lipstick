@@ -318,36 +318,12 @@ QString BluetoothAgent::deviceAddress() const
     return m_deviceAddress;
 }
 
-void BluetoothAgent::setDeviceAddress(const QString &newDeviceAddress)
-{
-    if (m_deviceAddress == newDeviceAddress)
-        return;
-    m_deviceAddress = newDeviceAddress;
-    emit deviceAddressChanged();
-}
-
 QString BluetoothAgent::devicePassKey() const
 {
     return m_devicePassKey;
 }
 
-void BluetoothAgent::setDevicePassKey(const QString &newDevicePassKey)
-{
-    if (m_devicePassKey == newDevicePassKey)
-        return;
-    m_devicePassKey = newDevicePassKey;
-    emit devicePassKeyChanged();
-}
-
 QString BluetoothAgent::deviceName() const
 {
     return m_deviceName;
-}
-
-void BluetoothAgent::setDeviceName(const QString &newDeviceName)
-{
-    if (m_deviceName == newDeviceName)
-        return;
-    m_deviceName = newDeviceName;
-    emit deviceNameChanged();
 }
