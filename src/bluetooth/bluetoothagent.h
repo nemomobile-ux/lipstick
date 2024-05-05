@@ -38,9 +38,9 @@ class LIPSTICK_EXPORT BluetoothAgent : public BluezQt::Agent
     Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
     Q_PROPERTY(bool available READ available NOTIFY availableChanged)
     Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
-    Q_PROPERTY(QString deviceAddress READ deviceAddress WRITE setDeviceAddress NOTIFY deviceAddressChanged)
-    Q_PROPERTY(QString deviceName READ deviceName WRITE setDeviceName NOTIFY deviceNameChanged)
-    Q_PROPERTY(QString devicePassKey READ devicePassKey WRITE setDevicePassKey NOTIFY devicePassKeyChanged)
+    Q_PROPERTY(QString deviceAddress READ deviceAddress NOTIFY deviceChanged)
+    Q_PROPERTY(QString deviceName READ deviceName NOTIFY deviceChanged)
+    Q_PROPERTY(QString devicePassKey READ devicePassKey NOTIFY deviceChanged)
 
 public:
     BluetoothAgent(QObject *parent = Q_NULLPTR);
@@ -67,13 +67,8 @@ public:
     void setWindowVisible(bool visible);
 
     QString deviceAddress() const;
-    void setDeviceAddress(const QString &newDeviceAddress);
-
     QString devicePassKey() const;
-    void setDevicePassKey(const QString &newDevicePassKey);
-
     QString deviceName() const;
-    void setDeviceName(const QString &newDeviceName);
 
 public slots:
     void registerAgent();
@@ -89,9 +84,7 @@ signals:
     void requestConfirmationAccept();
     void requestConfirmationReject();
     void windowVisibleChanged();
-    void deviceAddressChanged();
-    void devicePassKeyChanged();
-    void deviceNameChanged();
+    void deviceChanged();
 
 private:
     void initManagerJobResult(BluezQt::InitManagerJob *job);
