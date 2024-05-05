@@ -90,6 +90,10 @@ void LipstickSettings::exportScreenProperties()
     const int defaultValue = 0;
     MGConfItem widthConf("/lipstick/screen/primary/width");
     QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    if(primaryScreen == nullptr) {
+        qFatal("Can't find primary screen");
+    }
+
     QSize primaryScreenSize = primaryScreen->size();
     if (widthConf.value(defaultValue) != primaryScreenSize.width()) {
         widthConf.set(primaryScreenSize.width());
