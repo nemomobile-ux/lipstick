@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2024 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -30,14 +30,21 @@
 
 #include "lipstickglobal.h"
 
+class HomeWindow;
+
 class LIPSTICK_EXPORT BluetoothAgent : public BluezQt::Agent
 {
     Q_OBJECT
     Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
     Q_PROPERTY(bool available READ available NOTIFY availableChanged)
+    Q_PROPERTY(bool windowVisible READ windowVisible WRITE setWindowVisible NOTIFY windowVisibleChanged)
+    Q_PROPERTY(QString deviceAddress READ deviceAddress WRITE setDeviceAddress NOTIFY deviceAddressChanged)
+    Q_PROPERTY(QString deviceName READ deviceName WRITE setDeviceName NOTIFY deviceNameChanged)
+    Q_PROPERTY(QString devicePassKey READ devicePassKey WRITE setDevicePassKey NOTIFY devicePassKeyChanged)
 
 public:
     BluetoothAgent(QObject *parent = Q_NULLPTR);
+    virtual ~BluetoothAgent();
     QDBusObjectPath objectPath() const override;
     Capability capability() const override;
 
@@ -56,18 +63,35 @@ public:
     bool connected();
     bool available();
 
+    bool windowVisible() const;
+    void setWindowVisible(bool visible);
+
+    QString deviceAddress() const;
+    void setDeviceAddress(const QString &newDeviceAddress);
+
+    QString devicePassKey() const;
+    void setDevicePassKey(const QString &newDevicePassKey);
+
+    QString deviceName() const;
+    void setDeviceName(const QString &newDeviceName);
+
 public slots:
     void registerAgent();
+    void createWindow();
 
 signals:
     void adapterAdded(const BluezQt::AdapterPtr adapter);
-    void showRequiesDialog(const QString btMacAddres, const QString name, const QString code);
+    void showRequiesDialog();
     void connectedChanged();
     void availableChanged();
     void error(QString errorString);
     void showPinCode(QString code);
     void requestConfirmationAccept();
     void requestConfirmationReject();
+    void windowVisibleChanged();
+    void deviceAddressChanged();
+    void devicePassKeyChanged();
+    void deviceNameChanged();
 
 private:
     void initManagerJobResult(BluezQt::InitManagerJob *job);
@@ -86,6 +110,11 @@ private:
     bool m_connected;
     bool m_available;
     bool m_registerAgent;
+
+    HomeWindow *m_requestDialogWindow;
+    QString m_deviceAddress;
+    QString m_devicePassKey;
+    QString m_deviceName;
 };
 
 #endif // BLUETOOTHAGENT_H
