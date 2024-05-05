@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2024 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -17,12 +17,19 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <QDebug>
-
+#include "logging.h"
+#include "homewindow.h"
 #include "bluetoothagent.h"
+#include "lipstickqmlpath.h"
+#include "utilities/closeeventeater.h"
 
 #include <bluezqt/device.h>
 #include <bluezqt/initmanagerjob.h>
+
+#include <QScreen>
+#include <QGuiApplication>
+#include <QPoint>
+#include <QTimer>
 
 BluetoothAgent::BluetoothAgent(QObject *parent)
     : BluezQt::Agent(parent)
@@ -32,6 +39,7 @@ BluetoothAgent::BluetoothAgent(QObject *parent)
     , m_connected(false)
     , m_available(false)
     , m_registerAgent(false)
+    , m_requestDialogWindow(nullptr)
 {
     BluezQt::InitManagerJob *job = m_manager->init();
     job->start();
@@ -49,6 +57,12 @@ BluetoothAgent::BluetoothAgent(QObject *parent)
             this, &BluetoothAgent::calcAvailable);
 
     usableAdapterChanged(m_usableAdapter);
+    QTimer::singleShot(0, this, SLOT(createWindow()));
+}
+
+BluetoothAgent::~BluetoothAgent()
+{
+    delete m_requestDialogWindow;
 }
 
 QDBusObjectPath BluetoothAgent::objectPath() const
@@ -64,7 +78,7 @@ BluezQt::Agent::Capability BluetoothAgent::capability() const
 void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
                                     const BluezQt::Request<QString> &request)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << "requestPinCode";
     m_device = device;
     request.accept(QString());
 }
@@ -72,21 +86,21 @@ void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
 void BluetoothAgent::displayPinCode(BluezQt::DevicePtr device,
                                     const QString &pinCode)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << "displayPinCode";
     m_device = device;
     emit showPinCode(pinCode);
 }
 
 void BluetoothAgent::requestPasskey(BluezQt::DevicePtr device, const BluezQt::Request<quint32> &request)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << Q_FUNC_INFO;
     Q_UNUSED(request)
     m_device = device;
 }
 
 void BluetoothAgent::displayPasskey(BluezQt::DevicePtr device, const QString &passkey, const QString &entered)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << Q_FUNC_INFO;
     Q_UNUSED(passkey)
     Q_UNUSED(entered)
     m_device = device;
@@ -96,18 +110,29 @@ void BluetoothAgent::registerAgent()
 {
     BluezQt::PendingCall *call = m_manager->registerAgent(this);
 
-    qDebug() << "BT: bt agent registring";
+    qCDebug(lcLipstickBluetooth) << "BT: bt agent registring";
 
     connect(call, &BluezQt::PendingCall::finished,
             this, &BluetoothAgent::registerAgentFinished);
 
 }
 
+void BluetoothAgent::createWindow()
+{
+    m_requestDialogWindow = new HomeWindow();
+    m_requestDialogWindow->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
+    m_requestDialogWindow->setCategory(QLatin1String("notification"));
+    m_requestDialogWindow->setWindowTitle("Confirmation dialog");
+    m_requestDialogWindow->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
+    m_requestDialogWindow->setSource(QmlPath::to("bluetooth/RequestConfirmationDialog.qml"));
+    m_requestDialogWindow->installEventFilter(new CloseEventEater(this));
+}
+
 void BluetoothAgent::pair(const QString &btMacAddress)
 {
     m_device = m_manager->deviceForAddress(btMacAddress);
     if(!m_device) {
-        qWarning() << "BT: Device not found";
+        qCDebug(lcLipstickBluetooth) << "BT: Device not found";
         return;
     }
 
@@ -122,7 +147,7 @@ void BluetoothAgent::connectDevice(const QString &btMacAddress)
 {
     m_device = m_manager->deviceForAddress(btMacAddress);
     if(!m_device) {
-        qWarning() << "BT: Device not found";
+        qCDebug(lcLipstickBluetooth) << "BT: Device not found";
         return;
     }
 
@@ -155,7 +180,7 @@ void BluetoothAgent::unPair(const QString &btMacAddress)
 
 void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << Q_FUNC_INFO;
 
     if(adapter && m_usableAdapter != adapter) {
         m_usableAdapter = adapter;
@@ -174,12 +199,12 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
                                          const QString &passkey,
                                          const BluezQt::Request<> &request)
 {
-    Q_UNUSED(request);
     m_device = device;
+    m_deviceAddress = m_device->address();
+    m_deviceName = m_device->name();
+    m_devicePassKey = passkey;
 
-    emit showRequiesDialog(m_device->address(),
-                           m_device->name(),
-                           passkey);
+    emit showRequiesDialog();
 
     connect(this, &BluetoothAgent::requestConfirmationAccept, this, [=] {
        request.accept();
@@ -193,7 +218,7 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
 void BluetoothAgent::requestAuthorization(BluezQt::DevicePtr device,
                                           const BluezQt::Request<> &request)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << Q_FUNC_INFO;
     m_device = device;
     request.accept();
 }
@@ -202,7 +227,7 @@ void BluetoothAgent::authorizeService(BluezQt::DevicePtr device,
                                       const QString &uuid,
                                       const BluezQt::Request<> &request)
 {
-    qDebug() << Q_FUNC_INFO;
+    qCDebug(lcLipstickBluetooth) << Q_FUNC_INFO;
     Q_UNUSED(uuid);
 
     m_device = device;
@@ -235,7 +260,7 @@ void BluetoothAgent::requestDefaultAgentFinished(BluezQt::PendingCall *call)
         qWarning() << "BT: requestDefaultAgent() call failed:" << call->errorText();
         emit error(call->errorText());
     }
-    qDebug() << "BT: bt agent registring as system" << objectPath().path();
+    qCDebug(lcLipstickBluetooth) << "BT: bt agent registring as system" << objectPath().path();
     m_registerAgent = true;
 }
 
@@ -243,7 +268,7 @@ void BluetoothAgent::updateConnectedStatus()
 {
     bool isSomebodyConnected = false;
     QList<QSharedPointer<BluezQt::Device>> devices = m_usableAdapter->devices();
-    for (const QSharedPointer<BluezQt::Device> &device : qAsConst(devices)) {
+    for (const QSharedPointer<BluezQt::Device> &device : std::as_const(devices)) {
         if (device->isConnected()) {
             isSomebodyConnected = true;
             break;
@@ -275,4 +300,61 @@ bool BluetoothAgent::connected()
 bool BluetoothAgent::available()
 {
     return m_available;
+}
+
+bool BluetoothAgent::windowVisible() const
+{
+    return m_requestDialogWindow != 0 && m_requestDialogWindow->isVisible();
+}
+
+void BluetoothAgent::setWindowVisible(bool visible)
+{
+    if(visible) {
+        if(m_requestDialogWindow && !m_requestDialogWindow->isVisible()) {
+            m_requestDialogWindow->show();
+            emit windowVisibleChanged();
+        }
+    } else if(m_requestDialogWindow != 0 && m_requestDialogWindow->isVisible()) {
+        m_requestDialogWindow->hide();
+        emit windowVisibleChanged();
+    }
+}
+
+QString BluetoothAgent::deviceAddress() const
+{
+    return m_deviceAddress;
+}
+
+void BluetoothAgent::setDeviceAddress(const QString &newDeviceAddress)
+{
+    if (m_deviceAddress == newDeviceAddress)
+        return;
+    m_deviceAddress = newDeviceAddress;
+    emit deviceAddressChanged();
+}
+
+QString BluetoothAgent::devicePassKey() const
+{
+    return m_devicePassKey;
+}
+
+void BluetoothAgent::setDevicePassKey(const QString &newDevicePassKey)
+{
+    if (m_devicePassKey == newDevicePassKey)
+        return;
+    m_devicePassKey = newDevicePassKey;
+    emit devicePassKeyChanged();
+}
+
+QString BluetoothAgent::deviceName() const
+{
+    return m_deviceName;
+}
+
+void BluetoothAgent::setDeviceName(const QString &newDeviceName)
+{
+    if (m_deviceName == newDeviceName)
+        return;
+    m_deviceName = newDeviceName;
+    emit deviceNameChanged();
 }
