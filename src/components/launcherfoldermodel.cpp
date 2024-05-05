@@ -26,7 +26,6 @@
 #include <QStack>
 #include <mdesktopentry.h>
 #include <glib.h>
-#include <QDebug>
 
 static const int FOLDER_MODEL_SAVE_TIMER_MS = 1000;
 static const QString CONFIG_FOLDER_SUBDIRECTORY("/lipstick/");
