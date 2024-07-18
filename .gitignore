@@ -3,9 +3,7 @@ Makefile
 *gen_*.h
 *gen_*.cpp
 *gen_*.o
-*moc_*.h
-*moc_*.cpp
-*moc_*.o
+*moc_*
 *~
 *.log
 *.log.xml
@@ -17,6 +15,12 @@ build-stamp
 .project
 .cproject
 *.user
+*.cmake
+*autogen*
+*.so
+*.o.d
+*.qm
+a.out
 
 #dont store generated files
 src/compositor/fileserviceadaptor.cpp
