@@ -14,6 +14,7 @@
 ****************************************************************************/
 
 #include <QtTest/QtTest>
+#include "lipstickcompositorwindow.h"
 #include "notificationmanager.h"
 #include "notificationfeedbackplayer.h"
 #include "lipstickcompositor_stub.h"
@@ -122,10 +123,10 @@ LipstickNotification *createNotification(uint id, int urgency = 0, QVariant prio
     return notification;
 }
 
-QVariantMap qWaylandSurfaceWindowProperties;
-QVariantMap QWaylandSurface::windowProperties() const
+QVariantMap qLipstickWindowProperties;
+QVariantMap LipstickCompositorWindow::windowProperties() const
 {
-    return qWaylandSurfaceWindowProperties;
+    return qLipstickWindowProperties;
 }
 
 void QTimer::singleShot(int, const QObject *receiver, const char *member)
@@ -352,7 +353,7 @@ void Ut_NotificationFeedbackPlayer::testNotificationPreviewsDisabled()
     QFETCH(int, playCount);
 
     gLipstickCompositorStub->stubSetReturnValue("surfaceForId", surface);
-    qWaylandSurfaceWindowProperties = windowProperties;
+    qLipstickWindowProperties = windowProperties;
 
     createNotification(1, urgency);
     player->addNotification(1);

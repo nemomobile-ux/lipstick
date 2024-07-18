@@ -1,6 +1,7 @@
 /***************************************************************************
 **
-** Copyright (c) 2012-2014 Jolla Ltd.
+** Copyright (c) 2016 - 2020 Jolla Ltd.
+** Copyright (c) 2020 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -11,37 +12,33 @@
 ** of this file.
 **
 ****************************************************************************/
-#ifndef _UT_THERMALNOTIFIER_H
-#define _UT_THERMALNOTIFIER_H
+
+#ifndef UT_TOUCHSCREEN_H
+#define UT_TOUCHSCREEN_H
 
 #include <QObject>
+#include <displaystate.h>
 
-class ThermalNotifier;
+class TouchScreen;
 
-class Ut_ThermalNotifier : public QObject {
+class Ut_TouchScreen : public QObject
+{
     Q_OBJECT
 
 private slots:
-    // Executed once before every test case
     void init();
-
-    // Executed once after every test case
     void cleanup();
-
-    // Executed once before first test case
     void initTestCase();
-
-    // Executed once after last test case
     void cleanupTestCase();
 
-    // Test cases
-    void testConnections();
-    void testThermalState();
-    void testDisplayStateOffDoesNothing();
-    void testDisplayStateOnAppliesThermalState();
+    void testEnabled();
+    void testTouchBlocking();
 
 private:
-    ThermalNotifier *thermalNotifier;
+    void updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState);
+    void fakeDisplayOnAndReady();
+
+    TouchScreen *touchScreen;
 };
 
 #endif

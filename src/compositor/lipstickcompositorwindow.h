@@ -41,6 +41,7 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
     Q_PROPERTY(uint notificationMode READ notificationMode WRITE setNotificationMode NOTIFY notificationModeChanged)
 
     Q_PROPERTY(bool activated READ activated NOTIFY activatedChanged)
+    Q_PROPERTY(QVariantMap windowProperties READ windowProperties WRITE setWindowProperties NOTIFY windowPropertiesChanged)
 
 public:
     LipstickCompositorWindow(int windowId, const QString &, QWaylandSurface *surface, QQuickItem *parent = 0);
@@ -80,6 +81,9 @@ public:
     Q_INVOKABLE void unsetFullscreen();
     Q_INVOKABLE void resize(const QSize &size);
 
+    QVariantMap windowProperties() const;
+    void setWindowProperties(const QVariantMap &newWindowProperties);
+
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
 
@@ -100,6 +104,8 @@ signals:
     void notificationModeChanged();
     void resized();
     void activatedChanged();
+
+    void windowPropertiesChanged();
 
 private slots:
     void handleTouchCancel();
@@ -136,6 +142,7 @@ private:
     QVector<QQuickItem *> m_refs;
     uint m_notificationMode;
     QWaylandXdgToplevel* m_topLevel;
+    QVariantMap m_windowProperties;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H
