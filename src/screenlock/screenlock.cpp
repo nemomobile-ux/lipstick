@@ -18,7 +18,6 @@
 #include <QDBusPendingCall>
 #include <QTextStream>
 #include <QCursor>
-#include <QDebug>
 #include <QTouchEvent>
 
 #include <mce/mode-names.h>

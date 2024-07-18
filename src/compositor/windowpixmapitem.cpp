@@ -15,7 +15,6 @@
 #include "windowpixmapitem.h"
 #include "lipstickcompositor.h"
 #include "lipstickcompositorwindow.h"
-#include <QDebug>
 
 WindowPixmapItem::WindowPixmapItem() : m_id(0)
 {

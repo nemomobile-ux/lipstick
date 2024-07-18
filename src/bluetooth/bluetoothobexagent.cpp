@@ -19,7 +19,6 @@
 
 #include "bluetoothobexagent.h"
 
-#include <QDebug>
 #include <QDir>
 #include <QDBusObjectPath>
 #include <QStandardPaths>

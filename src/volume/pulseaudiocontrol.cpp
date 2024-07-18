@@ -20,7 +20,6 @@
 #include <QDBusArgument>
 #include <QDBusServiceWatcher>
 #include <QTimer>
-#include <QDebug>
 
 
 #define DBUS_ERR_CHECK(err) \

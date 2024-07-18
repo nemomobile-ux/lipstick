@@ -13,7 +13,6 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusServiceWatcher>
-#include <QDebug>
 #include <QEvent>
 #include <QIcon>
 #include <QQmlComponent>

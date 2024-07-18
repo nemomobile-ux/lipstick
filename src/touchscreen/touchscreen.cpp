@@ -20,7 +20,6 @@
 #include <QDBusConnection>
 #include <QDBusPendingReply>
 #include <QDBusPendingCallWatcher>
-#include <QDebug>
 
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
@@ -217,8 +216,6 @@ bool TouchScreen::eventFilter(QObject *, QEvent *event)
     if (eat) {
         setEnabled(true);
     }
-
-    qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<" << eat;
 
     return eat;
 }

@@ -629,7 +629,7 @@ void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrient
 {
     if (m_screenOrientation != screenOrientation) {
         if (debug())
-            qDebug() << "Setting screen orientation on QWaylandCompositor";
+            qCDebug(lcLipstickCoreLog) << "Setting screen orientation on QWaylandCompositor";
 
         QSize physSize = m_output->physicalSize();
         switch(screenOrientation) {
@@ -701,7 +701,7 @@ void LipstickCompositor::setScreenOrientationFromSensor()
     QOrientationReading* reading = m_orientationSensor->reading();
 
     if (debug())
-        qDebug() << "Screen orientation changed " << reading->orientation();
+        qCDebug(lcLipstickCoreLog) << "Screen orientation changed " << reading->orientation();
 
     Qt::ScreenOrientation sensorOrientation = m_sensorOrientation;
     switch (reading->orientation()) {

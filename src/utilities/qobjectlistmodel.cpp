@@ -17,7 +17,6 @@
 #include "qobjectlistmodel.h"
 #include "synchronizelists.h"
 #include <QQmlEngine>
-#include <QDebug>
 
 QObjectListModel::QObjectListModel(QObject *parent, QList<QObject*> *list)
     : QAbstractListModel(parent),

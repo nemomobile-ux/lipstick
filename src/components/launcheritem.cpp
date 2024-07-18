@@ -44,7 +44,6 @@
 #include <glib.h>
 #endif
 
-#include <QDebug>
 static void g_free_wrapper (void *data, void *userdata)
 {
     Q_UNUSED(userdata);

@@ -43,7 +43,6 @@
 #include <QDBusReply>
 #include <QDBusServiceWatcher>
 #include <QMetaMethod>
-#include <QDebug>
 
 namespace DeviceState {
 

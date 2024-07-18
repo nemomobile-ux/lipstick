@@ -17,9 +17,8 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <QDebug>
-
 #include "bluetoothagent.h"
+#include "logging.h"
 
 #include <bluezqt/device.h>
 #include <bluezqt/initmanagerjob.h>
@@ -64,7 +63,6 @@ BluezQt::Agent::Capability BluetoothAgent::capability() const
 void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
                                     const BluezQt::Request<QString> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     m_device = device;
     request.accept(QString());
 }
@@ -72,21 +70,18 @@ void BluetoothAgent::requestPinCode(BluezQt::DevicePtr device,
 void BluetoothAgent::displayPinCode(BluezQt::DevicePtr device,
                                     const QString &pinCode)
 {
-    qDebug() << Q_FUNC_INFO;
     m_device = device;
     emit showPinCode(pinCode);
 }
 
 void BluetoothAgent::requestPasskey(BluezQt::DevicePtr device, const BluezQt::Request<quint32> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(request)
     m_device = device;
 }
 
 void BluetoothAgent::displayPasskey(BluezQt::DevicePtr device, const QString &passkey, const QString &entered)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(passkey)
     Q_UNUSED(entered)
     m_device = device;
@@ -96,7 +91,7 @@ void BluetoothAgent::registerAgent()
 {
     BluezQt::PendingCall *call = m_manager->registerAgent(this);
 
-    qDebug() << "BT: bt agent registring";
+    qCDebug(lcLipstickBtAgentLog) << "BT: bt agent registring";
 
     connect(call, &BluezQt::PendingCall::finished,
             this, &BluetoothAgent::registerAgentFinished);
@@ -107,7 +102,7 @@ void BluetoothAgent::pair(const QString &btMacAddress)
 {
     m_device = m_manager->deviceForAddress(btMacAddress);
     if(!m_device) {
-        qWarning() << "BT: Device not found";
+        qCWarning(lcLipstickBtAgentLog) << "BT: Device not found";
         return;
     }
 
@@ -122,7 +117,7 @@ void BluetoothAgent::connectDevice(const QString &btMacAddress)
 {
     m_device = m_manager->deviceForAddress(btMacAddress);
     if(!m_device) {
-        qWarning() << "BT: Device not found";
+        qCWarning(lcLipstickBtAgentLog) << "BT: Device not found";
         return;
     }
 
@@ -155,8 +150,6 @@ void BluetoothAgent::unPair(const QString &btMacAddress)
 
 void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
 {
-    qDebug() << Q_FUNC_INFO;
-
     if(adapter && m_usableAdapter != adapter) {
         m_usableAdapter = adapter;
 
@@ -193,7 +186,6 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
 void BluetoothAgent::requestAuthorization(BluezQt::DevicePtr device,
                                           const BluezQt::Request<> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     m_device = device;
     request.accept();
 }
@@ -202,7 +194,6 @@ void BluetoothAgent::authorizeService(BluezQt::DevicePtr device,
                                       const QString &uuid,
                                       const BluezQt::Request<> &request)
 {
-    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(uuid);
 
     m_device = device;
@@ -212,14 +203,14 @@ void BluetoothAgent::authorizeService(BluezQt::DevicePtr device,
 void BluetoothAgent::initManagerJobResult(BluezQt::InitManagerJob *job)
 {
     if (job->error()) {
-        qWarning() << "Error initializing Bluetooth manager:" << job->errorText();
+        qCWarning(lcLipstickBtAgentLog) << "Error initializing Bluetooth manager:" << job->errorText();
     }
 }
 
 void BluetoothAgent::registerAgentFinished(BluezQt::PendingCall *call)
 {
     if (call->error()) {
-        qWarning() << "BT: registerAgent() call failed:" << call->errorText();
+        qCWarning(lcLipstickBtAgentLog) << "BT: registerAgent() call failed:" << call->errorText();
         return;
     }
 
@@ -232,10 +223,10 @@ void BluetoothAgent::registerAgentFinished(BluezQt::PendingCall *call)
 void BluetoothAgent::requestDefaultAgentFinished(BluezQt::PendingCall *call)
 {
     if (call->error()) {
-        qWarning() << "BT: requestDefaultAgent() call failed:" << call->errorText();
+        qCWarning(lcLipstickBtAgentLog) << "BT: requestDefaultAgent() call failed:" << call->errorText();
         emit error(call->errorText());
     }
-    qDebug() << "BT: bt agent registring as system" << objectPath().path();
+    qCDebug(lcLipstickBtAgentLog) << "BT: bt agent registring as system" << objectPath().path();
     m_registerAgent = true;
 }
 
@@ -258,8 +249,6 @@ void BluetoothAgent::updateConnectedStatus()
 
 void BluetoothAgent::calcAvailable(BluezQt::AdapterPtr adapter)
 {
-    Q_UNUSED(adapter)
-
     if(m_manager->adapters().count() > 0) {
         m_available = true;
     } else {

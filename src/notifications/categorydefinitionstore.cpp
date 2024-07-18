@@ -16,7 +16,6 @@
 #include "categorydefinitionstore.h"
 #include <QFileInfo>
 #include <QDir>
-#include <QDebug>
 
 //! The file extension for the category definition files
 static const char *FILE_EXTENSION = ".conf";

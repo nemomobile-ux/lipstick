@@ -54,11 +54,6 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
         setSurface(surface);
     }
 
-    QQuickWindow *window = qobject_cast<QQuickWindow *>(this);
-    if(window) {
-        qDebug() << "YES QQuickWindow";
-    }
-
     Q_UNUSED(parent)
     updatePolicyApplicationId();
 }

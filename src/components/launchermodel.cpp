@@ -18,7 +18,6 @@
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QDBusConnection>
-#include <QDebug>
 #include <QFile>
 #include <QSettings>
 #include <QStandardPaths>

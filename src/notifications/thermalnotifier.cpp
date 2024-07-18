@@ -19,7 +19,6 @@
 #include <dsme/thermalmanager_dbus_if.h>
 
 #include <QDBusConnection>
-#include <QDebug>
 
 ThermalNotifier::ThermalNotifier(QObject *parent)
     : QObject(parent)

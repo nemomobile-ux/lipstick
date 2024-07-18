@@ -15,10 +15,9 @@
 
 
 #include "lipstickqmlpath.h"
+#include "logging.h"
 
 #include <QFile>
-#include <QDebug>
-
 
 // Private list of paths
 static QStringList g_paths;
@@ -40,8 +39,8 @@ QUrl QmlPath::to(const QString &filename)
         // Add default search path to not break homescreens that are not
         // aware of the new QmlPath::append()/QmlPath::prepend() API.
         const QString FALLBACK_PATH = ":/qml";
-        qWarning() << "Your homescreen does not use the Lipstick QmlPath API.";
-        qWarning() << "Using qrc:/ fallback; consider using QmlPath::append()";
+        qCWarning(lcLipstickCoreLog) << "Your homescreen does not use the Lipstick QmlPath API.";
+        qCWarning(lcLipstickCoreLog) << "Using qrc:/ fallback; consider using QmlPath::append()";
         g_paths.append(FALLBACK_PATH);
     }
 
@@ -56,7 +55,7 @@ QUrl QmlPath::to(const QString &filename)
         }
     }
 
-    qWarning() << "QML file not found:" << filename;
-    qWarning() << "QML search path:" << g_paths;
+    qCWarning(lcLipstickCoreLog) << "QML file not found:" << filename;
+    qCWarning(lcLipstickCoreLog) << "QML search path:" << g_paths;
     return QUrl();
 }
