@@ -27,7 +27,7 @@ public:
 };
 
 HomeWindowPrivate::HomeWindowPrivate()
-: isVisible(false)
+    : isVisible(false)
 {
 }
 

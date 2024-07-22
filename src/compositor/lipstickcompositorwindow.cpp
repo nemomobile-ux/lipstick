@@ -525,3 +525,16 @@ void LipstickCompositorWindow::resize(const QSize &size)
         emit resized();
     }
 }
+
+QVariantMap LipstickCompositorWindow::windowProperties() const
+{
+    return m_windowProperties;
+}
+
+void LipstickCompositorWindow::setWindowProperties(const QVariantMap &newWindowProperties)
+{
+    if (m_windowProperties == newWindowProperties)
+        return;
+    m_windowProperties = newWindowProperties;
+    emit windowPropertiesChanged();
+}

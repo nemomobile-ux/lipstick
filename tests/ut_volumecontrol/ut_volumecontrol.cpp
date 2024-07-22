@@ -18,14 +18,10 @@
 #include "ut_volumecontrol.h"
 #include "volumecontrol.h"
 #include "pulseaudiocontrol_stub.h"
-#include "closeeventeater_stub.h"
-#include "mgconfitem_stub.h"
-#include "lipstickqmlpath_stub.h"
 
 extern "C"
 {
 #include <dbus/dbus.h>
-#include "dbus-gmain/dbus-gmain.h"
 }
 
 #include <policy/resource-set.h>
@@ -35,42 +31,41 @@ extern "C"
 
 bool acquireCalled = false;
 
-namespace ResourcePolicy
+namespace ResourcePolicy {
+ResourceSet::ResourceSet(const QString &, QObject *)
 {
-    ResourceSet::ResourceSet(const QString&, QObject*)
-    {
-    }
+}
 
-    bool ResourceSet::setAlwaysReply()
-    {
-        return true;
-    }
+bool ResourceSet::setAlwaysReply()
+{
+    return true;
+}
 
-    ScaleButtonResource::ScaleButtonResource()
-    {
-    }
+ScaleButtonResource::ScaleButtonResource()
+{
+}
 
-    void ResourceSet::addResourceObject(ResourcePolicy::Resource* rsc)
-    {
-        Q_UNUSED(rsc);
-        return;
-    }
+void ResourceSet::addResourceObject(ResourcePolicy::Resource *rsc)
+{
+    Q_UNUSED(rsc);
+    return;
+}
 
-    bool ResourceSet::acquire()
-    {
-        acquireCalled = true;
-        return true;
-    }
+bool ResourceSet::acquire()
+{
+    acquireCalled = true;
+    return true;
+}
 
-    bool ResourceSet::release()
-    {
-        return true;
-    }
+bool ResourceSet::release()
+{
+    return true;
+}
 
-    void ResourceSet::deleteResource(ResourcePolicy::ResourceType)
-    {
-        return;
-    }
+void ResourceSet::deleteResource(ResourcePolicy::ResourceType)
+{
+    return;
+}
 }
 
 void QObject::installEventFilter(QObject *filterObj)
@@ -100,7 +95,7 @@ void Ut_VolumeControl::init()
 {
     gPulseAudioControlStub->stubReset();
 
-    volumeControl = new VolumeControl;
+    volumeControl = new VolumeControl(true);
     volumeControl->setVolume(5, 10);
 }
 
@@ -113,8 +108,8 @@ void Ut_VolumeControl::cleanup()
 void Ut_VolumeControl::testConnections()
 {
     // Check that pulse audio and the volume bar are connected
-    QCOMPARE(disconnect(volumeControl->pulseAudioControl, SIGNAL(volumeChanged(int,int)), volumeControl, SLOT(setVolume(int,int))), true);
-    QCOMPARE(disconnect(volumeControl->pulseAudioControl, SIGNAL(callActiveChanged(bool)), volumeControl, SLOT(handleCallActive(bool))), true);
+    QCOMPARE(disconnect(volumeControl->m_pulseAudioControl, SIGNAL(volumeChanged(int,int)), volumeControl, SLOT(setVolume(int,int))), true);
+    QCOMPARE(disconnect(volumeControl->m_pulseAudioControl, SIGNAL(callActiveChanged(bool)), volumeControl, SLOT(handleCallActive(bool))), true);
 }
 
 Q_DECLARE_METATYPE(Qt::Key)
@@ -128,7 +123,7 @@ void Ut_VolumeControl::testEventFilter()
     QSignalSpy volumeKeyReleasedSpy(volumeControl, SIGNAL(volumeKeyReleased(int)));
 
     // no reaction if resources not acquired
-    QKeyEvent event(QEvent::KeyPress, Qt::Key_VolumeUp, 0, QString(), false);
+    QKeyEvent event(QEvent::KeyPress, Qt::Key_VolumeUp, Qt::NoModifier, QString(), false);
     volumeControl->eventFilter(0, &event);
     QCOMPARE(volumeKeyPressedSpy.count(), pressCount);
     QCOMPARE(volumeKeyReleasedSpy.count(), releaseCount);
@@ -142,23 +137,23 @@ void Ut_VolumeControl::testEventFilter()
     QCOMPARE(volumeKeyReleasedSpy.count(), releaseCount);
 
     // autorepeat doesn't do anything
-    event = QKeyEvent(QEvent::KeyPress, Qt::Key_VolumeUp, 0, QString(), true);
-    volumeControl->eventFilter(0, &event);
+    QKeyEvent event1(QEvent::KeyPress, Qt::Key_VolumeUp, Qt::NoModifier, QString(), true);
+    volumeControl->eventFilter(0, &event1);
     QCOMPARE(volumeKeyPressedSpy.count(), pressCount);
     QCOMPARE(volumeKeyReleasedSpy.count(), releaseCount);
 
     // release results in release signal
-    event = QKeyEvent(QEvent::KeyRelease, Qt::Key_VolumeUp, 0, QString(), false);
-    volumeControl->eventFilter(0, &event);
+    QKeyEvent event2(QEvent::KeyRelease, Qt::Key_VolumeUp, Qt::NoModifier, QString(), false);
+    volumeControl->eventFilter(0, &event2);
     releaseCount++;
     QCOMPARE(volumeKeyPressedSpy.count(), pressCount);
     QCOMPARE(volumeKeyReleasedSpy.count(), releaseCount);
 
     // other keys don't do anything
-    event = QKeyEvent(QEvent::KeyPress, Qt::Key_Camera, 0, QString(), false);
-    volumeControl->eventFilter(0, &event);
-    event = QKeyEvent(QEvent::KeyRelease, Qt::Key_Camera, 0, QString(), false);
-    volumeControl->eventFilter(0, &event);
+    QKeyEvent event3(QEvent::KeyPress, Qt::Key_Camera, Qt::NoModifier, QString(), false);
+    volumeControl->eventFilter(0, &event3);
+    QKeyEvent event4(QEvent::KeyRelease, Qt::Key_Camera, Qt::NoModifier, QString(), false);
+    volumeControl->eventFilter(0, &event4);
     QCOMPARE(volumeKeyPressedSpy.count(), pressCount);
     QCOMPARE(volumeKeyReleasedSpy.count(), releaseCount);
 }

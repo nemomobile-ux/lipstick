@@ -39,7 +39,6 @@ private slots:
     void testTkLockOpen_data();
     void testTkLockOpen();
     void testTkLockClose();
-    void testTouchBlocking();
 
 private:
     void updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState);

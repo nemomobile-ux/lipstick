@@ -31,7 +31,7 @@ public:
     virtual void classBegin();
     virtual void componentComplete();
     virtual void surfaceCreated(QWaylandSurface *surface);
-    virtual bool openUrl(WaylandClient *, const QUrl &);
+    virtual bool openUrl(QWaylandClient *, const QUrl &);
     virtual bool openUrl(const QUrl &);
     virtual void retainedSelectionReceived(QMimeData *mimeData);
     virtual int windowCount() const;
@@ -43,8 +43,6 @@ public:
     virtual void setTopmostWindowOrientation(Qt::ScreenOrientation topmostWindowOrientation);
     virtual void setScreenOrientation(Qt::ScreenOrientation screenOrientation);
     virtual bool displayDimmed() const;
-    virtual LipstickKeymap *keymap() const;
-    virtual void setKeymap(LipstickKeymap *keymap);
     virtual void updateKeymap();
     virtual QObject *clipboard() const;
     virtual bool debug() const;
@@ -69,7 +67,7 @@ public:
     virtual void clipboardDataChanged();
     virtual void onVisibleChanged(bool visible);
     virtual void keymapChanged();
-    virtual QWaylandSurfaceView *createView(QWaylandSurface *surf);
+    virtual LipstickCompositorWindow *createView(QWaylandSurface *surf);
     virtual void readContent();
     virtual void initialize();
     virtual bool completed();
@@ -110,10 +108,10 @@ void LipstickCompositorStub::surfaceCreated(QWaylandSurface *surface)
     stubMethodEntered("surfaceCreated", params);
 }
 
-bool LipstickCompositorStub::openUrl(WaylandClient *client, const QUrl &url)
+bool LipstickCompositorStub::openUrl(QWaylandClient *client, const QUrl &url)
 {
     QList<ParameterBase *> params;
-    params.append(new Parameter<WaylandClient * >(client));
+    params.append(new Parameter<QWaylandClient * >(client));
     params.append(new Parameter<const QUrl &>(url));
     stubMethodEntered("openUrl", params);
     return stubReturnValue<bool>("openUrl");
@@ -191,19 +189,6 @@ bool LipstickCompositorStub::displayDimmed() const
 {
     stubMethodEntered("displayDimmed");
     return stubReturnValue<bool>("displayDimmed");
-}
-
-LipstickKeymap *LipstickCompositorStub::keymap() const
-{
-    stubMethodEntered("keymap");
-    return stubReturnValue<LipstickKeymap *>("keymap");
-}
-
-void LipstickCompositorStub::setKeymap(LipstickKeymap *keymap)
-{
-    QList<ParameterBase *> params;
-    params.append(new Parameter<LipstickKeymap *>(keymap));
-    stubMethodEntered("setKeymap", params);
 }
 
 void LipstickCompositorStub::updateKeymap()
@@ -390,12 +375,12 @@ void LipstickCompositorStub::keymapChanged()
     stubMethodEntered("keymapChanged");
 }
 
-QWaylandSurfaceView *LipstickCompositorStub::createView(QWaylandSurface *surf)
+LipstickCompositorWindow *LipstickCompositorStub::createView(QWaylandSurface *surf)
 {
     QList<ParameterBase *> params;
     params.append(new Parameter<QWaylandSurface *>(surf));
     stubMethodEntered("createView", params);
-    return stubReturnValue<QWaylandSurfaceView *>("createView");
+    return stubReturnValue<LipstickCompositorWindow *>("createView");
 }
 
 // 3. CREATE A STUB INSTANCE
@@ -418,29 +403,14 @@ LipstickCompositor *LipstickCompositor::instance()
     return gLipstickCompositorStub->instance();
 }
 
-void LipstickCompositor::classBegin()
-{
-    gLipstickCompositorStub->classBegin();
-}
-
-void LipstickCompositor::componentComplete()
-{
-    gLipstickCompositorStub->componentComplete();
-}
-
-void LipstickCompositor::surfaceCreated(QWaylandSurface *surface)
+void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
 {
     gLipstickCompositorStub->surfaceCreated(surface);
 }
 
-bool LipstickCompositor::openUrl(WaylandClient *client, const QUrl &url)
+bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
 {
     return gLipstickCompositorStub->openUrl(client, url);
-}
-
-bool LipstickCompositor::openUrl(const QUrl &url)
-{
-    return gLipstickCompositorStub->openUrl(url);
 }
 
 void LipstickCompositor::retainedSelectionReceived(QMimeData *mimeData)
@@ -488,21 +458,6 @@ bool LipstickCompositor::displayDimmed() const
     return gLipstickCompositorStub->displayDimmed();
 }
 
-LipstickKeymap *LipstickCompositor::keymap() const
-{
-    return gLipstickCompositorStub->keymap();
-}
-
-void LipstickCompositor::setKeymap(LipstickKeymap *keymap)
-{
-    gLipstickCompositorStub->setKeymap(keymap);
-}
-
-void LipstickCompositor::updateKeymap()
-{
-    gLipstickCompositorStub->updateKeymap();
-}
-
 QObject *LipstickCompositor::clipboard() const
 {
     return gLipstickCompositorStub->clipboard();
@@ -543,34 +498,9 @@ QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
     return gLipstickCompositorStub->surfaceForId(id);
 }
 
-void LipstickCompositor::surfaceMapped()
-{
-    gLipstickCompositorStub->surfaceMapped();
-}
-
-void LipstickCompositor::surfaceUnmapped()
-{
-    gLipstickCompositorStub->surfaceUnmapped();
-}
-
-void LipstickCompositor::surfaceSizeChanged()
-{
-    gLipstickCompositorStub->surfaceSizeChanged();
-}
-
 void LipstickCompositor::surfaceTitleChanged()
 {
     gLipstickCompositorStub->surfaceTitleChanged();
-}
-
-void LipstickCompositor::surfaceRaised()
-{
-    gLipstickCompositorStub->surfaceRaised();
-}
-
-void LipstickCompositor::surfaceLowered()
-{
-    gLipstickCompositorStub->surfaceLowered();
 }
 
 void LipstickCompositor::surfaceDamaged(const QRegion &rect)
@@ -617,14 +547,9 @@ void LipstickCompositor::onVisibleChanged(bool v)
     gLipstickCompositorStub->onVisibleChanged(v);
 }
 
-QWaylandSurfaceView *LipstickCompositor::createView(QWaylandSurface *surf)
+LipstickCompositorWindow *LipstickCompositor::createView(QWaylandSurface *surf)
 {
     return gLipstickCompositorStub->createView(surf);
-}
-
-void LipstickCompositor::readContent()
-{
-    gLipstickCompositorStub->readContent();
 }
 
 void LipstickCompositor::initialize()

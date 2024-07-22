@@ -15,7 +15,6 @@
 #include <QtTest/QtTest>
 
 #include "screenlock_stub.h"
-#include "touchscreen_stub.h"
 #include "homeapplication.h"
 #include "touchscreen/touchscreen.h"
 #include "lipsticksettings.h"

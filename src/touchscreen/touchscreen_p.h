@@ -19,7 +19,6 @@
 #include <displaystate.h>
 
 #include "touchscreen.h"
-#include "homeapplication.h"
 
 class TouchScreenPrivate {
 public:
