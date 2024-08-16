@@ -117,8 +117,10 @@ void LauncherItem::setFilePath(const QString &filePath)
     }
 
     if (!m_desktopEntry.isNull() && m_desktopEntry->isValid()) {
-        const QString organisation = m_desktopEntry->value(QStringLiteral("X-Sailjail"), QStringLiteral("OrganizationName"));
-        const QString application = m_desktopEntry->value(QStringLiteral("X-Sailjail"), QStringLiteral("ApplicationName"));
+        const QString organisation = m_desktopEntry->value(QStringLiteral("X-Sailjail"),
+                                                           QStringLiteral("OrganizationName"));
+        const QString application = m_desktopEntry->value(QStringLiteral("X-Sailjail"),
+                                                          QStringLiteral("ApplicationName"));
 
         if (!organisation.isEmpty() && !application.isEmpty()) {
             m_serviceName = organisation + QLatin1Char('.') + application;
@@ -204,7 +206,10 @@ MRemoteAction LauncherItem::remoteAction(const QStringList &arguments) const
                         method.mid(period + 1),
                         { QVariant::fromValue(arguments) });
         } else if (!m_serviceName.isEmpty() && dBusActivatable()) {
-            const QString path = QLatin1Char('/') + QString(m_serviceName).replace(QLatin1Char('.'), QLatin1Char('/')).replace(QLatin1Char('-'), QLatin1Char('_'));
+            const QString path = QLatin1Char('/')
+                    + (QString(m_serviceName)
+                       .replace(QLatin1Char('.'), QLatin1Char('/'))
+                       .replace(QLatin1Char('-'), QLatin1Char('_')));
             const QString interface = QStringLiteral("org.freedesktop.Application");
 
             QVariantList dBusArguments;

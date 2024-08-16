@@ -27,7 +27,7 @@
 #endif
 
 WindowModel::WindowModel()
-: m_complete(false)
+    : m_complete(false)
 {
     LipstickCompositor *c = LipstickCompositor::instance();
     if (!c) {
@@ -38,7 +38,7 @@ WindowModel::WindowModel()
 
     QDBusConnection dbus = QDBusConnection::sessionBus();
     dbus.registerObject(LIPSTICK_DBUS_WINDOW_MODEL_PATH,
-            this, QDBusConnection::ExportAllSlots);
+                        this, QDBusConnection::ExportAllSlots);
     dbus.registerService(LIPSTICK_DBUS_SERVICE_NAME);
 }
 
@@ -159,16 +159,16 @@ void WindowModel::titleChanged(int id)
 
 void WindowModel::refresh()
 {
-    LipstickCompositor *c = LipstickCompositor::instance();
-    if (!m_complete || !c)
+    LipstickCompositor *compositor = LipstickCompositor::instance();
+    if (!m_complete || !compositor)
         return;
 
     beginResetModel();
 
     m_items.clear();
 
-    for (QHash<int, LipstickCompositorWindow *>::ConstIterator iter = c->m_mappedSurfaces.begin();
-         iter != c->m_mappedSurfaces.end(); ++iter) {
+    for (QHash<int, LipstickCompositorWindow *>::ConstIterator iter = compositor->m_mappedSurfaces.begin();
+         iter != compositor->m_mappedSurfaces.end(); ++iter) {
 
         if (approveWindow(iter.value()))
             m_items.append(iter.key());
