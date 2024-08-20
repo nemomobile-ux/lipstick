@@ -20,7 +20,8 @@
 
 // 1. DECLARE STUB
 // FIXME - stubgen is not yet finished
-class TouchScreenStub : public StubBase {
+class TouchScreenStub : public StubBase
+{
 public:
     virtual void TouchScreenStubConstructor(QObject *parent = 0);
     virtual void TouchScreenStubDestructor();
@@ -32,10 +33,14 @@ public:
 
     virtual bool eventFilter(QObject *, QEvent *);
     virtual void timerEvent(QTimerEvent *);
+
+    virtual void inputPolicyChanged(const QString &status);
+    virtual void inputPolicyReply(QDBusPendingCallWatcher *watcher);
 };
 
 // 2. IMPLEMENT STUB
-void TouchScreenStub::TouchScreenStubConstructor(QObject *parent) {
+void TouchScreenStub::TouchScreenStubConstructor(QObject *parent)
+{
     Q_UNUSED(parent)
 }
 
@@ -52,7 +57,7 @@ bool TouchScreenStub::touchBlocked() const
 
 void TouchScreenStub::setEnabled(bool enable)
 {
-    QList<ParameterBase*> params;
+    QList<ParameterBase *> params;
     params.append(new Parameter<bool>(enable));
     stubMethodEntered("setEnabled", params);
 }
@@ -79,16 +84,30 @@ void TouchScreenStub::timerEvent(QTimerEvent *)
     stubMethodEntered("timerEvent");
 }
 
+void TouchScreenStub::inputPolicyChanged(const QString &status)
+{
+    Q_UNUSED(status);
+    stubMethodEntered("inputPolicyChanged");
+}
+
+void TouchScreenStub::inputPolicyReply(QDBusPendingCallWatcher *watcher)
+{
+    Q_UNUSED(watcher);
+    stubMethodEntered("inputPolicyReply");
+}
+
 // 3. CREATE A STUB INSTANCE
 TouchScreenStub gDefaultTouchScreenStub;
-TouchScreenStub* gTouchScreenStub = &gDefaultTouchScreenStub;
+TouchScreenStub *gTouchScreenStub = &gDefaultTouchScreenStub;
 
 // 4. CREATE A PROXY WHICH CALLS THE STUB
-TouchScreen::TouchScreen(QObject *parent) {
+TouchScreen::TouchScreen(QObject *parent)
+{
     gTouchScreenStub->TouchScreenStubConstructor(parent);
 }
 
-TouchScreen::~TouchScreen() {
+TouchScreen::~TouchScreen()
+{
     gTouchScreenStub->TouchScreenStubDestructor();
 }
 
@@ -122,5 +141,14 @@ void TouchScreen::timerEvent(QTimerEvent *e)
     gTouchScreenStub->timerEvent(e);
 }
 
+void TouchScreen::inputPolicyChanged(const QString &status)
+{
+    gTouchScreenStub->inputPolicyChanged(status);
+}
+
+void TouchScreen::inputPolicyReply(QDBusPendingCallWatcher *watcher)
+{
+    gTouchScreenStub->inputPolicyReply(watcher);
+}
 
 #endif // TOUCHSCREEN_STUB_H

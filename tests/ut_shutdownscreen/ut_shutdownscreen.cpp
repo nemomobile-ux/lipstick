@@ -21,9 +21,6 @@
 #include "homeapplication.h"
 #include "ut_shutdownscreen.h"
 #include "notificationmanager_stub.h"
-#include "lipsticknotification.h"
-#include "closeeventeater_stub.h"
-#include "lipstickqmlpath_stub.h"
 
 QList<QQuickView *> qQuickViews;
 void QQuickView::setSource(const QUrl &)
@@ -89,19 +86,19 @@ void Ut_ShutdownScreen::testSystemState()
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 1);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_high_temp"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString("icon-system-warning"));
 
     shutdownScreen->applySystemState(DeviceState::DeviceState::ShutdownDeniedUSB);
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 2);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_unplug_usb"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString("icon-system-usb"));
 
     shutdownScreen->applySystemState(DeviceState::DeviceState::BatteryStateEmpty);
     QCOMPARE(qQuickViews.count(), 0);
     QCOMPARE(gNotificationManagerStub->stubCallCount("Notify"), 3);
     QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(4), qtTrId("qtn_shut_batt_empty"));
-    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString());
+    QCOMPARE(gNotificationManagerStub->stubLastCallTo("Notify").parameter<QString>(2), QString("icon-system-battery"));
 
     shutdownScreen->applySystemState(DeviceState::DeviceState::Shutdown);
     QCOMPARE(qQuickViews.count(), 1);

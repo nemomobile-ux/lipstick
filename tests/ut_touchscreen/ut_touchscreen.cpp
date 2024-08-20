@@ -61,7 +61,7 @@ void Ut_TouchScreen::cleanupTestCase()
 void Ut_TouchScreen::testEnabled()
 {
     fakeDisplayOnAndReady();
-    QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
+    QMouseEvent event(QEvent::MouseButtonPress, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
 
     TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
     touchScreen->setEnabled(false);
@@ -80,30 +80,30 @@ void Ut_TouchScreen::testTouchBlocking()
     touchScreen->inputPolicyChanged(MCE_INPUT_POLICY_DISABLED);
     QVERIFY(touchScreen->touchBlocked());
 
-    QMouseEvent event(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
+    QMouseEvent event(QEvent::MouseButtonPress, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
     QCOMPARE(touchScreen->eventFilter(0, &event), true);
 
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QMouseEvent event1(QEvent::MouseMove, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event1), true);
 
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QMouseEvent event2(QEvent::MouseButtonRelease, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event2), true);
 
-    event = QMouseEvent(QEvent::MouseButtonDblClick, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QMouseEvent event3(QEvent::MouseButtonDblClick, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event3), true);
 
     QTouchEvent touch(QEvent::TouchBegin);
     QCOMPARE(touchScreen->eventFilter(0, &touch), true);
 
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
+    QTouchEvent touch1(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch1), true);
 
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
+    QTouchEvent touch2(QEvent::TouchEnd);
+    QCOMPARE(touchScreen->eventFilter(0, &touch2), true);
 
     // Do not filter TouchCancel.
-    touch = QTouchEvent(QEvent::TouchCancel);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
+    QTouchEvent touch3(QEvent::TouchCancel);
+    QCOMPARE(touchScreen->eventFilter(0, &touch3), false);
 
     updateDisplayState(DeviceState::DisplayStateMonitor::Off, DeviceState::DisplayStateMonitor::On);
     QVERIFY(touchScreen->touchBlocked());
@@ -112,42 +112,70 @@ void Ut_TouchScreen::testTouchBlocking()
     touchBlockingSpy.wait();
     QVERIFY(!touchScreen->touchBlocked());
 
-    event = QMouseEvent(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QMouseEvent event4(QEvent::MouseButtonRelease, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event4), true);
 
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QMouseEvent event5(QEvent::MouseButtonDblClick,  QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event5), true);
 
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
+    QTouchEvent touch4(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch4), true);
 
-    event = QMouseEvent(QEvent::MouseButtonDblClick, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), true);
-
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
-
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), true);
+    QTouchEvent touch5(QEvent::TouchEnd);
+    QCOMPARE(touchScreen->eventFilter(0, &touch5), true);
 
     // New touch sequence starts after turning display on.
-    touch = QTouchEvent(QEvent::TouchBegin);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
+    QTouchEvent touch6(QEvent::TouchBegin);
+    QCOMPARE(touchScreen->eventFilter(0, &touch6), false);
 
-    touch = QTouchEvent(QEvent::TouchUpdate);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
+    QTouchEvent touch7(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch7), false);
 
-    touch = QTouchEvent(QEvent::TouchEnd);
-    QCOMPARE(touchScreen->eventFilter(0, &touch), false);
+    QTouchEvent touch8(QEvent::TouchEnd);
+    QCOMPARE(touchScreen->eventFilter(0, &touch8), false);
 
-    event = QMouseEvent(QEvent::MouseButtonPress, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
+    QMouseEvent event6(QEvent::MouseButtonPress, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event6), false);
 
-    event = QMouseEvent(QEvent::MouseMove, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
+    QMouseEvent event7(QEvent::MouseMove, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event7), false);
 
-    event = QMouseEvent(QEvent::MouseButtonRelease, QPointF(), Qt::NoButton, 0, 0);
-    QCOMPARE(touchScreen->eventFilter(0, &event), false);
+    QMouseEvent event8(QEvent::MouseButtonRelease, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event8), false);
+
+    // MouseButtonPress stops event eater
+    touchScreen->inputPolicyChanged(MCE_INPUT_POLICY_DISABLED);
+    touchBlockingSpy.wait();
+    QVERIFY(touchScreen->touchBlocked());
+    touchScreen->inputPolicyChanged(MCE_INPUT_POLICY_ENABLED);
+    touchBlockingSpy.wait();
+    QVERIFY(!touchScreen->touchBlocked());
+
+    QTouchEvent touch9(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch9), true);
+
+    QMouseEvent event9(QEvent::MouseButtonPress, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event9), false);
+
+    QTouchEvent touch10(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch10), false);
+
+    // MouseMove stops event eater
+    touchScreen->inputPolicyChanged(MCE_INPUT_POLICY_DISABLED);
+    touchBlockingSpy.wait();
+    QVERIFY(touchScreen->touchBlocked());
+    touchScreen->inputPolicyChanged(MCE_INPUT_POLICY_ENABLED);
+    touchBlockingSpy.wait();
+    QVERIFY(!touchScreen->touchBlocked());
+
+    QTouchEvent touch11(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch11), true);
+
+    QMouseEvent event10(QEvent::MouseMove, QPointF(), QPointF(), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+    QCOMPARE(touchScreen->eventFilter(0, &event10), false);
+
+    QTouchEvent touch12(QEvent::TouchUpdate);
+    QCOMPARE(touchScreen->eventFilter(0, &touch12), false);
 }
 
 void Ut_TouchScreen::updateDisplayState(DeviceState::DisplayStateMonitor::DisplayState oldState, DeviceState::DisplayStateMonitor::DisplayState newState)

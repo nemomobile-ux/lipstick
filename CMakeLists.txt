@@ -12,6 +12,8 @@ include(FindPkgConfig)
 include(FeatureSummary)
 include(GNUInstallDirs)
 
+enable_testing()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
@@ -43,6 +45,7 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED
     Qml
     Quick
     Sql
+    Test
     Sensors
     WaylandCompositor
     LinguistTools)
@@ -69,6 +72,7 @@ pkg_check_modules(USB_MODED_QT usb-moded-qt6 REQUIRED IMPORTED_TARGET)
 
 add_subdirectory(src)
 add_subdirectory(plugin)
+add_subdirectory(tests)
 
 add_dependencies(lipstickplugin lipstick-qt6)
 

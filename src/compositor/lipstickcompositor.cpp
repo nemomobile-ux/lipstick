@@ -175,6 +175,7 @@ void LipstickCompositor::homeApplicationAboutToDestroy()
     delete this;
 }
 
+
 void LipstickCompositor::onVisibleChanged(bool visible)
 {
     if (!visible) {

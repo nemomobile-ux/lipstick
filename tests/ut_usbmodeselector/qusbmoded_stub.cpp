@@ -62,7 +62,7 @@ const QString QUsbMode::Mode::Charger(MODE_CHARGER);
 const QString QUsbMode::Mode::ChargingFallback(MODE_CHARGING_FALLBACK);
 const QString QUsbMode::Mode::Busy(MODE_BUSY);
 
-QUsbMode::QUsbMode(QObject* aParent) :
+QUsbMode::QUsbMode(QObject *aParent) :
     QObject(aParent)
 {
 }
@@ -124,7 +124,7 @@ public:
     }
 };
 
-QUsbModed::QUsbModed(QObject* aParent) :
+QUsbModed::QUsbModed(QObject *aParent) :
     QUsbMode(aParent),
     iPrivate(new Private)
 {
@@ -136,6 +136,11 @@ QUsbModed::~QUsbModed()
 }
 
 QStringList QUsbModed::supportedModes() const
+{
+    return iPrivate->iSupportedModes;
+}
+
+QStringList QUsbModed::availableModes() const
 {
     return iPrivate->iSupportedModes;
 }
@@ -164,6 +169,12 @@ bool QUsbModed::setCurrentMode(QString aMode)
     return true;
 }
 
+QString QUsbModed::targetMode() const
+{
+    // Let target mode be always the same as the configured mode here
+    return iPrivate->iConfigMode;
+}
+
 bool QUsbModed::setConfigMode(QString aMode)
 {
     if (iPrivate->iConfigMode != aMode) {
@@ -181,15 +192,23 @@ void QUsbModed::onServiceUnregistered(QString)
 {
 }
 
-void QUsbModed::onGetModesFinished(QDBusPendingCallWatcher*)
+void QUsbModed::onGetAvailableModesFinished(QDBusPendingCallWatcher *)
 {
 }
 
-void QUsbModed::onGetConfigFinished(QDBusPendingCallWatcher*)
+void QUsbModed::onGetModesFinished(QDBusPendingCallWatcher *)
 {
 }
 
-void QUsbModed::onGetModeRequestFinished(QDBusPendingCallWatcher*)
+void QUsbModed::onGetConfigFinished(QDBusPendingCallWatcher *)
+{
+}
+
+void QUsbModed::onGetModeRequestFinished(QDBusPendingCallWatcher *)
+{
+}
+
+void QUsbModed::onGetTargetModeFinished(QDBusPendingCallWatcher*)
 {
 }
 
@@ -201,11 +220,11 @@ void QUsbModed::setupCallFinished(int)
 {
 }
 
-void QUsbModed::onSetModeFinished(QDBusPendingCallWatcher*)
+void QUsbModed::onSetModeFinished(QDBusPendingCallWatcher *)
 {
 }
 
-void QUsbModed::onSetConfigFinished(QDBusPendingCallWatcher*)
+void QUsbModed::onSetConfigFinished(QDBusPendingCallWatcher *)
 {
 }
 
@@ -214,6 +233,14 @@ void QUsbModed::onUsbConfigChanged(QString, QString, QString)
 }
 
 void QUsbModed::onUsbStateChanged(QString)
+{
+}
+
+void QUsbModed::onUsbEventReceived(QString)
+{
+}
+
+void QUsbModed::onUsbTargetStateChanged(QString)
 {
 }
 

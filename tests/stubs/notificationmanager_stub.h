@@ -1,7 +1,7 @@
 /***************************************************************************
 **
-** Copyright (c) 2012 - 2019 Jolla Ltd.
-** Copyright (c) 2019 Open Mobile Platform LLC.
+** Copyright (c) 2012 - 2021 Jolla Ltd.
+** Copyright (c) 2019 - 2021 Open Mobile Platform LLC.
 **
 ** This file is part of lipstick.
 **
@@ -17,7 +17,6 @@
 
 #include "notificationmanager.h"
 #include <stubbase.h>
-
 
 // 1. DECLARE STUB
 // FIXME - stubgen is not yet finished
@@ -45,45 +44,62 @@ public:
     virtual void reportModifications();
     virtual void NotificationManagerConstructor(QObject *parent, bool owner);
     virtual void NotificationManagerDestructor();
+    virtual void identifiedGetNotifications();
+    virtual void identifiedGetNotificationsByCategory();
+    virtual void identifiedCloseNotification();
+    virtual void identifiedNotify();
 };
 
 // 2. IMPLEMENT STUB
-NotificationManager * NotificationManagerStub::instance(bool owner) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<bool >(owner));
-  stubMethodEntered("instance",params);
-  return stubReturnValue<NotificationManager *>("instance");
+NotificationManager *NotificationManagerStub::instance(bool owner)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<bool >(owner));
+    stubMethodEntered("instance", params);
+    return stubReturnValue<NotificationManager *>("instance");
 }
 
-LipstickNotification * NotificationManagerStub::notification(uint id) const {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<uint >(id));
-  stubMethodEntered("notification",params);
-  return stubReturnValue<LipstickNotification *>("notification");
+LipstickNotification *NotificationManagerStub::notification(uint id) const
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<uint >(id));
+    stubMethodEntered("notification", params);
+    return stubReturnValue<LipstickNotification *>("notification");
 }
 
-QList<uint> NotificationManagerStub::notificationIds() const {
-  stubMethodEntered("notificationIds");
-  return stubReturnValue<QList<uint>>("notificationIds");
+QList<uint> NotificationManagerStub::notificationIds() const
+{
+    stubMethodEntered("notificationIds");
+    return stubReturnValue<QList<uint>>("notificationIds");
 }
 
-QStringList NotificationManagerStub::GetCapabilities() {
-  stubMethodEntered("GetCapabilities");
-  return stubReturnValue<QStringList>("GetCapabilities");
+QStringList NotificationManagerStub::GetCapabilities()
+{
+    stubMethodEntered("GetCapabilities");
+    return stubReturnValue<QStringList>("GetCapabilities");
 }
 
-uint NotificationManagerStub::Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(appName));
-  params.append( new Parameter<uint >(replacesId));
-  params.append( new Parameter<QString >(appIcon));
-  params.append( new Parameter<QString >(summary));
-  params.append( new Parameter<QString >(body));
-  params.append( new Parameter<QStringList >(actions));
-  params.append( new Parameter<QVariantHash >(hints));
-  params.append( new Parameter<int >(expireTimeout));
-  stubMethodEntered("Notify",params);
-  return stubReturnValue<uint>("Notify");
+uint NotificationManagerStub::Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(appName));
+    params.append( new Parameter<uint >(replacesId));
+    params.append( new Parameter<QString >(appIcon));
+    params.append( new Parameter<QString >(summary));
+    params.append( new Parameter<QString >(body));
+    params.append( new Parameter<QStringList >(actions));
+    params.append( new Parameter<QVariantHash >(hints));
+    params.append( new Parameter<int >(expireTimeout));
+    stubMethodEntered("Notify", params);
+    return stubReturnValue<uint>("Notify");
+}
+
+void NotificationManagerStub::CloseNotification(uint id, NotificationManager::NotificationClosedReason closeReason)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<uint >(id));
+    params.append( new Parameter<NotificationManager::NotificationClosedReason >(closeReason));
+    stubMethodEntered("CloseNotification", params);
 }
 
 void NotificationManagerStub::markNotificationDisplayed(uint id)
@@ -93,49 +109,49 @@ void NotificationManagerStub::markNotificationDisplayed(uint id)
     stubMethodEntered("markNotificationDisplayed", params);
 }
 
-void NotificationManagerStub::MarkNotificationDisplayed(uint id) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<uint >(id));
-  stubMethodEntered("MarkNotificationDisplayed",params);
+QString NotificationManagerStub::GetServerInformation(QString &name, QString &vendor, QString &version)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString & >(name));
+    params.append( new Parameter<QString & >(vendor));
+    params.append( new Parameter<QString & >(version));
+    stubMethodEntered("GetServerInformation", params);
+    return stubReturnValue<QString>("GetServerInformation");
 }
 
-QString NotificationManagerStub::GetServerInformation(QString &name, QString &vendor, QString &version) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString & >(name));
-  params.append( new Parameter<QString & >(vendor));
-  params.append( new Parameter<QString & >(version));
-  stubMethodEntered("GetServerInformation",params);
-  return stubReturnValue<QString>("GetServerInformation");
+NotificationList NotificationManagerStub::GetNotifications(const QString &appName)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(appName));
+    stubMethodEntered("GetNotifications", params);
+    return stubReturnValue<NotificationList>("GetNotifications");
 }
 
-NotificationList NotificationManagerStub::GetNotifications(const QString &appName) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(appName));
-  stubMethodEntered("GetNotifications",params);
-  return stubReturnValue<NotificationList>("GetNotifications");
+NotificationList NotificationManagerStub::GetNotificationsByCategory(const QString &category)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(category));
+    stubMethodEntered("GetNotificationsByCategory", params);
+    return stubReturnValue<NotificationList>("GetNotificationsByCategory");
 }
 
-NotificationList NotificationManagerStub::GetNotificationsByCategory(const QString &category) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(category));
-  stubMethodEntered("GetNotificationsByCategory",params);
-  return stubReturnValue<NotificationList>("GetNotificationsByCategory");
+void NotificationManagerStub::removeNotificationsWithCategory(const QString &category)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(category));
+    stubMethodEntered("removeNotificationsWithCategory", params);
 }
 
-void NotificationManagerStub::removeNotificationsWithCategory(const QString &category) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(category));
-  stubMethodEntered("removeNotificationsWithCategory",params);
+void NotificationManagerStub::updateNotificationsWithCategory(const QString &category)
+{
+    QList<ParameterBase *> params;
+    params.append( new Parameter<QString >(category));
+    stubMethodEntered("updateNotificationsWithCategory", params);
 }
 
-void NotificationManagerStub::updateNotificationsWithCategory(const QString &category) {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<QString >(category));
-  stubMethodEntered("updateNotificationsWithCategory",params);
-}
-
-void NotificationManagerStub::commit() {
-  stubMethodEntered("commit");
+void NotificationManagerStub::commit()
+{
+    stubMethodEntered("commit");
 }
 
 void NotificationManagerStub::invokeAction(const QString &action, const QString &actionText)
@@ -148,36 +164,55 @@ void NotificationManagerStub::invokeAction(const QString &action, const QString 
 
 void NotificationManagerStub::removeNotificationIfUserRemovable(uint id)
 {
-  QList<ParameterBase*> params;
-  params.append( new Parameter<uint >(id));
-  stubMethodEntered("removeNotificationIfUserRemovable",params);
+    QList<ParameterBase *> params;
+    params.append( new Parameter<uint >(id));
+    stubMethodEntered("removeNotificationIfUserRemovable", params);
 }
 
-void NotificationManagerStub::removeUserRemovableNotifications() {
-  stubMethodEntered("removeUserRemovableNotifications");
+void NotificationManagerStub::removeUserRemovableNotifications()
+{
+    stubMethodEntered("removeUserRemovableNotifications");
 }
 
-void NotificationManagerStub::expire() {
-  stubMethodEntered("expire");
+void NotificationManagerStub::expire()
+{
+    stubMethodEntered("expire");
 }
 
-void NotificationManagerStub::reportModifications() {
-  stubMethodEntered("reportModifications");
+void NotificationManagerStub::reportModifications()
+{
+    stubMethodEntered("reportModifications");
 }
 
-void NotificationManagerStub::NotificationManagerConstructor(QObject *parent, bool owner) {
-  Q_UNUSED(parent);
-  Q_UNUSED(owner);
+void NotificationManagerStub::NotificationManagerConstructor(QObject *parent, bool owner)
+{
+    Q_UNUSED(parent);
+    Q_UNUSED(owner);
 }
-void NotificationManagerStub::NotificationManagerDestructor() {
+void NotificationManagerStub::NotificationManagerDestructor()
+{
 
 }
 
+void NotificationManagerStub::identifiedGetNotifications()
+{
+}
 
+void NotificationManagerStub::identifiedGetNotificationsByCategory()
+{
+}
+
+void NotificationManagerStub::identifiedCloseNotification()
+{
+}
+
+void NotificationManagerStub::identifiedNotify()
+{
+}
 
 // 3. CREATE A STUB INSTANCE
 NotificationManagerStub gDefaultNotificationManagerStub;
-NotificationManagerStub* gNotificationManagerStub = &gDefaultNotificationManagerStub;
+NotificationManagerStub *gNotificationManagerStub = &gDefaultNotificationManagerStub;
 
 
 // 4. CREATE A PROXY WHICH CALLS THE STUB
@@ -190,24 +225,29 @@ NotificationManager *NotificationManager::instance(bool owner)
     return s_instance;
 }
 
-LipstickNotification * NotificationManager::notification(uint id) const {
-  return gNotificationManagerStub->notification(id);
+LipstickNotification *NotificationManager::notification(uint id) const
+{
+    return gNotificationManagerStub->notification(id);
 }
 
-QList<uint> NotificationManager::notificationIds() const {
-  return gNotificationManagerStub->notificationIds();
+QList<uint> NotificationManager::notificationIds() const
+{
+    return gNotificationManagerStub->notificationIds();
 }
 
-QStringList NotificationManager::GetCapabilities() {
-  return gNotificationManagerStub->GetCapabilities();
+QStringList NotificationManager::GetCapabilities()
+{
+    return gNotificationManagerStub->GetCapabilities();
 }
 
-uint NotificationManager::Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout) {
-  return gNotificationManagerStub->Notify(appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout);
+uint NotificationManager::Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary, const QString &body, const QStringList &actions, const QVariantHash &hints, int expireTimeout)
+{
+    return gNotificationManagerStub->Notify(appName, replacesId, appIcon, summary, body, actions, hints, expireTimeout);
 }
 
-void NotificationManager::CloseNotification(uint id, NotificationClosedReason closeReason) {
-  gNotificationManagerStub->CloseNotification(id, closeReason);
+void NotificationManager::CloseNotification(uint id, NotificationClosedReason closeReason)
+{
+    gNotificationManagerStub->CloseNotification(id, closeReason);
 }
 
 void NotificationManager::markNotificationDisplayed(uint id)
@@ -215,67 +255,103 @@ void NotificationManager::markNotificationDisplayed(uint id)
     gNotificationManagerStub->markNotificationDisplayed(id);
 }
 
-QString NotificationManager::GetServerInformation(QString &name, QString &vendor, QString &version) {
-  return gNotificationManagerStub->GetServerInformation(name, vendor, version);
+QString NotificationManager::GetServerInformation(QString &name, QString &vendor, QString &version)
+{
+    return gNotificationManagerStub->GetServerInformation(name, vendor, version);
 }
 
-NotificationList NotificationManager::GetNotifications(const QString &appName) {
-  return gNotificationManagerStub->GetNotifications(appName);
+NotificationList NotificationManager::GetNotifications(const QString &appName)
+{
+    return gNotificationManagerStub->GetNotifications(appName);
 }
 
-NotificationList NotificationManager::GetNotificationsByCategory(const QString &category) {
-  return gNotificationManagerStub->GetNotificationsByCategory(category);
+NotificationList NotificationManager::GetNotificationsByCategory(const QString &category)
+{
+    return gNotificationManagerStub->GetNotificationsByCategory(category);
 }
 
-void NotificationManager::removeNotificationsWithCategory(const QString &category) {
-  gNotificationManagerStub->removeNotificationsWithCategory(category);
+void NotificationManager::removeNotificationsWithCategory(const QString &category)
+{
+    gNotificationManagerStub->removeNotificationsWithCategory(category);
 }
 
-void NotificationManager::updateNotificationsWithCategory(const QString &category) {
-  gNotificationManagerStub->updateNotificationsWithCategory(category);
+void NotificationManager::updateNotificationsWithCategory(const QString &category)
+{
+    gNotificationManagerStub->updateNotificationsWithCategory(category);
 }
 
-void NotificationManager::commit() {
-  gNotificationManagerStub->commit();
+void NotificationManager::commit()
+{
+    gNotificationManagerStub->commit();
 }
 
-<<<<<<< HEAD
-void NotificationManager::invokeAction(const QString &action) {
-  gNotificationManagerStub->invokeAction(action);
-=======
 void NotificationManager::invokeAction(const QString &action, const QString &actionText)
 {
     gNotificationManagerStub->invokeAction(action, actionText);
->>>>>>> 50084853 ([lipstick] Support text parameter on invokeAction. JB#55557)
 }
 
-void NotificationManager::removeNotificationIfUserRemovable(uint id) {
-  gNotificationManagerStub->removeNotificationIfUserRemovable(id);
+void NotificationManager::removeNotificationIfUserRemovable(uint id)
+{
+    gNotificationManagerStub->removeNotificationIfUserRemovable(id);
 }
 
-void NotificationManager::removeUserRemovableNotifications() {
-  gNotificationManagerStub->removeUserRemovableNotifications();
+void NotificationManager::removeUserRemovableNotifications()
+{
+    gNotificationManagerStub->removeUserRemovableNotifications();
 }
 
-void NotificationManager::expire() {
-  gNotificationManagerStub->expire();
+void NotificationManager::expire()
+{
+    gNotificationManagerStub->expire();
 }
 
-void NotificationManager::reportModifications() {
-  gNotificationManagerStub->reportModifications();
+void NotificationManager::reportModifications()
+{
+    gNotificationManagerStub->reportModifications();
 }
 
-NotificationManager::NotificationManager(QObject *parent, bool owner) {
-  gNotificationManagerStub->NotificationManagerConstructor(parent, owner);
+NotificationManager::NotificationManager(QObject *parent, bool owner)
+{
+    gNotificationManagerStub->NotificationManagerConstructor(parent, owner);
 }
 
-NotificationManager::~NotificationManager() {
-  gNotificationManagerStub->NotificationManagerDestructor();
+NotificationManager::~NotificationManager()
+{
+    gNotificationManagerStub->NotificationManagerDestructor();
 }
 
 QString NotificationManager::systemApplicationName() const
 {
     return QString();
+}
+
+void NotificationManager::identifiedGetNotifications()
+{
+    gNotificationManagerStub->identifiedGetNotifications();
+}
+
+void NotificationManager::identifiedGetNotificationsByCategory()
+{
+    gNotificationManagerStub->identifiedGetNotificationsByCategory();
+}
+
+void NotificationManager::identifiedCloseNotification()
+{
+    gNotificationManagerStub->identifiedCloseNotification();
+}
+
+void NotificationManager::identifiedNotify()
+{
+    gNotificationManagerStub->identifiedNotify();
+}
+
+void ClientIdentifier::getPidReply(QDBusPendingCallWatcher *getPidWatcher)
+{
+    Q_UNUSED(getPidWatcher);
+}
+
+void ClientIdentifier::identifyReply(QDBusPendingCallWatcher *identifyWatcher) {
+    Q_UNUSED(identifyWatcher);
 }
 
 #endif
