@@ -10,6 +10,8 @@ include_directories(${CMAKE_SOURCE_DIR}/src/screenlock)
 include_directories(${CMAKE_SOURCE_DIR}/src/touchscreen)
 include_directories(${CMAKE_SOURCE_DIR}/src/utilities)
 include_directories(${CMAKE_SOURCE_DIR}/src/volume)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src/notifications)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src/)
 
 include_directories(${CMAKE_SOURCE_DIR}/tests)
 include_directories(${CMAKE_SOURCE_DIR}/tests/stubs)
