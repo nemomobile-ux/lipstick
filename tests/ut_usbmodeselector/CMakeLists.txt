@@ -22,6 +22,7 @@ target_link_libraries(ut_${TESTNAME}
     PkgConfig::LIBRESOURCE
     PkgConfig::NEMODEVICELOCK
     PkgConfig::TIMED_QT
+    PkgConfig::USB_MODED
     PkgConfig::USB_MODED_QT
     -llipstick-qt6 -L../../src)
 

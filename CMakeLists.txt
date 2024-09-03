@@ -68,6 +68,7 @@ pkg_check_modules(THERMALMANAGER_DBUS thermalmanager_dbus_if REQUIRED IMPORTED_T
 pkg_check_modules(SYSTEMSETTINGS systemsettings-qt6 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(TIMED_QT timed-qt6 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(WAYLAND_SERVER wayland-server REQUIRED IMPORTED_TARGET)
+pkg_check_modules(USB_MODED usb_moded REQUIRED IMPORTED_TARGET)
 pkg_check_modules(USB_MODED_QT usb-moded-qt6 REQUIRED IMPORTED_TARGET)
 
 add_subdirectory(src)
