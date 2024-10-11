@@ -704,7 +704,7 @@ void LauncherModel::savePositions()
 {
     m_fileSystemWatcher.removePath(m_launcherSettings.fileName());
 
-    m_launcherSettings.remove(m_launcherOrderPrefix.left(m_launcherOrderPrefix.count() - 1));
+    m_launcherSettings.remove(m_launcherOrderPrefix.left(m_launcherOrderPrefix.size() - 1));
     QList<LauncherItem *> *currentLauncherList = getList<LauncherItem>();
 
     int pos = 0;

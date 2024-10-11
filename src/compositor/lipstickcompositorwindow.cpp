@@ -288,7 +288,7 @@ void LipstickCompositorWindow::mouseMoveEvent(QMouseEvent *event)
     if (m_surface && event->source() != Qt::MouseEventSynthesizedByQt) {
         QWaylandView *v = view();
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
-        inputDevice->sendMouseMoveEvent(v, event->localPos(), event->globalPos());
+        inputDevice->sendMouseMoveEvent(v, event->position(), event->globalPosition());
     } else {
         event->ignore();
     }
@@ -337,7 +337,7 @@ void LipstickCompositorWindow::touchEvent(QTouchEvent *event)
 
 void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
 {
-    QList<QTouchEvent::TouchPoint> points = event->touchPoints();
+    QList<QTouchEvent::TouchPoint> points = event->points();
 
     QWaylandSurface *m_surface = surface();
     if (!m_surface) {
@@ -347,7 +347,7 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
 
     if (event->touchPointStates() & Qt::TouchPointPressed) {
         foreach (const QTouchEvent::TouchPoint &p, points) {
-            if (!m_surface->inputRegionContains(p.pos().toPoint())) {
+            if (!m_surface->inputRegionContains(p.position().toPoint())) {
                 event->ignore();
                 return;
             }
@@ -366,7 +366,7 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
     if (inputDevice->mouseFocus() != v) {
         QPoint pointPos;
         if (!points.isEmpty())
-            pointPos = points.at(0).pos().toPoint();
+            pointPos = points.at(0).position().toPoint();
         inputDevice->setMouseFocus(v);
 
         if (m_focusOnTouch && inputDevice->keyboardFocus() != m_surface) {

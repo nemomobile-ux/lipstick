@@ -87,9 +87,9 @@ QStringList LauncherWatcherModel::updateItems()
         }
 
         if (existingIndex >= itemCount()) {
-            QScopedPointer<LauncherItem> item(new LauncherItem(filePath, this));
+            std::unique_ptr<LauncherItem> item(new LauncherItem(filePath, this));
             if (item->isValid()) {
-                insertItem(index, item.take());
+                insertItem(index, item.release());
             } else {
                 continue;
             }

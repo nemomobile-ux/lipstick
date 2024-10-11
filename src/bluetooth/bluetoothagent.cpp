@@ -234,7 +234,7 @@ void BluetoothAgent::updateConnectedStatus()
 {
     bool isSomebodyConnected = false;
     QList<QSharedPointer<BluezQt::Device>> devices = m_usableAdapter->devices();
-    for (const QSharedPointer<BluezQt::Device> &device : qAsConst(devices)) {
+    for (const QSharedPointer<BluezQt::Device> &device : std::as_const(devices)) {
         if (device->isConnected()) {
             isSomebodyConnected = true;
             break;

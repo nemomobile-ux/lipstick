@@ -126,8 +126,8 @@ void LauncherItem::setFilePath(const QString &filePath)
             const int slash = filePath.lastIndexOf(QLatin1Char('/')) + 1;
             const int period = filePath.indexOf(QLatin1Char('.'), slash);
 
-            m_serviceName = period > 0 && period < filePath.count() - 8 // strlen(".desktop")
-                    ? filePath.mid(slash, filePath.count() - slash - 8)
+            m_serviceName = period > 0 && period < filePath.size() - 8 // strlen(".desktop")
+                    ? filePath.mid(slash, filePath.size() - slash - 8)
                     : QString();
         }
     }

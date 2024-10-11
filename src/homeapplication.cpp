@@ -33,6 +33,7 @@
 #include "homewindow.h"
 #include "lipstickdbus.h"
 #include "lipsticksettings.h"
+#include "logging.h"
 #include "notifications/batterynotifier.h"
 #include "notifications/notificationmanager.h"
 #include "notifications/notificationpreviewpresenter.h"
@@ -84,11 +85,18 @@ HomeApplication::HomeApplication(int& argc, char** argv, const QString& qmlPath)
     setUpSignalHandlers();
 
     QTranslator* engineeringEnglish = new QTranslator(this);
-    engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations");
-    installTranslator(engineeringEnglish);
+    if(!engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations")) {
+        qCWarning(lcLipstickCoreLog, "Can't load en translation");
+    } else {
+        installTranslator(engineeringEnglish);
+    }
+
     QTranslator* translator = new QTranslator(this);
-    translator->load(QLocale(), "lipstick", "-", "/usr/share/translations");
-    installTranslator(translator);
+    if(!translator->load(QLocale(), "lipstick", "-", "/usr/share/translations")) {
+       qCWarning(lcLipstickCoreLog, "Can't load system translation");
+    } else {
+        installTranslator(translator);
+    }
 
     setApplicationName("Lipstick");
     setApplicationVersion(VERSION);
