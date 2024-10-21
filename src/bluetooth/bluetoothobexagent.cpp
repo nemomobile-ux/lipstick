@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2024 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -18,25 +18,35 @@
  */
 
 #include "bluetoothobexagent.h"
+#include "homewindow.h"
+#include "lipstickqmlpath.h"
+#include "logging.h"
+#include "utilities/closeeventeater.h"
 
 #include <QDir>
+#include <QScreen>
 #include <QDBusObjectPath>
 #include <QStandardPaths>
+#include <QTimer>
+#include <QGuiApplication>
 
 #include <BluezQt/ObexManager>
 #include <BluezQt/ObexSession>
 
 BluetoothObexAgent::BluetoothObexAgent(QObject *parent)
     : BluezQt::ObexAgent(parent)
+    , m_requestODialogWindow(nullptr)
 {
     BluezQt::PendingCall* startCall = BluezQt::ObexManager::startService();
 
     connect(startCall, &BluezQt::PendingCall::finished, this, &BluetoothObexAgent::startServiceFinished);
+
+    QTimer::singleShot(0, this, SLOT(createWindow()));
 }
 
 BluetoothObexAgent::~BluetoothObexAgent()
 {
-
+    delete m_requestODialogWindow;
 }
 
 QDBusObjectPath BluetoothObexAgent::objectPath() const
@@ -46,7 +56,10 @@ QDBusObjectPath BluetoothObexAgent::objectPath() const
 
 void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQt::ObexSessionPtr session, const BluezQt::Request<QString> &request)
 {
-    emit showRequiesDialog(session->destination(), transfer->name());
+    m_fileName = transfer->name();
+    m_deviceName = session->destination();
+    emit showRequiesDialog();
+
     connect(this, &BluetoothObexAgent::requestConfirmationReject, this, [=]() {
         request.reject();
     });
@@ -76,7 +89,7 @@ void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQ
 void BluetoothObexAgent::startServiceFinished(BluezQt::PendingCall *call)
 {
     if(call->error()) {
-        qWarning() << Q_FUNC_INFO << call->errorText();
+        qCDebug(lcLipstickBtAgentLog) << Q_FUNC_INFO << call->errorText();
         return;
     }
 
@@ -90,7 +103,7 @@ void BluetoothObexAgent::startServiceFinished(BluezQt::PendingCall *call)
 void BluetoothObexAgent::obexManagerStartResult(BluezQt::InitObexManagerJob *job)
 {
     if(job->error()) {
-        qWarning() << Q_FUNC_INFO << job->errorText();
+        qCDebug(lcLipstickBtAgentLog) << Q_FUNC_INFO << job->errorText();
         return;
     }
     m_obexManager->registerAgent(this);
@@ -116,4 +129,43 @@ void BluetoothObexAgent::obexDataTransferFinished(BluezQt::ObexTransfer::Status 
     }else if(status == BluezQt::ObexTransfer::Error) {
         emit transferError();
     }
+}
+
+void BluetoothObexAgent::createWindow()
+{
+    m_requestODialogWindow = new HomeWindow();
+    m_requestODialogWindow->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
+    m_requestODialogWindow->setCategory(QLatin1String("notification"));
+    m_requestODialogWindow->setWindowTitle("Bluetooth file transfer");
+    m_requestODialogWindow->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
+    m_requestODialogWindow->setSource(QmlPath::to("bluetooth/RequestObexDialog.qml"));
+    m_requestODialogWindow->installEventFilter(new CloseEventEater(this));
+}
+
+bool BluetoothObexAgent::windowVisible() const
+{
+    return m_requestODialogWindow != 0 && m_requestODialogWindow->isVisible();
+}
+
+void BluetoothObexAgent::setWindowVisible(bool visible)
+{
+    if(visible) {
+        if(m_requestODialogWindow && !m_requestODialogWindow->isVisible()) {
+            m_requestODialogWindow->show();
+            emit windowVisibleChanged();
+        }
+    } else if(m_requestODialogWindow != 0 && m_requestODialogWindow->isVisible()) {
+        m_requestODialogWindow->hide();
+        emit windowVisibleChanged();
+    }
+}
+
+QString BluetoothObexAgent::deviceName() const
+{
+    return m_deviceName;
+}
+
+QString BluetoothObexAgent::fileName() const
+{
+    return m_fileName;
 }
