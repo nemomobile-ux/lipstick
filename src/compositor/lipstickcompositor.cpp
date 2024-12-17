@@ -60,6 +60,7 @@ LipstickCompositor::LipstickCompositor()
     , m_retainedSelection(0)
     , m_updatesEnabled(true)
     , m_completed(false)
+    , m_synthesizeBackEvent(true)
     , m_onUpdatesDisabledUnfocusedWindowId(0)
     , m_fakeRepaintTriggered(false)
     , m_queuedSetUpdatesEnabledCalls()
@@ -297,7 +298,7 @@ void LipstickCompositor::closeClientForWindowId(int id)
             wmExtension->sendQuitMessage(window->surface()->client());
         else
             window->surface()->client()->close();
-    }   
+    }
 }
 
 QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
@@ -309,6 +310,19 @@ QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
 bool LipstickCompositor::completed()
 {
     return m_completed;
+}
+
+bool LipstickCompositor::synthesizeBackEvent() const
+{
+    return m_synthesizeBackEvent;
+}
+
+void LipstickCompositor::setSynthesizeBackEvent(bool enable)
+{
+    if (enable != m_synthesizeBackEvent) {
+        m_synthesizeBackEvent = enable;
+        emit synthesizeBackEventChanged();
+    }
 }
 
 void LipstickCompositor::clearKeyboardFocus()
@@ -956,7 +970,7 @@ bool LipstickCompositor::event(QEvent *event)
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
 
-        if (mouseEvent->button() == Qt::RightButton) {
+        if (m_synthesizeBackEvent && mouseEvent->button() == Qt::RightButton) {
             // see xkeyboard-config/keycodes/evdev: Map to <I166> = 166; #define KEY_BACK
             int scanCode = 166;
             if (mouseEvent->type() == QEvent::MouseButtonPress) {

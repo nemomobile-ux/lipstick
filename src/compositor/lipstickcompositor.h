@@ -80,6 +80,7 @@ class LIPSTICK_EXPORT LipstickCompositor
     Q_PROPERTY(QVariant orientationLock READ orientationLock NOTIFY orientationLockChanged)
     Q_PROPERTY(bool displayDimmed READ displayDimmed NOTIFY displayDimmedChanged)
     Q_PROPERTY(bool completed READ completed NOTIFY completedChanged)
+    Q_PROPERTY(bool synthesizeBackEvent READ synthesizeBackEvent WRITE setSynthesizeBackEvent NOTIFY synthesizeBackEventChanged)
     Q_PROPERTY(QQuickWindow *quickWindow READ quickWindow CONSTANT)
     Q_PROPERTY(bool ambientSupported READ ambientSupported CONSTANT)
     Q_PROPERTY(bool ambientEnabled READ ambientEnabled WRITE setAmbientEnabled NOTIFY ambientEnabledChanged)
@@ -134,6 +135,10 @@ public:
     QWaylandSurface *surfaceForId(int) const;
 
     bool completed();
+
+    bool synthesizeBackEvent() const;
+    void setSynthesizeBackEvent(bool enable);
+
     void setUpdatesEnabledNow(bool enabled, bool inAmbientMode = false);
 
     bool ambientSupported() const;
@@ -190,6 +195,7 @@ signals:
     void ambientEnabledChanged();
 
     void completedChanged();
+    void synthesizeBackEventChanged();
 
     void showUnlockScreen();
 
@@ -277,6 +283,7 @@ private:
     MGConfItem *m_orientationLock;
     bool m_updatesEnabled;
     bool m_completed;
+    bool m_synthesizeBackEvent;
     int m_onUpdatesDisabledUnfocusedWindowId;
     bool m_fakeRepaintTriggered;
     QQuickWindow *m_window;
