@@ -26,19 +26,19 @@
 
 LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &category,
                                                    QWaylandSurface *surface, QQuickItem *parent)
-                        : QWaylandQuickItem()
-                        , m_processId(0)
-                        , m_windowId(windowId)
-                        , m_category(category)
-                        , m_delayRemove(false)
-                        , m_windowClosed(false)
-                        , m_removePosted(false)
-                        , m_mouseRegionValid(false)
-                        , m_interceptingTouch(false)
-                        , m_mapped(false)
-                        , m_focusOnTouch(false)
-                        , m_notificationMode(0)
-                        , m_topLevel(nullptr)
+    : QWaylandQuickItem()
+    , m_processId(0)
+    , m_windowId(windowId)
+    , m_category(category)
+    , m_delayRemove(false)
+    , m_windowClosed(false)
+    , m_removePosted(false)
+    , m_mouseRegionValid(false)
+    , m_interceptingTouch(false)
+    , m_mapped(false)
+    , m_focusOnTouch(false)
+    , m_notificationMode(0)
+    , m_topLevel(nullptr)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 
@@ -269,6 +269,7 @@ bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
         }
         return false;
     }
+
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         QKeyEvent *ke = static_cast<QKeyEvent *>(event);
         QWaylandSurface *m_surface = surface();
@@ -328,7 +329,8 @@ bool LipstickCompositorWindow::event(QEvent *e)
 void LipstickCompositorWindow::mousePressEvent(QMouseEvent *event)
 {
     QWaylandSurface *m_surface = surface();
-    if (m_surface && m_surface->inputRegionContains(event->pos()) && event->source() != Qt::MouseEventSynthesizedByQt) {
+    if (m_surface && m_surface->inputRegionContains(event->pos())
+        && event->source() != Qt::MouseEventSynthesizedByQt) {
         if(!m_surface || !m_surface->compositor()) {
             return;
         }

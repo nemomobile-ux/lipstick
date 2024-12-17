@@ -50,6 +50,7 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED
     Sql
     Test
     Sensors
+    ShaderTools
     WaylandCompositor
     LinguistTools)
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.10)

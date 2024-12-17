@@ -97,7 +97,10 @@ LipstickCompositor::LipstickCompositor()
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
 
     m_wm = new QWaylandQtWindowManager(this);
-    connect(m_wm, &QWaylandQtWindowManager::openUrl, this, &LipstickCompositor::openUrl);
+    connect(m_wm, &QWaylandQtWindowManager::openUrl, this,
+            [this](QWaylandClient* client, const QUrl& url) {
+                this->openUrl(client, url);
+            });
 
     QGuiApplication::primaryScreen()->handle()->setPowerState(QPlatformScreen::PowerStateOn);
 
