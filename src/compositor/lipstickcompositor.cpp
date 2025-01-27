@@ -86,7 +86,7 @@ LipstickCompositor::LipstickCompositor()
     if (m_instance) qFatal("LipstickCompositor: Only one compositor instance per process is supported");
     m_instance = this;
 
-    m_orientationLock = new MGConfItem("/lipstick/orientationLock", this);
+    m_orientationLock = new MDConfItem("/lipstick/orientationLock", this);
     connect(m_orientationLock, SIGNAL(valueChanged()), SIGNAL(orientationLockChanged()));
 
     // Load legacy settings from the config file and delete it from there

@@ -18,6 +18,9 @@
 #include "ut_volumecontrol.h"
 #include "volumecontrol.h"
 #include "pulseaudiocontrol_stub.h"
+#include "closeeventeater_stub.h"
+#include "mdconfitem_stub.h"
+#include "lipstickqmlpath_stub.h"
 
 extern "C"
 {
