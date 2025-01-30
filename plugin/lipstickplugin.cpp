@@ -18,6 +18,7 @@
 #include "lipstickplugin.h"
 
 #include <QtQml>
+
 #include <components/launcheritem.h>
 #include <components/launcherwatchermodel.h>
 #include <notifications/notificationpreviewpresenter.h>
@@ -34,15 +35,33 @@
 #include <compositor/windowmodel.h>
 #include <compositor/windowpixmapitem.h>
 #include <lipstickapi.h>
+#include <homeapplication.h>
 
 static QObject *lipstickApi_callback(QQmlEngine *e, QJSEngine *)
 {
     return new LipstickApi(e);
 }
 
-LipstickPlugin::LipstickPlugin(QObject *parent) :
-    QQmlExtensionPlugin(parent)
+LipstickPlugin::LipstickPlugin(QObject *parent)
+    : QQmlExtensionPlugin(parent)
 {
+}
+
+void LipstickPlugin::initializeEngine(QQmlEngine *engine, const char *uri)
+{
+    Q_UNUSED(uri)
+    Q_UNUSED(engine)
+    Q_ASSERT(QLatin1String(uri) == QLatin1String("org.nemomobile.lipstick"));
+
+    if (!HomeApplication::instance()) {
+        // within homescreen we have these already loaded but otherwise plugin needs to handle
+        AppTranslator *engineeringEnglish = new AppTranslator(engine);
+        AppTranslator *translator = new AppTranslator(engine);
+        if(!engineeringEnglish->load("lipstick_eng_en", "/usr/share/translations")
+                || !translator->load(QLocale(), "lipstick", "-", "/usr/share/translations")) {
+            qWarning() << "Can't load translations";
+        }
+    }
 }
 
 void LipstickPlugin::registerTypes(const char *uri)
@@ -72,5 +91,5 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterUncreatableType<BluetoothAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothAgent", "This type is created by lipstick");
     qmlRegisterUncreatableType<BluetoothObexAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothObexAgent", "This type is created by lipstick");
 
-    qmlRegisterRevision<QQuickWindow,1>("org.nemomobile.lipstick", 0, 1);
+    qmlRegisterRevision<QQuickWindow, 1>("org.nemomobile.lipstick", 0, 1);
 }

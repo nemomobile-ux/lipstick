@@ -20,6 +20,9 @@
 
 #include <QQmlExtensionPlugin>
 #include <QQmlParserStatus>
+#include <QTranslator>
+#include <QCoreApplication>
+
 #include <components/launchermodel.h>
 #include <components/launcherfoldermodel.h>
 
@@ -30,6 +33,8 @@ class Q_DECL_EXPORT LipstickPlugin : public QQmlExtensionPlugin
 
 public:
     explicit LipstickPlugin(QObject *parent = 0);
+
+    void initializeEngine(QQmlEngine *engine, const char *uri);
     void registerTypes(const char *uri);
     
 };
@@ -62,5 +67,20 @@ public:
     void componentComplete() { initialize(); }
 };
 
+class AppTranslator: public QTranslator
+{
+    Q_OBJECT
+public:
+    AppTranslator(QObject *parent)
+        : QTranslator(parent)
+    {
+        qApp->installTranslator(this);
+    }
+
+    virtual ~AppTranslator()
+    {
+        qApp->removeTranslator(this);
+    }
+};
 
 #endif // LIPSTICKPLUGIN_H
