@@ -120,7 +120,7 @@ void BluetoothAgent::createWindow()
     m_requestDialogWindow = new HomeWindow();
     m_requestDialogWindow->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
     m_requestDialogWindow->setCategory(QLatin1String("notification"));
-    m_requestDialogWindow->setWindowTitle("Confirmation dialog");
+    m_requestDialogWindow->setWindowTitle(tr("Confirmation dialog"));
     m_requestDialogWindow->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
     m_requestDialogWindow->setSource(QmlPath::to("bluetooth/RequestConfirmationDialog.qml"));
     m_requestDialogWindow->installEventFilter(new CloseEventEater(this));

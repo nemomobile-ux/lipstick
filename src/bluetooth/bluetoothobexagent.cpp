@@ -136,7 +136,7 @@ void BluetoothObexAgent::createWindow()
     m_requestODialogWindow = new HomeWindow();
     m_requestODialogWindow->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
     m_requestODialogWindow->setCategory(QLatin1String("notification"));
-    m_requestODialogWindow->setWindowTitle("Bluetooth file transfer");
+    m_requestODialogWindow->setWindowTitle(tr("Bluetooth file transfer"));
     m_requestODialogWindow->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
     m_requestODialogWindow->setSource(QmlPath::to("bluetooth/RequestObexDialog.qml"));
     m_requestODialogWindow->installEventFilter(new CloseEventEater(this));
