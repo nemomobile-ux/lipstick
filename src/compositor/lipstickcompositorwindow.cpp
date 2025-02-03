@@ -308,9 +308,10 @@ void LipstickCompositorWindow::mouseReleaseEvent(QMouseEvent *event)
 void LipstickCompositorWindow::wheelEvent(QWheelEvent *event)
 {
     QWaylandSurface *m_surface = surface();
-    if (m_surface) {
-        QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
 
+    if (m_surface
+            && m_surface->inputRegionContains(event->position()) && event->source() != Qt::MouseEventSynthesizedByQt) {
+        QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         if (inputDevice->mouseFocus() != this->view()) {
             inputDevice->setMouseFocus(this->view());
             if (m_focusOnTouch && inputDevice->keyboardFocus() != m_surface) {
