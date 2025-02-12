@@ -986,13 +986,13 @@ bool LipstickCompositor::event(QEvent *event)
 
 void LipstickCompositor::sendKeyEvent(QEvent::Type type, Qt::Key key, quint32 nativeScanCode)
 {
-    QKeyEvent *event = new QKeyEvent(type, key, Qt::NoModifier, nativeScanCode, 0, 0);
+    QKeyEvent event(type, key, Qt::NoModifier, nativeScanCode, 0, 0);
 
     // Not all Lipstick windows are real windows
     LipstickCompositorWindow *topmostWindow = qobject_cast<LipstickCompositorWindow *>(windowForId(topmostWindowId()));
     if (topmostWindow && topmostWindow->isInProcess()) {
-        QCoreApplication::sendEvent(m_window->activeFocusItem(), event);
+        QCoreApplication::sendEvent(m_window->activeFocusItem(), &event);
     } else {
-        seatFor(event)->sendFullKeyEvent(event);
+        seatFor(&event)->sendFullKeyEvent(&event);
     }
 }
