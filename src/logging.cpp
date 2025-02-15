@@ -17,4 +17,4 @@
 Q_LOGGING_CATEGORY(lcLipstickCoreLog, "org.nemomobile.lipstick", QtWarningMsg)
 Q_LOGGING_CATEGORY(lcLipstickHwcLog, "org.nemomobile.lipstick.hwc", QtWarningMsg)
 Q_LOGGING_CATEGORY(lcLipstickAppLaunchLog, "org.nemomobile.lipstick.applaunch", QtWarningMsg)
-Q_LOGGING_CATEGORY(lcLipstickBtAgentLog, "org.nemomobile.lipstick.btagent", QtWarningMsg)
+Q_LOGGING_CATEGORY(lcLipstickBtAgentLog, "org.nemomobile.lipstick.bluetooth", QtWarningMsg)
