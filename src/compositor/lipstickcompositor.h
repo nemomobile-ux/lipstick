@@ -63,8 +63,11 @@ struct QueuedSetUpdatesEnabledCall
 };
 
 class LIPSTICK_EXPORT LipstickCompositor
+#ifndef LIPSTICK_UNIT_TEST_STUB
         : public QWaylandQuickCompositor
-        , QDBusContext
+#endif
+        , public QDBusContext
+
 {
     Q_OBJECT
 

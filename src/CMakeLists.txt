@@ -141,8 +141,8 @@ qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/net.connman.vpn.Agent.xml"
     "ConnmanVpnAgentAdaptor")
 
 qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/compositor.xml"
-    "lipstickcompositoradaptor.h"
-    ""
+    "lipstickcompositor.h"
+    "LipstickCompositor"
     "lipstickcompositoradaptor"
     "LipstickCompositorAdaptor")
 qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/fileservice.xml" "fileserviceadaptor.h" "" "" "FileServiceAdaptor")
