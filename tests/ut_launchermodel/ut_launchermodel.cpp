@@ -115,16 +115,6 @@ MDesktopEntry::value(const QString &group, const QString &key) const
     return QString();
 }
 
-void QTimer::singleShot(int, const QObject *receiver, const char *member)
-{
-    // The "member" string is of form "1member()", so remove the trailing 1 and the ()
-    int memberLength = strlen(member) - 3;
-    char modifiedMember[memberLength + 1];
-    strncpy(modifiedMember, member + 1, memberLength);
-    modifiedMember[memberLength] = 0;
-    QMetaObject::invokeMethod(const_cast<QObject *>(receiver), modifiedMember, Qt::DirectConnection);
-}
-
 bool QFile::exists() const
 {
     return true;
