@@ -1233,7 +1233,7 @@ void NotificationManager::fetchData(bool update)
             // Timestamps in the DB are already UTC but not marked as such, so they will
             // be converted again unless specified to be UTC
             QDateTime timestamp(QDateTime::fromString(hintValue.toString(), Qt::ISODate));
-            timestamp.setTimeSpec(Qt::UTC);
+            timestamp.setTimeZone(QTimeZone::UTC);
             value = timestamp.toString(Qt::ISODate);
         } else {
             value = hintValue;
