@@ -201,7 +201,7 @@ MRemoteAction LauncherItem::remoteAction(const QStringList &arguments) const
             const QString path = m_desktopEntry->value(QStringLiteral("Desktop Entry/X-Maemo-Object-Path"));
             // similar to libcontentaction / dbus.cpp, assuming we want the fixed parameters first
             const QString fixedArgs = m_desktopEntry->value(QStringLiteral("Desktop Entry/X-Maemo-Fixed-Args"));
-            QStringList totalArguments = fixedArgs.split(';', QString::SkipEmptyParts) + arguments;
+            QStringList totalArguments = fixedArgs.split(';', Qt::SkipEmptyParts) + arguments;
 
             return MRemoteAction(
                         service,
