@@ -75,6 +75,11 @@ HomeWindowPrivate::~HomeWindowPrivate()
 
 bool HomeWindowPrivate::isWindow()
 {
+    const QByteArray raw(qgetenv("DEBUG_COMPOSITOR_IS_WINDOW"));
+    if(raw.startsWith("y")) {
+        return true;
+    }
+
     if (mode == Unknown) checkMode();
     return mode == Window;
 }
