@@ -46,6 +46,19 @@
 
 #define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
 
+namespace {
+bool debuggingCompositorHandover()
+{
+    static int debugging = -1;
+    if (debugging < 0) {
+        const QByteArray raw(qgetenv("DEBUG_COMPOSITOR_HANDOVER"));
+        const QString env(QString::fromLocal8Bit(raw));
+        debugging = env.startsWith('y');
+    }
+    return debugging > 0;
+}
+}
+
 LipstickCompositor *LipstickCompositor::m_instance = 0;
 
 LipstickCompositor::LipstickCompositor()
@@ -68,7 +81,12 @@ LipstickCompositor::LipstickCompositor()
     , m_sessionActivationTries(0)
 {
     m_window = new QQuickWindow();
-    m_window->setColor(Qt::black);
+    if (debuggingCompositorHandover()) {
+        m_window->setColor(Qt::magenta);
+        m_window->showFullScreen();
+    } else {
+        m_window->setColor(Qt::black);
+    }
     m_window->setVisible(true);
 
     m_output = new QWaylandQuickOutput(this, m_window);
@@ -80,6 +98,8 @@ LipstickCompositor::LipstickCompositor()
 
     m_wm = new QWaylandQtWindowManager(this);
     connect(m_wm, &QWaylandQtWindowManager::openUrl, this, &LipstickCompositor::openUrl);
+
+    QGuiApplication::primaryScreen()->handle()->setPowerState(QPlatformScreen::PowerStateOn);
 
     setRetainedSelectionEnabled(true);
 
@@ -884,7 +904,7 @@ void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)
             }
             m_window->hide();
             if (m_window->handle() && !inAmbientMode) {
-                QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("DisplayOff");
+                QGuiApplication::primaryScreen()->handle()->setPowerState(QPlatformScreen::PowerStateOff);
             }
             // trigger frame callbacks which are pending already at this time
             surfaceCommitted();
@@ -892,7 +912,7 @@ void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)
             scheduleAmbientUpdate();
         } else {
             if (m_window->handle() && !inAmbientMode) {
-                QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("DisplayOn");
+                QGuiApplication::primaryScreen()->handle()->setPowerState(QPlatformScreen::PowerStateOn);
             }
             emit displayAboutToBeOn();
             m_window->showFullScreen();
@@ -986,13 +1006,13 @@ bool LipstickCompositor::event(QEvent *event)
 
 void LipstickCompositor::sendKeyEvent(QEvent::Type type, Qt::Key key, quint32 nativeScanCode)
 {
-    QKeyEvent *event = new QKeyEvent(type, key, Qt::NoModifier, nativeScanCode, 0, 0);
+    QKeyEvent event(type, key, Qt::NoModifier, nativeScanCode, 0, 0);
 
     // Not all Lipstick windows are real windows
     LipstickCompositorWindow *topmostWindow = qobject_cast<LipstickCompositorWindow *>(windowForId(topmostWindowId()));
     if (topmostWindow && topmostWindow->isInProcess()) {
-        QCoreApplication::sendEvent(m_window->activeFocusItem(), event);
+        QCoreApplication::sendEvent(m_window->activeFocusItem(), &event);
     } else {
-        seatFor(event)->sendFullKeyEvent(event);
+        seatFor(&event)->sendFullKeyEvent(&event);
     }
 }
