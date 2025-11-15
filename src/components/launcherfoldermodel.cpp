@@ -250,7 +250,9 @@ void LauncherFolderItem::saveDirectoryFile()
     if (m_directoryFile.isEmpty()) {
         QTemporaryFile *tempFile = new QTemporaryFile(absoluteConfigPath("FolderXXXXXX.directory"));
         dirFile.reset(tempFile);
-        tempFile->open();
+        if(!tempFile->open()) {
+            qWarning() << "Can`t open tmp file";
+        }
         tempFile->setAutoRemove(false);
         m_directoryFile = tempFile->fileName();
         emit directoryFileChanged();
