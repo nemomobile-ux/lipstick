@@ -166,10 +166,8 @@ target_link_libraries(${PACKAGE} PUBLIC
     Qt6::DBus
     Qt6::Qml
     Qt6::Quick
-    Qt6::QuickPrivate
     Qt6::Sql
     Qt6::Gui
-    Qt6::GuiPrivate
     Qt6::Sensors
     Qt6::WaylandCompositor
     PkgConfig::DBUS
