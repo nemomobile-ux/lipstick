@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 project(lipstick
     VERSION 1.1
@@ -52,6 +52,9 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED
     Sensors
     WaylandCompositor
     LinguistTools)
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.10)
+  find_package(Qt6 COMPONENTS GuiPrivate QuickPrivate REQUIRED)
+endif()
 find_package(KF6BluezQt REQUIRED)
 
 pkg_check_modules(DBUS dbus-1 REQUIRED IMPORTED_TARGET)
