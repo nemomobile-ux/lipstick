@@ -139,9 +139,14 @@ private:
     bool m_mapped : 1;
     bool m_focusOnTouch : 1;
     QVariant m_data;
+    QList<int> m_grabbedKeys;
+    struct {
+        QWaylandSurface *oldFocus;
+        QList<int> keys;
+    } m_pressedGrabbedKeys;
     QVector<QQuickItem *> m_refs;
     uint m_notificationMode;
-    QWaylandXdgToplevel* m_topLevel;
+    QPointer<QWaylandXdgToplevel> m_topLevel;
     QVariantMap m_windowProperties;
 };
 
