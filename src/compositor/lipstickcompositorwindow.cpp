@@ -33,6 +33,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
                         , m_delayRemove(false)
                         , m_windowClosed(false)
                         , m_removePosted(false)
+                        , m_mouseRegionValid(false)
                         , m_interceptingTouch(false)
                         , m_mapped(false)
                         , m_focusOnTouch(false)
@@ -189,10 +190,32 @@ void LipstickCompositorWindow::tryRemove()
     }
 }
 
+QRect LipstickCompositorWindow::mouseRegionBounds() const
+{
+    if (m_mouseRegionValid)
+        return m_mouseRegion.boundingRect();
+    else
+        return QRect(0, 0, width(), height());
+}
+
 void LipstickCompositorWindow::refreshMouseRegion()
 {
-    //TODO
-    qWarning() << Q_FUNC_INFO << "Not implemented";
+    QWindow *w = window();
+    if (w) {
+        QVariantMap mouseRegionProperty = w->property("MOUSE_REGION").toMap();
+        if (!mouseRegionProperty.isEmpty()) {
+            m_mouseRegion = mouseRegionProperty.value("MOUSE_REGION").value<QRegion>();
+            m_mouseRegionValid = true;
+            if (LipstickCompositor::instance()->debug())
+                qDebug() << "Window" << windowId() << "mouse region set:" << m_mouseRegion;
+        } else {
+            m_mouseRegionValid = false;
+            if (LipstickCompositor::instance()->debug())
+                qDebug() << "Window" << windowId() << "mouse region cleared";
+        }
+
+        emit mouseRegionBoundsChanged();
+    }
 }
 
 void LipstickCompositorWindow::refreshGrabbedKeys()
@@ -341,6 +364,7 @@ void LipstickCompositorWindow::wheelEvent(QWheelEvent *event)
     QWaylandSurface *m_surface = surface();
 
     if (m_surface
+            && (!m_mouseRegionValid || m_mouseRegion.contains(event->position().toPoint()))
             && m_surface->inputRegionContains(event->position()) && event->source() != Qt::MouseEventSynthesizedByQt) {
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         if (inputDevice->mouseFocus() != this->view()) {
@@ -386,7 +410,8 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
 
     if (event->touchPointStates() & Qt::TouchPointPressed) {
         foreach (const QTouchEvent::TouchPoint &p, points) {
-            if (!m_surface->inputRegionContains(p.position().toPoint())) {
+            if (m_mouseRegionValid && !m_mouseRegion.contains(p.position().toPoint())
+                    || !m_surface->inputRegionContains(p.position().toPoint())) {
                 event->ignore();
                 return;
             }

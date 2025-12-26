@@ -37,6 +37,7 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
     Q_PROPERTY(qint64 processId READ processId CONSTANT)
 
+    Q_PROPERTY(QRect mouseRegionBounds READ mouseRegionBounds NOTIFY mouseRegionBoundsChanged)
     Q_PROPERTY(bool focusOnTouch READ focusOnTouch WRITE setFocusOnTouch NOTIFY focusOnTouchChanged)
     Q_PROPERTY(uint notificationMode READ notificationMode WRITE setNotificationMode NOTIFY notificationModeChanged)
 
@@ -60,6 +61,8 @@ public:
     QString category() const;
     virtual QString title() const;
     virtual bool isInProcess() const;
+
+    QRect mouseRegionBounds() const;
 
     bool eventFilter(QObject *object, QEvent *event);
 
@@ -98,6 +101,7 @@ signals:
     void userDataChanged();
     void titleChanged();
     void delayRemoveChanged();
+    void mouseRegionBoundsChanged();
     void committed();
     void focusOnTouchChanged();
     void windowFlagsChanged();
@@ -135,10 +139,12 @@ private:
     bool m_delayRemove:1;
     bool m_windowClosed:1;
     bool m_removePosted:1;
+    bool m_mouseRegionValid:1;
     bool m_interceptingTouch:1;
     bool m_mapped : 1;
     bool m_focusOnTouch : 1;
     QVariant m_data;
+    QRegion m_mouseRegion;
     QList<int> m_grabbedKeys;
     struct {
         QWaylandSurface *oldFocus;
