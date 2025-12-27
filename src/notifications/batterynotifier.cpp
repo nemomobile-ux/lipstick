@@ -21,7 +21,7 @@
 #include "lipsticknotification.h"
 #include "batterynotifier.h"
 #include <time.h>
-#include <keepalive/backgroundactivity.h>
+#include <backgroundactivity.h>
 
 // How much slack to include in keepalive wakeup ranges [s]
 static const int HEARTBEAT_INTERVAL = 12;

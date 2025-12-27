@@ -33,6 +33,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
                         , m_delayRemove(false)
                         , m_windowClosed(false)
                         , m_removePosted(false)
+                        , m_mouseRegionValid(false)
                         , m_interceptingTouch(false)
                         , m_mapped(false)
                         , m_focusOnTouch(false)
@@ -189,16 +190,55 @@ void LipstickCompositorWindow::tryRemove()
     }
 }
 
+QRect LipstickCompositorWindow::mouseRegionBounds() const
+{
+    if (m_mouseRegionValid)
+        return m_mouseRegion.boundingRect();
+    else
+        return QRect(0, 0, width(), height());
+}
+
 void LipstickCompositorWindow::refreshMouseRegion()
 {
-    //TODO
-    qWarning() << Q_FUNC_INFO << "Not implemented";
+    QWindow *w = window();
+    if (w) {
+        QVariantMap mouseRegionProperty = w->property("MOUSE_REGION").toMap();
+        if (!mouseRegionProperty.isEmpty()) {
+            m_mouseRegion = mouseRegionProperty.value("MOUSE_REGION").value<QRegion>();
+            m_mouseRegionValid = true;
+            if (LipstickCompositor::instance()->debug())
+                qDebug() << "Window" << windowId() << "mouse region set:" << m_mouseRegion;
+        } else {
+            m_mouseRegionValid = false;
+            if (LipstickCompositor::instance()->debug())
+                qDebug() << "Window" << windowId() << "mouse region cleared";
+        }
+
+        emit mouseRegionBoundsChanged();
+    }
 }
 
 void LipstickCompositorWindow::refreshGrabbedKeys()
 {
-    //TODO
-    qWarning() << Q_FUNC_INFO << "Not implemented";
+    QWindow *w = window();
+    if (w) {
+        const QStringList grabbedKeys = w->property("GRABBED_KEYS").toStringList();
+
+        if (m_grabbedKeys.isEmpty() && !grabbedKeys.isEmpty()) {
+            qApp->installEventFilter(this);
+        } else if (!m_grabbedKeys.isEmpty() && grabbedKeys.isEmpty() && m_pressedGrabbedKeys.keys.isEmpty()) {
+            // we don't remove the event filter if m_pressedGrabbedKeys.keys contains still some key.
+            // we wait the key release for that.
+            qApp->removeEventFilter(this);
+        }
+
+        m_grabbedKeys.clear();
+        foreach (const QString &key, grabbedKeys)
+            m_grabbedKeys.append(key.toInt());
+
+        if (LipstickCompositor::instance()->debug())
+            qDebug() << "Window" << windowId() << "grabbed keys changed:" << grabbedKeys;
+    }
 }
 
 bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
@@ -227,13 +267,27 @@ bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         QKeyEvent *ke = static_cast<QKeyEvent *>(event);
         QWaylandSurface *m_surface = surface();
-        if (m_surface) {
+        if (m_surface
+            && (m_grabbedKeys.contains(ke->key()) || m_pressedGrabbedKeys.keys.contains(ke->key()))
+            && !ke->isAutoRepeat()) {
             QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(ke);
-            if (event->type() == QEvent::KeyPress) //KeyPress
-                inputDevice->setKeyboardFocus(m_surface);
+            if (event->type() == QEvent::KeyPress) {
+                if (m_pressedGrabbedKeys.keys.isEmpty()) {
+                    QWaylandSurface *old = inputDevice->keyboardFocus();
+                    m_pressedGrabbedKeys.oldFocus = old;
+                    inputDevice->setKeyboardFocus(m_surface);
+                }
+                m_pressedGrabbedKeys.keys << ke->key();
+            }
             inputDevice->sendFullKeyEvent(ke);
-            if (event->type() == QEvent::KeyRelease) //KeyRelease
-                qApp->removeEventFilter(this);
+            if (event->type() == QEvent::KeyRelease) {
+                m_pressedGrabbedKeys.keys.removeOne(ke->key());
+                if (m_pressedGrabbedKeys.keys.isEmpty()) {
+                    inputDevice->setKeyboardFocus(m_pressedGrabbedKeys.oldFocus);
+                    if (m_grabbedKeys.isEmpty())
+                        qApp->removeEventFilter(this);
+                }
+            }
             return true;
         }
     }
@@ -310,6 +364,7 @@ void LipstickCompositorWindow::wheelEvent(QWheelEvent *event)
     QWaylandSurface *m_surface = surface();
 
     if (m_surface
+            && (!m_mouseRegionValid || m_mouseRegion.contains(event->position().toPoint()))
             && m_surface->inputRegionContains(event->position()) && event->source() != Qt::MouseEventSynthesizedByQt) {
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         if (inputDevice->mouseFocus() != this->view()) {
@@ -355,7 +410,8 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
 
     if (event->touchPointStates() & Qt::TouchPointPressed) {
         foreach (const QTouchEvent::TouchPoint &p, points) {
-            if (!m_surface->inputRegionContains(p.position().toPoint())) {
+            if (m_mouseRegionValid && !m_mouseRegion.contains(p.position().toPoint())
+                    || !m_surface->inputRegionContains(p.position().toPoint())) {
                 event->ignore();
                 return;
             }
@@ -460,7 +516,7 @@ void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
         return;
     }
 
-    if(m_topLevel != nullptr) {
+    if(m_topLevel) {
         m_topLevel->disconnect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
     }
     m_topLevel = topLevel;
