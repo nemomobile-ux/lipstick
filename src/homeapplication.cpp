@@ -98,6 +98,7 @@ HomeApplication::HomeApplication(int& argc, char** argv, const QString& qmlPath)
         installTranslator(translator);
     }
 
+    setOverrideCursor(Qt::BlankCursor);
     setApplicationName("Lipstick");
     setApplicationVersion(VERSION);
 
