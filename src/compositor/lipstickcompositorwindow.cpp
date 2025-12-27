@@ -410,7 +410,7 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
 
     if (event->touchPointStates() & Qt::TouchPointPressed) {
         foreach (const QTouchEvent::TouchPoint &p, points) {
-            if (m_mouseRegionValid && !m_mouseRegion.contains(p.position().toPoint())
+            if ((m_mouseRegionValid && !m_mouseRegion.contains(p.position().toPoint()))
                     || !m_surface->inputRegionContains(p.position().toPoint())) {
                 event->ignore();
                 return;

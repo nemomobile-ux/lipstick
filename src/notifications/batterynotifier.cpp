@@ -20,7 +20,6 @@
 #include "notificationmanager.h"
 #include "lipsticknotification.h"
 #include "batterynotifier.h"
-#include <time.h>
 #include <backgroundactivity.h>
 
 // How much slack to include in keepalive wakeup ranges [s]
