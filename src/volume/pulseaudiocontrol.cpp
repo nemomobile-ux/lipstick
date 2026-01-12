@@ -13,7 +13,6 @@
 ****************************************************************************/
 
 #include "pulseaudiocontrol.h"
-#include "dbus-gmain/dbus-gmain.h"
 
 #include <QDBusMessage>
 #include <QDBusConnection>
@@ -22,26 +21,33 @@
 #include <QTimer>
 
 
-#define DBUS_ERR_CHECK(err) \
-    if (dbus_error_is_set(&err)) \
-    { \
-        qWarning() << err.message; \
-        dbus_error_free(&err); \
-    }
-
-static const char *VOLUME_SERVICE = "com.Meego.MainVolume2";
-static const char *VOLUME_PATH = "/com/meego/mainvolume2";
-static const char *VOLUME_INTERFACE = "com.Meego.MainVolume2";
-
-#define PA_RECONNECT_TIMEOUT_MS (2000)
-
 PulseAudioControl::PulseAudioControl(QObject *parent) :
     QObject(parent)
+    , m_loop(new PulseAudioPrivateLoop(this))
+    , m_buttonHandler(new MceButtonHandler(this))
 {
-    m_loop = new PulseAudioPrivateLoop(this);
     connect(m_loop, &PulseAudioPrivateLoop::volumeChanged,
             this, &PulseAudioControl::volumeChanged,
             Qt::QueuedConnection);
+
+
+    int step = 5; // TODO
+
+    connect(m_buttonHandler, &MceButtonHandler::volumeUp, this, [=]() {
+        int newVol = qMin(m_loop->currentVolume() + step, 100);
+        m_loop->setVolume(newVol);
+    });
+
+    connect(m_buttonHandler, &MceButtonHandler::volumeDown, this, [=]() {
+        int newVol = qMax(m_loop->currentVolume() - step, 0);
+        m_loop->setVolume(newVol);
+    });
+
+    connect(m_buttonHandler, &MceButtonHandler::volumeMute, this, [=]() {
+        m_loop->setMute(!m_loop->isMuted());
+    });
+
+
     m_loop->start();
 }
 

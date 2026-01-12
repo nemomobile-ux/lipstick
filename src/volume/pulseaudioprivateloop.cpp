@@ -80,6 +80,16 @@ void PulseAudioPrivateLoop::onContextReady()
         nullptr
     );
 
+    pa_context_subscribe(
+        m_context,
+        static_cast<pa_subscription_mask_t>(
+            PA_SUBSCRIPTION_MASK_SINK_INPUT |
+            PA_SUBSCRIPTION_MASK_SINK
+            ),
+        nullptr,
+        nullptr
+    );
+
     requestVolume();
 }
 
@@ -143,6 +153,19 @@ void PulseAudioPrivateLoop::sinkInfoCallback(
     }
 }
 
+void PulseAudioPrivateLoop::sinkInputInfoCallback(pa_context *, const pa_sink_input_info *info, int eol, void *userdata)
+{
+    if (eol || !info)
+        return;
+
+    const char *role = pa_proplist_gets(
+        info->proplist,
+        PA_PROP_MEDIA_ROLE
+        );
+
+    if (!role)
+        return;
+}
 
 void PulseAudioPrivateLoop::subscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata)
 {
@@ -164,7 +187,21 @@ void PulseAudioPrivateLoop::subscribeCallback(pa_context *c, pa_subscription_eve
 
         self->requestVolume();
     }
+
+    if (facility == PA_SUBSCRIPTION_EVENT_SINK_INPUT &&
+        (type == PA_SUBSCRIPTION_EVENT_NEW ||
+         type == PA_SUBSCRIPTION_EVENT_CHANGE)) {
+
+        pa_context_get_sink_input_info(
+            c,
+            idx,
+            sinkInputInfoCallback,
+            userdata
+            );
+    }
 }
+
+
 
 void PulseAudioPrivateLoop::reconnect()
 {
