@@ -8,6 +8,7 @@ PulseAudioPrivateLoop::PulseAudioPrivateLoop(QObject *parent)
     , m_lastVolume(-1)
     , m_reconnecting(false)
     , m_lastMuted(false)
+    , m_lastRole("inactive")
 {
 }
 
@@ -137,8 +138,8 @@ void PulseAudioPrivateLoop::sinkInfoCallback(
     auto self = static_cast<PulseAudioPrivateLoop*>(userdata);
 
     int volume = static_cast<int>(
-            pa_cvolume_avg(&info->volume) * 100 / PA_VOLUME_NORM
-            );
+        pa_cvolume_avg(&info->volume) * 100 / PA_VOLUME_NORM
+    );
 
     if (volume != self->m_lastVolume) {
         self->m_lastVolume = volume;
@@ -155,19 +156,54 @@ void PulseAudioPrivateLoop::sinkInfoCallback(
 
 void PulseAudioPrivateLoop::sinkInputInfoCallback(pa_context *, const pa_sink_input_info *info, int eol, void *userdata)
 {
-    if (eol || !info)
+    if (eol || !info) {
         return;
+    }
 
-    const char *role = pa_proplist_gets(
-        info->proplist,
-        PA_PROP_MEDIA_ROLE
-        );
-
-    if (!role)
+    PulseAudioPrivateLoop *self = static_cast<PulseAudioPrivateLoop *>(userdata);
+    if(!self->m_context) {
         return;
+    }
+
+    pa_context_get_sink_input_info_list(
+        self->m_context,
+        sinkInputInfoListCallback,
+        self
+    );
 }
 
-void PulseAudioPrivateLoop::subscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t idx, void *userdata)
+void PulseAudioPrivateLoop::sinkInputInfoListCallback(pa_context *
+                                                      , const pa_sink_input_info *info
+                                                      , int eol
+                                                      , void *userdata)
+{
+    PulseAudioPrivateLoop* self = static_cast<PulseAudioPrivateLoop*>(userdata);
+    if(eol) {
+        if (self->m_lastRole.isEmpty()) {
+            self->m_lastRole = "inactive";
+            emit self->activeSinkRoleChanged("inactive");
+            qDebug() << "All media streams removed. Active role set to inactive.";
+        }
+        return;
+    }
+
+    if(!info) {
+        return;
+    }
+
+    const char *role = pa_proplist_gets(info->proplist, PA_PROP_MEDIA_ROLE);
+    QString roleStr = role ? QString::fromLatin1(role) : QStringLiteral("inactive");
+
+    if (roleStr != self->m_lastRole) {
+        self->m_lastRole = roleStr;
+        emit self->activeSinkRoleChanged(roleStr);
+    }
+}
+
+void PulseAudioPrivateLoop::subscribeCallback(pa_context *c
+                                              , pa_subscription_event_type_t t
+                                              , uint32_t idx
+                                              , void *userdata)
 {
     PulseAudioPrivateLoop* self = static_cast<PulseAudioPrivateLoop*>(userdata);
 
@@ -200,8 +236,6 @@ void PulseAudioPrivateLoop::subscribeCallback(pa_context *c, pa_subscription_eve
             );
     }
 }
-
-
 
 void PulseAudioPrivateLoop::reconnect()
 {

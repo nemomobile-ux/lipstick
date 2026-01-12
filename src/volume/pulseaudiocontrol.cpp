@@ -13,7 +13,6 @@
 ****************************************************************************/
 
 #include "pulseaudiocontrol.h"
-
 #include <QDBusMessage>
 #include <QDBusConnection>
 #include <QDBusArgument>
@@ -30,6 +29,10 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
             this, &PulseAudioControl::volumeChanged,
             Qt::QueuedConnection);
 
+
+    connect(m_loop, &PulseAudioPrivateLoop::activeSinkRoleChanged,
+            this, &PulseAudioControl::sinkRoleChangeHandler,
+            Qt::QueuedConnection);
 
     int step = 5; // TODO
 
@@ -58,6 +61,25 @@ PulseAudioControl::~PulseAudioControl()
 void PulseAudioControl::update()
 {
     qDebug() << Q_FUNC_INFO;
+}
+
+void PulseAudioControl::sinkRoleChangeHandler(const QString &role)
+{
+    QString mediaState;
+    if(role == "music" || role == "video" || role == "game") {
+        mediaState = "foreground";
+    } else if (role == "phone" || role == "ring" || role == "alarm") {
+        mediaState = "active";
+    } else if (role == "notification") {
+        mediaState = "background";
+    } else {
+        mediaState = "unknow";
+    }
+
+    if(mediaState != m_mediaState) {
+        m_mediaState = mediaState;
+        emit mediaStateChanged(m_mediaState);
+    }
 }
 
 void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)

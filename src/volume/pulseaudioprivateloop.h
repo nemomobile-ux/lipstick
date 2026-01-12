@@ -4,14 +4,6 @@
 #include <QThread>
 #include <pulse/pulseaudio.h>
 
-enum class AudioRole {
-    Media,
-    Call,
-    Alarm,
-    System,
-    Unknow = 255,
-};
-
 class PulseAudioPrivateLoop : public QThread
 {
     Q_OBJECT
@@ -30,6 +22,7 @@ public:
 signals:
     void volumeChanged(int percent, int max);
     void muteChanged(bool muted);
+    void activeSinkRoleChanged(const QString &role);
     void connected();
     void disconnected();
 
@@ -42,6 +35,7 @@ private:
     int m_lastVolume;
     bool m_reconnecting;
     bool m_lastMuted;
+    QString m_lastRole;
 
     static void contextStateCallback(pa_context *c, void *userdata);
     static void sinkInfoCallback(
@@ -63,6 +57,13 @@ private:
         const pa_sink_input_info *info,
         int eol,
         void *userdata);
+
+    static void sinkInputInfoListCallback(pa_context *,
+        const pa_sink_input_info *info,
+        int eol,
+        void *userdata);
+
+    void sinkInputRemoved(uint32_t index);
 
     void reconnect();
     void cleanupContext();

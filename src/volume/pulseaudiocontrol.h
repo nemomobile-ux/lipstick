@@ -87,6 +87,9 @@ public slots:
      */
     void setVolume(int volume);
 
+private slots:
+    void sinkRoleChangeHandler(const QString &role);
+
 private:
     /*!
      * Stores the current volume and the maximum volume.
@@ -99,6 +102,7 @@ private:
     PulseAudioPrivateLoop *m_loop;
     MceButtonHandler *m_buttonHandler;
 
+    QString m_mediaState;
 
     Q_DISABLE_COPY(PulseAudioControl)
 
