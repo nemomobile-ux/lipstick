@@ -20,6 +20,7 @@
 #include <QDBusArgument>
 #include <QDBusServiceWatcher>
 #include <QTimer>
+#include <QFile>
 
 
 #define DBUS_ERR_CHECK(err) \
@@ -41,6 +42,7 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
     m_reconnectTimeout(PA_RECONNECT_TIMEOUT_MS),
     m_serviceWatcher(0)
 {
+    qDebug() << Q_FUNC_INFO;
 }
 
 PulseAudioControl::~PulseAudioControl()
@@ -53,12 +55,14 @@ PulseAudioControl::~PulseAudioControl()
 
 void PulseAudioControl::pulseRegistered(const QString &service)
 {
+    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(service);
     openConnection();
 }
 
 void PulseAudioControl::pulseUnregistered(const QString &service)
 {
+    qDebug() << Q_FUNC_INFO;
     Q_UNUSED(service);
     dbus_connection_unref(m_dbusConnection);
     m_dbusConnection = NULL;
@@ -67,6 +71,7 @@ void PulseAudioControl::pulseUnregistered(const QString &service)
 
 void PulseAudioControl::openConnection()
 {
+    qDebug() << Q_FUNC_INFO;
     // For the first time connection is opened connect to session bus
     // for tracking PulseAudio server state and to do the peer to peer
     // address lookup later
@@ -102,6 +107,16 @@ void PulseAudioControl::openConnection()
         }
     }
 
+    if (pa_bus_address == NULL) {
+        const char* home = getenv("XDG_RUNTIME_DIR");
+        if (home && *home) {
+            QString socketPath = QString("%1/pulse/native").arg(home);
+            if(QFile::exists(socketPath)) {
+                pa_bus_address = QString("unix:path=%1").arg(socketPath).toLatin1().data();
+            }
+        }
+    }
+
     if (pa_bus_address != NULL) {
         DBusError dbus_err;
         dbus_error_init(&dbus_err);
@@ -126,6 +141,7 @@ void PulseAudioControl::openConnection()
 
 void PulseAudioControl::update()
 {
+    qDebug() << Q_FUNC_INFO;
     openConnection();
 
     if (m_dbusConnection == NULL) {
@@ -219,6 +235,7 @@ void PulseAudioControl::update()
 
 void PulseAudioControl::addSignalMatch()
 {
+    qDebug() << Q_FUNC_INFO;
     static const char *signalNames []  = {"com.Meego.MainVolume2.StepsUpdated", "com.Meego.MainVolume2.NotifyHighVolume",
                                           "com.Meego.MainVolume2.NotifyListeningTime", "com.Meego.MainVolume2.CallStateChanged",
                                           "com.Meego.MainVolume2.MediaStateChanged"};
@@ -237,6 +254,7 @@ void PulseAudioControl::addSignalMatch()
 
 DBusHandlerResult PulseAudioControl::signalHandler(DBusConnection *, DBusMessage *message, void *control)
 {
+    qDebug() << Q_FUNC_INFO;
     if (!message)
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -281,12 +299,14 @@ DBusHandlerResult PulseAudioControl::signalHandler(DBusConnection *, DBusMessage
 
 void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
 {
+    qDebug() << Q_FUNC_INFO;
     // The pulseaudio API reports the step count (starting from 0), so the maximum volume is stepCount - 1
     emit volumeChanged(currentStep, stepCount - 1);
 }
 
 void PulseAudioControl::setVolume(int volume)
 {
+    qDebug() << Q_FUNC_INFO;
     // Check the connection, maybe PulseAudio restarted meanwhile
     openConnection();
 

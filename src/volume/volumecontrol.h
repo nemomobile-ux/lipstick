@@ -20,7 +20,11 @@
 #include "lipstickglobal.h"
 
 class HomeWindow;
+#ifdef HAVE_PIPEWIRE
+class PipeWireAudioControl;
+#else
 class PulseAudioControl;
+#endif
 class VolumeKeyListener;
 class MDConfItem;
 
@@ -215,8 +219,12 @@ private:
     //! The volume control window
     HomeWindow *m_window;
 
+#ifdef HAVE_PIPEWIRE
+    PipeWireAudioControl *m_audioControl;
+#else
     //! PulseAudio volume controller
-    PulseAudioControl *m_pulseAudioControl;
+    PulseAudioControl *m_audioControl;
+#endif
 
     //! A resource object for access to the volume keys
     ResourcePolicy::ResourceSet *m_hwKeyResource;

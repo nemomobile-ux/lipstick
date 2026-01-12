@@ -31,8 +31,21 @@ set(PUBLICHEADERS
     devicestate/devicestate.h
     vpnagent.h)
 
+if(PIPEWARE_FOUND)
+    set(VOLSOURCES
+        volume/pipewireaudiocontrol.cpp)
+    set(VOLHEADERS
+        volume/pipewireaudiocontrol.h)
+else()
+    set(VOLHEADERS
+        volume/volume/pulseaudiocontrol.h)
+    set(VOLSOURCES
+        volume/pulseaudiocontrol.cpp)
+endif()
+
 set(HEADERS
     ${PUBLICHEADERS}
+    ${VOLHEADERS}
     3rdparty/synchronizelists.h
     3rdparty/dbus-gmain/dbus-gmain.h
     bluetooth/bluetoothagent.h
@@ -45,7 +58,6 @@ set(HEADERS
     screenlock/screenlock.h
     touchscreen/touchscreen_p.h
     volume/volumecontrol.h
-    volume/pulseaudiocontrol.h
     lipstickapi.h
     lipstickqmlpath.h
     screenshotservice.h
@@ -56,6 +68,7 @@ set(HEADERS
     logging.h)
 
 set(SOURCES
+    ${VOLSOURCES}
     3rdparty/dbus-gmain/dbus-gmain.c
     bluetooth/bluetoothagent.cpp
     bluetooth/bluetoothobexagent.cpp
@@ -87,6 +100,7 @@ set(SOURCES
     touchscreen/touchscreen.cpp
     volume/volumecontrol.cpp
     volume/pulseaudiocontrol.cpp
+    volume/pipewireaudiocontrol.cpp
     notifications/notificationfeedbackplayer.cpp
     usbmodeselector.cpp
     localemanager.cpp
@@ -192,6 +206,12 @@ target_link_libraries(${PACKAGE} PUBLIC
     PkgConfig::USB_MODED_QT
     KF6::BluezQt
     -lrt -lEGL)
+
+if(PIPEWIRE_FOUND)
+    target_include_directories(${PACKAGE} PRIVATE ${PIPEWIRE_INCLUDE_DIRS})
+    target_link_libraries(${PACKAGE} PRIVATE ${PIPEWIRE_LIBRARIES})
+    target_compile_options(${PACKAGE} PRIVATE ${PIPEWIRE_CFLAGS_OTHER})
+endif()
 
 configure_file(${PACKAGE}.pc.in ${PACKAGE}.pc @ONLY)
 

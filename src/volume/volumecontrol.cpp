@@ -22,7 +22,11 @@
 #include <QKeyEvent>
 #include <MDConfItem>
 #include "utilities/closeeventeater.h"
+#ifdef HAVE_PIPEWIRE
+#include "pipewireaudiocontrol.h"
+#else
 #include "pulseaudiocontrol.h"
+#endif
 #include "volumecontrol.h"
 #include "lipstickqmlpath.h"
 #include <QDBusConnection>
@@ -41,7 +45,11 @@ VolumeControl::VolumeControl(QObject *parent)
 VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     QObject(parent),
     m_window(nullptr),
-    m_pulseAudioControl(new PulseAudioControl(this)),
+#ifdef HAVE_PIPEWIRE
+    m_audioControl(new PipeWireAudioControl(this)),
+#else
+    m_audioControl(new PulseAudioControl(this)),
+#endif
     m_hwKeyResource(nullptr),
     m_hwKeysAcquired(false),
     m_hwKeysEnabled(false),
@@ -91,12 +99,12 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     setWarningAcknowledged(false);
     connect(m_audioWarning, SIGNAL(valueChanged()), this, SIGNAL(restrictedVolumeChanged()));
     connect(this, SIGNAL(maximumVolumeChanged()), this, SIGNAL(restrictedVolumeChanged()));
-    connect(m_pulseAudioControl, SIGNAL(volumeChanged(int,int)), this, SLOT(setVolume(int,int)));
-    connect(m_pulseAudioControl, SIGNAL(highVolume(int)), SLOT(handleHighVolume(int)));
-    connect(m_pulseAudioControl, SIGNAL(longListeningTime(int)), SLOT(handleLongListeningTime(int)));
-    connect(m_pulseAudioControl, SIGNAL(callActiveChanged(bool)), SLOT(handleCallActive(bool)));
-    connect(m_pulseAudioControl, SIGNAL(mediaStateChanged(QString)), SLOT(handleMediaStateChanged(QString)));
-    m_pulseAudioControl->update();
+    connect(m_audioControl, SIGNAL(volumeChanged(int,int)), this, SLOT(setVolume(int,int)));
+    connect(m_audioControl, SIGNAL(highVolume(int)), SLOT(handleHighVolume(int)));
+    connect(m_audioControl, SIGNAL(longListeningTime(int)), SLOT(handleLongListeningTime(int)));
+    connect(m_audioControl, SIGNAL(callActiveChanged(bool)), SLOT(handleCallActive(bool)));
+    connect(m_audioControl, SIGNAL(mediaStateChanged(QString)), SLOT(handleMediaStateChanged(QString)));
+    m_audioControl->update();
 
 }
 
@@ -139,6 +147,7 @@ int VolumeControl::volume() const
 
 void VolumeControl::setVolume(int volume)
 {
+    qDebug() << Q_FUNC_INFO;
     int newVolume = qBound(0, volume, maximumVolume());
 
     // This must always clamp the volume.
@@ -149,7 +158,7 @@ void VolumeControl::setVolume(int volume)
 
     if (newVolume != m_volume) {
         m_volume = volume;
-        m_pulseAudioControl->setVolume(m_volume);
+        m_audioControl->setVolume(m_volume);
         emit volumeChanged();
     }
 
@@ -213,6 +222,8 @@ int VolumeControl::mediaState() const
 
 void VolumeControl::setVolume(int volume, int maximumVolume)
 {
+    qDebug() << Q_FUNC_INFO;
+
     int clampedMaxVolume = qMax(0, maximumVolume);
     int clampedVolume = qBound(0, volume, maximumVolume);
 
@@ -245,6 +256,7 @@ void VolumeControl::setVolume(int volume, int maximumVolume)
 
 void VolumeControl::setVolumeUpKeyState(bool pressed)
 {
+    qDebug() << Q_FUNC_INFO;
     if (m_upPressed != pressed) {
         m_upPressed = pressed;
         if (m_upPressed) {
@@ -297,6 +309,8 @@ void VolumeControl::hwKeysDisabled()
 
 void VolumeControl::hwKeyResourceAcquired()
 {
+    qDebug() << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << Q_FUNC_INFO;
+
     if (!m_hwKeysAcquired ) {
         m_hwKeysAcquired = true;
         evaluateKeyState();
@@ -335,7 +349,7 @@ void VolumeControl::handleLongListeningTime(int listeningTime)
     int newVolume = qBound(0, m_volume, safeVolume() == 0 ? maximumVolume() : safeVolume());
     if (newVolume != m_volume) {
         m_volume = newVolume;
-        m_pulseAudioControl->setVolume(m_volume);
+        m_audioControl->setVolume(m_volume);
         emit volumeChanged();
     }
 
