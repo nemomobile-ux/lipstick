@@ -16,8 +16,13 @@
 #define PULSEAUDIOCONTROL_H
 
 #include <QObject>
+#include <QThread>
+#include <pulse/pulseaudio.h>
+
 #include <QDBusServiceWatcher>
 #include <dbus/dbus.h>
+
+#include "pulseaudioprivateloop.h"
 
 /*!
  * \class PulseAudioControl
@@ -81,15 +86,7 @@ public slots:
      */
     void setVolume(int volume);
 
-private slots:
-    //! Follow PulseAudio visibility in sessionbus
-    void pulseRegistered(const QString &service);
-    void pulseUnregistered(const QString &service);
-
 private:
-    //! Opens connection to PulseAudio daemon.
-    void openConnection();
-
     /*!
      * Stores the current volume and the maximum volume.
      *
@@ -98,23 +95,7 @@ private:
      */
     void setSteps(quint32 currentStep, quint32 stepCount);
 
-    //! Registers a signal handler to listen to the PulseAudio MainVolume1 StepsUpdated signal
-    void addSignalMatch();
-
-    /*!
-     * The signal handler for PulseAudio's MainVolume1 signal
-     *
-     * \param conn D-Bus connection structure
-     * \param message signal message
-     * \param control PulseAudioControl instance handling this signal
-     */
-    static DBusHandlerResult signalHandler(DBusConnection *conn, DBusMessage *message, void *control);
-
-    //! D-Bus connection structure
-    DBusConnection *m_dbusConnection;
-    int m_reconnectTimeout;
-
-    QDBusServiceWatcher *m_serviceWatcher;
+    PulseAudioPrivateLoop *m_loop;
 
     Q_DISABLE_COPY(PulseAudioControl)
 

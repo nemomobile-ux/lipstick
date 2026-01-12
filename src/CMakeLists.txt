@@ -46,6 +46,7 @@ set(HEADERS
     touchscreen/touchscreen_p.h
     volume/volumecontrol.h
     volume/pulseaudiocontrol.h
+    volume/pulseaudioprivateloop.h
     lipstickapi.h
     lipstickqmlpath.h
     screenshotservice.h
@@ -87,6 +88,7 @@ set(SOURCES
     touchscreen/touchscreen.cpp
     volume/volumecontrol.cpp
     volume/pulseaudiocontrol.cpp
+    volume/pulseaudioprivateloop.cpp
     notifications/notificationfeedbackplayer.cpp
     usbmodeselector.cpp
     localemanager.cpp
@@ -190,6 +192,7 @@ target_link_libraries(${PACKAGE} PUBLIC
     PkgConfig::TIMED_QT
     PkgConfig::WAYLAND_SERVER
     PkgConfig::USB_MODED_QT
+    PkgConfig::PULSE
     KF6::BluezQt
     -lrt -lEGL)
 
