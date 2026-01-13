@@ -356,7 +356,8 @@ void HomeApplication::setCompositorPath(const QString& path)
         return;
     }
 
-    QQuickItem* compositor = qobject_cast<QQuickItem*>(component.beginCreate(m_qmlEngine->rootContext()));
+    QObject *obj = component.beginCreate(m_qmlEngine->rootContext());
+    QQuickItem* compositor = qobject_cast<QQuickItem*>(obj);
     if (compositor) {
         compositor->setParent(this);
 
@@ -367,8 +368,6 @@ void HomeApplication::setCompositorPath(const QString& path)
             compositor->setParentItem(LipstickCompositor::instance()->quickWindow()->contentItem());
         }
 
-        component.completeCreate();
-
         if (!m_qmlEngine->incubationController() && LipstickCompositor::instance()) {
             // install default incubation controller
             m_qmlEngine->setIncubationController(LipstickCompositor::instance()->quickWindow()->incubationController());
@@ -376,7 +375,10 @@ void HomeApplication::setCompositorPath(const QString& path)
     } else {
         qWarning() << "HomeApplication: Error creating compositor from" << path;
         qWarning() << component.errors();
+
+        delete obj;
     }
+    component.completeCreate();
 }
 
 HomeWindow* HomeApplication::mainWindowInstance()
