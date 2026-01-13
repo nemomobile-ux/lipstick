@@ -129,6 +129,7 @@ void HomeWindow::show()
 
     d->isVisible = true;
     if (d->isWindow()) {
+        d->window->setGeometry(d->geometry);
         d->window->show();
     } else {
         d->compositorWindow = LipstickCompositor::instance()->mapProcWindow(d->title, d->category, d->geometry, d->root);
