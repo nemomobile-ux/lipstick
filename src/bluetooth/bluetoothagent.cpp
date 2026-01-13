@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2026 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -85,6 +85,7 @@ void BluetoothAgent::displayPasskey(BluezQt::DevicePtr device, const QString &pa
     Q_UNUSED(passkey)
     Q_UNUSED(entered)
     m_device = device;
+    emit showPasskey(passkey, entered);
 }
 
 void BluetoothAgent::registerAgent()
@@ -146,12 +147,18 @@ void BluetoothAgent::unPair(const QString &btMacAddress)
         return;
     }
 
-    m_usableAdapter->removeDevice(m_device);
+    if(m_usableAdapter) {
+        m_usableAdapter->removeDevice(m_device);
+    }
 }
 
 void BluetoothAgent::usableAdapterChanged(BluezQt::AdapterPtr adapter)
 {
     if(adapter && m_usableAdapter != adapter) {
+        if(m_usableAdapter) {
+            disconnect(m_usableAdapter.data(), nullptr, this, nullptr);
+        }
+
         m_usableAdapter = adapter;
 
         connect(m_usableAdapter.data(), &BluezQt::Adapter::deviceChanged,
@@ -171,16 +178,12 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
     Q_UNUSED(request);
     m_device = device;
 
-    emit showRequiesDialog(m_device->address(),
+    emit showRequestDialog(m_device->address(),
                            m_device->name(),
                            passkey);
 
     connect(this, &BluetoothAgent::requestConfirmationAccept, this, [=] {
         request.accept();
-    });
-
-    connect(this, &BluetoothAgent::requestConfirmationReject, this, [=] {
-        request.reject();
     });
 }
 
@@ -227,7 +230,7 @@ void BluetoothAgent::requestDefaultAgentFinished(BluezQt::PendingCall *call)
         qCWarning(lcLipstickBtAgentLog) << "BT: requestDefaultAgent() call failed:" << call->errorText();
         emit error(call->errorText());
     }
-    qCDebug(lcLipstickBtAgentLog) << "BT: bt agent registring as system" << objectPath().path();
+    qCDebug(lcLipstickBtAgentLog) << "BT: bt agent registering as system" << objectPath().path();
     m_registerAgent = true;
 }
 
@@ -250,11 +253,13 @@ void BluetoothAgent::updateConnectedStatus()
 
 void BluetoothAgent::calcAvailable(BluezQt::AdapterPtr adapter)
 {
-    if(m_manager->adapters().count() > 0) {
-        m_available = true;
-    } else {
-        m_available = false;
+    bool available = !m_manager->adapters().isEmpty();
+
+    if(available != m_available) {
+        m_available = available;
+        emit availableChanged();
     }
+
 }
 
 bool BluetoothAgent::connected()

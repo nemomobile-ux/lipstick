@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2026 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -47,11 +47,11 @@ QDBusObjectPath BluetoothObexAgent::objectPath() const
 void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQt::ObexSessionPtr session, const BluezQt::Request<QString> &request)
 {
     emit showRequiesDialog(session->destination(), transfer->name());
-    connect(this, &BluetoothObexAgent::requestConfirmationReject, this, [=]() {
+    connect(this, &BluetoothObexAgent::requestConfirmationReject, this, [request]() mutable {
         request.reject();
-    });
+    }, Qt::SingleShotConnection);
 
-    connect(this, &BluetoothObexAgent::requestConfirmationAccept, this, [=]() {
+    connect(this, &BluetoothObexAgent::requestConfirmationAccept, this, [=]() mutable {
         QString cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation)+"/obexd";
         QString transferName = transfer->name();
 
@@ -59,7 +59,7 @@ void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQ
             QDir(cachePath).mkpath(cachePath);
         }
 
-        QString temporaryPath = cachePath + transferName;
+        QString temporaryPath = QDir(cachePath).filePath(transferName);
         int number = 0;
 
         while (QFile::exists(temporaryPath)) {
@@ -70,7 +70,9 @@ void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQ
         m_transferName = transferName;
 
         connect(transfer.data(), &BluezQt::ObexTransfer::statusChanged, this, &BluetoothObexAgent::obexDataTransferFinished);
-    });
+
+        request.accept(m_temporaryPath);
+    }, Qt::SingleShotConnection);
 }
 
 void BluetoothObexAgent::startServiceFinished(BluezQt::PendingCall *call)
@@ -99,19 +101,19 @@ void BluetoothObexAgent::obexManagerStartResult(BluezQt::InitObexManagerJob *job
 void BluetoothObexAgent::obexDataTransferFinished(BluezQt::ObexTransfer::Status status)
 {
     if(status == BluezQt::ObexTransfer::Complete) {
-        QString downloadsDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/bluethooth";
+        QString downloadsDir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/bluetooth";
         if(!QDir(downloadsDir).exists()) {
-            QDir::root().mkpath(downloadsDir);
+            QDir().mkpath(downloadsDir);
         }
 
         QString resultPath = QDir(downloadsDir).absoluteFilePath(m_transferName);
-        int number = 0;
+        int number = 1;
         while (QFile::exists(resultPath)) {
             resultPath = QDir(downloadsDir).absoluteFilePath(QStringLiteral("%1 (%2)").arg(m_transferName, number));
             number++;
         }
 
-        QFile::rename(m_transferName, resultPath);
+        QFile::rename(m_temporaryPath, resultPath);
         emit transferFinished(resultPath);
     }else if(status == BluezQt::ObexTransfer::Error) {
         emit transferError();
