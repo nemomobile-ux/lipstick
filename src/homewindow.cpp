@@ -68,7 +68,7 @@ HomeWindowPrivate::HomeWindowPrivate()
 
 HomeWindowPrivate::~HomeWindowPrivate()
 {
-    delete root;
+    if (root) root->deleteLater();
     delete context;
     if (isWindow()) delete window;
 }
@@ -178,8 +178,9 @@ void HomeWindow::setSource(const QUrl &source)
 {
     d->errors.clear();
     if (d->root) {
-        delete d->root;
-        d->root = 0;
+        d->root->setParent(nullptr);
+        d->root->deleteLater();
+        d->root = nullptr;
     }
 
     QQmlComponent component(d->context->engine(), source);
