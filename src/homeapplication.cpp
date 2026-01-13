@@ -254,8 +254,17 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 {
     if (!m_homeReadySent) {
         m_homeReadySent = true;
-        disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        LipstickCompositor *c = LipstickCompositor::instance();
+        if (!c) {
+            return;
+        }
 
+        QQuickWindow* w = c->quickWindow();
+        if (!w) {
+            return;
+        }
+
+        disconnect(w, &QQuickWindow::frameSwapped, this, &HomeApplication::sendHomeReadySignalIfNotAlreadySent);
         emit homeReady();
     }
 }
