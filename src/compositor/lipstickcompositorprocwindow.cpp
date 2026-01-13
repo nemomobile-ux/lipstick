@@ -26,6 +26,9 @@ LipstickCompositorProcWindow *LipstickCompositor::mapProcWindow(const QString &t
                                                                 const QRect &g, QQuickItem *rootItem)
 {
     int id = m_nextWindowId++;
+    if(!m_window || !m_window->contentItem()) {
+        return nullptr;
+    }
 
     LipstickCompositorProcWindow *item = new LipstickCompositorProcWindow(id, category, m_window->contentItem());
     item->setSize(g.size());
@@ -60,7 +63,9 @@ LipstickCompositorProcWindow::LipstickCompositorProcWindow(int windowId, const Q
 void LipstickCompositorProcWindow::hide()
 {
     LipstickCompositor *c = LipstickCompositor::instance();
-    c->surfaceUnmapped(this);
+    if(c) {
+        c->surfaceUnmapped(this);
+    }
 }
 
 bool LipstickCompositorProcWindow::isInProcess() const

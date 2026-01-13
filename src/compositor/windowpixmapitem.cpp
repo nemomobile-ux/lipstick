@@ -40,12 +40,26 @@ void WindowPixmapItem::setWindowId(int id)
         return;
     m_id = id;
     LipstickCompositor *c = LipstickCompositor::instance();
-    if (c && m_id) {
-        LipstickCompositorWindow *w = static_cast<LipstickCompositorWindow *>(c->windowForId(m_id));
-
-        if (w)
-            setSurface(w->surface());
+    if (!c || m_id == 0) {
+        setSurface(nullptr);
+        emit windowIdChanged();
+        return;
     }
+
+    LipstickCompositorWindow *w = static_cast<LipstickCompositorWindow *>(c->windowForId(m_id));
+
+    if (w && w->surface()) {
+        setSurface(w->surface());
+
+        connect(w, &QObject::destroyed, this, [this]() {
+            setSurface(nullptr);
+            m_id = 0;
+            emit windowIdChanged();
+        });
+    } else {
+        setSurface(nullptr);
+    }
+
     emit windowIdChanged();
 }
 

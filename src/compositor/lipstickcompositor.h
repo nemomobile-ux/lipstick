@@ -230,7 +230,7 @@ private slots:
     void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
     void windowSwapped();
-    void windowDestroyed();
+    void windowObjectDestroyed();
     void windowPropertyChanged(const QString &);
     void reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState);
     void homeApplicationAboutToDestroy();

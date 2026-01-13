@@ -63,7 +63,9 @@ LipstickCompositorWindow::~LipstickCompositorWindow()
 {
     // We don't want tryRemove() posting an event anymore, we're dying anyway
     m_removePosted = true;
-    LipstickCompositor::instance()->windowDestroyed(this);
+    if (auto *c = LipstickCompositor::instance()) {
+        c->windowDestroyed(this);
+    }
 }
 
 void LipstickCompositorWindow::updatePolicyApplicationId()
@@ -81,7 +83,10 @@ void LipstickCompositorWindow::updatePolicyApplicationId()
 
     // stat line values are split by ' ' in /proc/*/stat
     QByteArray data = f.readAll();
-    QList<QByteArray> statFields = data.split(' ');
+
+    int lastParen = data.lastIndexOf(')');
+    QByteArray after = data.mid(lastParen + 2);
+    QList<QByteArray> statFields = after.split(' ');
 
     // starttime is field 22, format %lld in stat, see man page for details.
     if (statFields.count() < 22) {
@@ -195,7 +200,7 @@ QRect LipstickCompositorWindow::mouseRegionBounds() const
     if (m_mouseRegionValid)
         return m_mouseRegion.boundingRect();
     else
-        return QRect(0, 0, width(), height());
+        return QRect(0, 0, int(width()), int(height()));
 }
 
 void LipstickCompositorWindow::refreshMouseRegion()
@@ -243,7 +248,7 @@ void LipstickCompositorWindow::refreshGrabbedKeys()
 
 bool LipstickCompositorWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == window() && m_interceptingTouch) {
+    if (window() && obj == window() && m_interceptingTouch) {
         switch (event->type()) {
         case QEvent::TouchUpdate: {
             QTouchEvent *te = static_cast<QTouchEvent *>(event);
@@ -313,7 +318,9 @@ bool LipstickCompositorWindow::event(QEvent *e)
     bool rv = QWaylandQuickItem::event(e);
     if (e->type() == QEvent::User) {
         m_removePosted = false;
-        if (canRemove()) delete this;
+        if (canRemove()) {
+            deleteLater();
+        }
     }
     return rv;
 }
@@ -322,6 +329,10 @@ void LipstickCompositorWindow::mousePressEvent(QMouseEvent *event)
 {
     QWaylandSurface *m_surface = surface();
     if (m_surface && m_surface->inputRegionContains(event->pos()) && event->source() != Qt::MouseEventSynthesizedByQt) {
+        if(!m_surface || !m_surface->compositor()) {
+            return;
+        }
+
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         QWaylandView *v = view();
         if (inputDevice->mouseFocus() != v) {
@@ -341,6 +352,10 @@ void LipstickCompositorWindow::mouseMoveEvent(QMouseEvent *event)
     QWaylandSurface *m_surface = surface();
     if (m_surface && event->source() != Qt::MouseEventSynthesizedByQt) {
         QWaylandView *v = view();
+        if(!m_surface || !m_surface->compositor()) {
+            return;
+        }
+
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         inputDevice->sendMouseMoveEvent(v, event->position(), event->globalPosition());
     } else {
@@ -352,6 +367,10 @@ void LipstickCompositorWindow::mouseReleaseEvent(QMouseEvent *event)
 {
     QWaylandSurface *m_surface = surface();
     if (m_surface && event->source() != Qt::MouseEventSynthesizedByQt) {
+        if(!m_surface || !m_surface->compositor()) {
+            return;
+        }
+
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         inputDevice->sendMouseReleaseEvent(event->button());
     } else {
@@ -366,6 +385,10 @@ void LipstickCompositorWindow::wheelEvent(QWheelEvent *event)
     if (m_surface
             && (!m_mouseRegionValid || m_mouseRegion.contains(event->position().toPoint()))
             && m_surface->inputRegionContains(event->position()) && event->source() != Qt::MouseEventSynthesizedByQt) {
+        if(!m_surface || !m_surface->compositor()) {
+            return;
+        }
+
         QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
         if (inputDevice->mouseFocus() != this->view()) {
             inputDevice->setMouseFocus(this->view());
@@ -373,8 +396,8 @@ void LipstickCompositorWindow::wheelEvent(QWheelEvent *event)
                 takeFocus();
             }
         }
-        //@todo Use angleDelta()
-        inputDevice->sendMouseWheelEvent(Qt::Vertical, 0);
+        QPoint angle = event->angleDelta();
+        inputDevice->sendMouseWheelEvent(Qt::Vertical, angle.y());
     } else {
         event->ignore();
     }
@@ -390,7 +413,9 @@ void LipstickCompositorWindow::touchEvent(QTouchEvent *event)
             // On TouchBegin, start intercepting
             if (event->isAccepted() && !m_interceptingTouch) {
                 m_interceptingTouch = true;
-                window()->installEventFilter(this);
+                if (QWindow *w = window()) {
+                    window()->installEventFilter(this);
+                }
             }
         }
     } else {
@@ -416,6 +441,10 @@ void LipstickCompositorWindow::handleTouchEvent(QTouchEvent *event)
                 return;
             }
         }
+    }
+
+    if(!m_surface || !m_surface->compositor()) {
+        return;
     }
 
     QWaylandSeat *inputDevice = m_surface->compositor()->seatFor(event);
@@ -517,7 +546,7 @@ void LipstickCompositorWindow::setTopLevel(QWaylandXdgToplevel* topLevel)
     }
 
     if(m_topLevel) {
-        m_topLevel->disconnect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
+        disconnect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);
     }
     m_topLevel = topLevel;
     connect(m_topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositorWindow::activatedChanged);

@@ -37,9 +37,14 @@ WindowModel::WindowModel()
     }
 
     QDBusConnection dbus = QDBusConnection::sessionBus();
-    dbus.registerObject(LIPSTICK_DBUS_WINDOW_MODEL_PATH,
-                        this, QDBusConnection::ExportAllSlots);
-    dbus.registerService(LIPSTICK_DBUS_SERVICE_NAME);
+    if (!dbus.registerObject(LIPSTICK_DBUS_WINDOW_MODEL_PATH,
+                            this, QDBusConnection::ExportAllSlots)) {
+        qWarning() << "WindowModel: cant register object" << LIPSTICK_DBUS_WINDOW_MODEL_PATH;
+    }
+
+    if (!dbus.registerService(LIPSTICK_DBUS_SERVICE_NAME)) {
+        qWarning() << "WindowModel: cant register service" << LIPSTICK_DBUS_SERVICE_NAME;
+    }
 }
 
 WindowModel::~WindowModel()
@@ -56,7 +61,7 @@ int WindowModel::itemCount() const
 int WindowModel::windowId(int index) const
 {
     if (index < 0 || index >= m_items.count())
-        return 0;
+        return -1;
     return m_items.at(index);
 }
 
@@ -67,10 +72,11 @@ int WindowModel::rowCount(const QModelIndex &) const
 
 QVariant WindowModel::data(const QModelIndex &index, int role) const
 {
-    int idx = index.row();
-    if (idx < 0 || idx >= m_items.count())
+    if (!index.isValid()) {
         return QVariant();
+    }
 
+    int idx = index.row();
     LipstickCompositor *c = LipstickCompositor::instance();
     if (role == Qt::UserRole + 1) {
         return m_items.at(idx);
@@ -79,6 +85,9 @@ QVariant WindowModel::data(const QModelIndex &index, int role) const
         return s?s->client()->processId():0;
     } else if (role == Qt::UserRole + 3) {
         LipstickCompositorWindow *w = static_cast<LipstickCompositorWindow *>(c->windowForId(m_items.at(idx)));
+        if(!w) {
+            return QString();
+        }
         return w->title();
     } else {
         return QVariant();
@@ -154,7 +163,7 @@ void WindowModel::titleChanged(int id)
     if (idx == -1)
         return;
 
-    emit dataChanged(index(idx, 0), index(idx, 0));
+    emit dataChanged(index(idx, 0), index(idx, 0), { Qt::UserRole + 3 });
 }
 
 void WindowModel::refresh()
