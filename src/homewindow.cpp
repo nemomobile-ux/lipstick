@@ -63,7 +63,11 @@ HomeWindowPrivate::HomeWindowPrivate()
         // XXX
         // window->setResizeMode(QQuickView::SizeRootObjectToView);
     } else {
-        window = LipstickCompositor::instance()->quickWindow();
+        LipstickCompositor* c = LipstickCompositor::instance();
+        if(!c) {
+            qFatal("HomeWindow: compositor expected but not available");
+        }
+        window = c->quickWindow();
     }
 }
 
