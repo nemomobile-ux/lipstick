@@ -199,6 +199,11 @@ void HomeWindow::setSource(const QUrl &source)
     }
 
     QObject *o = component.create(d->context);
+    if(!o) {
+        d->errors = component.errors();
+        return;
+    }
+
     if (QQuickItem *item = qobject_cast<QQuickItem *>(o)) {
         d->root = item;
 
