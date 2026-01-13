@@ -276,8 +276,13 @@ void HomeWindow::raise()
 {
     if (d->isWindow())
         d->window->raise();
-    else if (d->compositorWindow)
+    else if (d->compositorWindow) {
+        LipstickCompositor* c = LipstickCompositor::instance();
+        if (!c) {
+            return;
+        }
         LipstickCompositor::instance()->windowRaised(d->compositorWindow);
+    }
 }
 
 void HomeWindow::lower()
