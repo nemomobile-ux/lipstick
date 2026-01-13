@@ -272,7 +272,7 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 void HomeApplication::sendStartupNotifications()
 {
     /* Let systemd know that we are initialized */
-    if (arguments().indexOf("--systemd") >= 0) {
+    if (arguments().contains("--systemd")) {
         sd_notify(0, "READY=1");
     }
 
