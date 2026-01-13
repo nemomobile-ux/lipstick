@@ -59,9 +59,10 @@
 
 void HomeApplication::quitSignalHandler(int)
 {
-    uint64_t a = 1;
-    ssize_t unused = ::write(s_quitSignalFd, &a, sizeof(a));
-    Q_UNUSED(unused);
+    if (s_quitSignalFd >= 0) {
+        uint64_t a = 1;
+        ::write(s_quitSignalFd, &a, sizeof(a));
+    }
 }
 
 int HomeApplication::s_quitSignalFd = -1;
@@ -204,6 +205,11 @@ HomeApplication::~HomeApplication()
     }
 
     emit aboutToDestroy();
+
+    if (s_quitSignalFd >= 0) {
+        ::close(s_quitSignalFd);
+        s_quitSignalFd = -1;
+    }
 
     delete m_mainWindowInstance;
     m_mainWindowInstance = nullptr;
