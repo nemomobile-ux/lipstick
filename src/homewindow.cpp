@@ -55,7 +55,8 @@ HomeWindowPrivate::HomeWindowPrivate()
     if (0 == HomeApplication::instance())
         qFatal("HomeWindow: Must create HomeApplication before HomeWindow");
 
-    context = new QQmlContext(HomeApplication::instance()->engine());
+    context = new QQmlContext(HomeApplication::instance()->engine()
+                              , HomeApplication::instance());
 
     if (isWindow()) {
         window = new QQuickWindow;
