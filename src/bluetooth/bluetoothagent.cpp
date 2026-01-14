@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2024 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -19,9 +19,19 @@
 
 #include "bluetoothagent.h"
 #include "logging.h"
+#include "homewindow.h"
+#include "bluetoothagent.h"
+#include "lipstickqmlpath.h"
+#include "utilities/closeeventeater.h"
+
 
 #include <bluezqt/device.h>
 #include <bluezqt/initmanagerjob.h>
+
+#include <QScreen>
+#include <QGuiApplication>
+#include <QPoint>
+#include <QTimer>
 
 BluetoothAgent::BluetoothAgent(QObject *parent)
     : BluezQt::Agent(parent)
@@ -31,6 +41,7 @@ BluetoothAgent::BluetoothAgent(QObject *parent)
     , m_connected(false)
     , m_available(false)
     , m_registerAgent(false)
+    , m_requestDialogWindow(nullptr)
 {
     BluezQt::InitManagerJob *job = m_manager->init();
     job->start();
@@ -48,6 +59,12 @@ BluetoothAgent::BluetoothAgent(QObject *parent)
             this, &BluetoothAgent::calcAvailable);
 
     usableAdapterChanged(m_usableAdapter);
+    QTimer::singleShot(0, this, SLOT(createWindow()));
+}
+
+BluetoothAgent::~BluetoothAgent()
+{
+    delete m_requestDialogWindow;
 }
 
 QDBusObjectPath BluetoothAgent::objectPath() const
@@ -96,6 +113,17 @@ void BluetoothAgent::registerAgent()
     connect(call, &BluezQt::PendingCall::finished,
             this, &BluetoothAgent::registerAgentFinished);
 
+}
+
+void BluetoothAgent::createWindow()
+{
+    m_requestDialogWindow = new HomeWindow();
+    m_requestDialogWindow->setGeometry(QRect(QPoint(), QGuiApplication::primaryScreen()->size()));
+    m_requestDialogWindow->setCategory(QLatin1String("notification"));
+    m_requestDialogWindow->setWindowTitle(tr("Confirmation dialog"));
+    m_requestDialogWindow->setContextProperty("initialSize", QGuiApplication::primaryScreen()->size());
+    m_requestDialogWindow->setSource(QmlPath::to("bluetooth/RequestConfirmationDialog.qml"));
+    m_requestDialogWindow->installEventFilter(new CloseEventEater(this));
 }
 
 void BluetoothAgent::pair(const QString &btMacAddress)
@@ -168,12 +196,12 @@ void BluetoothAgent::requestConfirmation(BluezQt::DevicePtr device,
                                          const QString &passkey,
                                          const BluezQt::Request<> &request)
 {
-    Q_UNUSED(request);
     m_device = device;
+    m_deviceAddress = m_device->address();
+    m_deviceName = m_device->name();
+    m_devicePassKey = passkey;
 
-    emit showRequiesDialog(m_device->address(),
-                           m_device->name(),
-                           passkey);
+    emit showRequiesDialog();
 
     connect(this, &BluetoothAgent::requestConfirmationAccept, this, [=] {
         request.accept();
@@ -265,4 +293,37 @@ bool BluetoothAgent::connected()
 bool BluetoothAgent::available()
 {
     return m_available;
+}
+
+bool BluetoothAgent::windowVisible() const
+{
+    return m_requestDialogWindow != 0 && m_requestDialogWindow->isVisible();
+}
+
+void BluetoothAgent::setWindowVisible(bool visible)
+{
+    if(visible) {
+        if(m_requestDialogWindow && !m_requestDialogWindow->isVisible()) {
+            m_requestDialogWindow->show();
+            emit windowVisibleChanged();
+        }
+    } else if(m_requestDialogWindow != 0 && m_requestDialogWindow->isVisible()) {
+        m_requestDialogWindow->hide();
+        emit windowVisibleChanged();
+    }
+}
+
+QString BluetoothAgent::deviceAddress() const
+{
+    return m_deviceAddress;
+}
+
+QString BluetoothAgent::devicePassKey() const
+{
+    return m_devicePassKey;
+}
+
+QString BluetoothAgent::deviceName() const
+{
+    return m_deviceName;
 }
