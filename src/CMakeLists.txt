@@ -44,8 +44,10 @@ set(HEADERS
     notifications/androidprioritystore.h
     screenlock/screenlock.h
     touchscreen/touchscreen_p.h
+    volume/mcebuttonhandler.h
     volume/volumecontrol.h
     volume/pulseaudiocontrol.h
+    volume/pulseaudioprivateloop.h
     lipstickapi.h
     lipstickqmlpath.h
     screenshotservice.h
@@ -85,8 +87,10 @@ set(SOURCES
     notifications/androidprioritystore.cpp
     screenlock/screenlock.cpp
     touchscreen/touchscreen.cpp
+    volume/mcebuttonhandler.cpp
     volume/volumecontrol.cpp
     volume/pulseaudiocontrol.cpp
+    volume/pulseaudioprivateloop.cpp
     notifications/notificationfeedbackplayer.cpp
     usbmodeselector.cpp
     localemanager.cpp
@@ -190,6 +194,7 @@ target_link_libraries(${PACKAGE} PUBLIC
     PkgConfig::TIMED_QT
     PkgConfig::WAYLAND_SERVER
     PkgConfig::USB_MODED_QT
+    PkgConfig::PULSE
     KF6::BluezQt
     -lrt -lEGL)
 
