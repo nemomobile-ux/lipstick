@@ -188,7 +188,9 @@ void LipstickCompositor::homeApplicationAboutToDestroy()
     // up calling code such as LipstickCompositorWindow::handleTouchCancel(),
     // which will try to use the compositor, at that point not usable anymore.
     // So delete all the windows here.
-    foreach (LipstickCompositorWindow *w, m_windows) {
+    auto windows = m_windows.values();
+    m_windows.clear();
+    for (auto *w : windows) {
         delete w;
     }
 
@@ -228,7 +230,7 @@ void LipstickCompositor::onWindowActivated()
 {
     LipstickCompositorWindow *window = qobject_cast<LipstickCompositorWindow *>(sender());
 
-    if(window && !window->activated()) {
+    if(window && window->activated()) {
         emit windowRaised(window);
     }
 }
@@ -521,6 +523,9 @@ void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)
 void LipstickCompositor::onHasContentChanged()
 {
     QWaylandSurface *surface = qobject_cast<QWaylandSurface *>(sender());
+    if(!surface) {
+        return;
+    }
 
     if(surface->isCursorSurface())
         return;
@@ -592,7 +597,7 @@ void LipstickCompositor::windowSwapped()
     m_output->sendFrameCallbacks();
 }
 
-void LipstickCompositor::windowDestroyed()
+void LipstickCompositor::windowObjectDestroyed()
 {
     m_totalWindowCount--;
     m_windows.remove(static_cast<LipstickCompositorWindow *>(sender())->windowId());
@@ -618,7 +623,7 @@ void LipstickCompositor::surfaceUnmapped(QWaylandSurface *surface)
 {
     LipstickCompositorWindow *window = surfaceWindow(surface);
     if (window)
-        emit windowHidden(window);
+        surfaceUnmapped(window);
 }
 
 void LipstickCompositor::surfaceUnmapped(LipstickCompositorWindow *item)
@@ -777,7 +782,7 @@ void LipstickCompositor::clipboardDataChanged()
 
 bool LipstickCompositor::ambientSupported() const
 {
-    return QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientSupported");
+    return QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("AmbientSupported") != nullptr;
 }
 
 void LipstickCompositor::setAmbientEnabled(bool enabled)
@@ -851,7 +856,7 @@ void LipstickCompositor::scheduleAmbientUpdate()
     }
     wakeupTime += 60;
     wakeupEvent.setTicker(wakeupTime);
-    wakeupEvent.setAttribute(QLatin1String("APPLICATION"), QLatin1String("wakup_alarm"));
+    wakeupEvent.setAttribute(QLatin1String("APPLICATION"), QLatin1String("wakeup_alarm"));
     wakeupEvent.setAttribute(QLatin1String("type"), QLatin1String("wakeup"));
     wakeupEvent.setBootFlag();
     wakeupEvent.setKeepAliveFlag();
@@ -877,7 +882,7 @@ void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
             return;
         }
     }
-    setUpdatesEnabled(enabled, true);;
+    setUpdatesEnabled(enabled, true);
     if (enabled) {
         emit displayAmbientUpdate();
     }
@@ -886,7 +891,7 @@ void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 bool LipstickCompositor::displayAmbient() const
 {
     TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    return touchScreen->currentDisplayState() == TouchScreen::DisplayOn;
+    return touchScreen->currentDisplayState() == TouchScreen::DisplayDimmed;
 }
 
 void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)

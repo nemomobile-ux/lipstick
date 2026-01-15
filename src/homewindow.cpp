@@ -55,20 +55,25 @@ HomeWindowPrivate::HomeWindowPrivate()
     if (0 == HomeApplication::instance())
         qFatal("HomeWindow: Must create HomeApplication before HomeWindow");
 
-    context = new QQmlContext(HomeApplication::instance()->engine());
+    context = new QQmlContext(HomeApplication::instance()->engine()
+                              , HomeApplication::instance());
 
     if (isWindow()) {
         window = new QQuickWindow;
         // XXX
         // window->setResizeMode(QQuickView::SizeRootObjectToView);
     } else {
-        window = LipstickCompositor::instance()->quickWindow();
+        LipstickCompositor* c = LipstickCompositor::instance();
+        if(!c) {
+            qFatal("HomeWindow: compositor expected but not available");
+        }
+        window = c->quickWindow();
     }
 }
 
 HomeWindowPrivate::~HomeWindowPrivate()
 {
-    delete root;
+    if (root) root->deleteLater();
     delete context;
     if (isWindow()) delete window;
 }
@@ -124,6 +129,7 @@ void HomeWindow::show()
 
     d->isVisible = true;
     if (d->isWindow()) {
+        d->window->setGeometry(d->geometry);
         d->window->show();
     } else {
         d->compositorWindow = LipstickCompositor::instance()->mapProcWindow(d->title, d->category, d->geometry, d->root);
@@ -178,8 +184,9 @@ void HomeWindow::setSource(const QUrl &source)
 {
     d->errors.clear();
     if (d->root) {
-        delete d->root;
-        d->root = 0;
+        d->root->setParent(nullptr);
+        d->root->deleteLater();
+        d->root = nullptr;
     }
 
     QQmlComponent component(d->context->engine(), source);
@@ -193,6 +200,11 @@ void HomeWindow::setSource(const QUrl &source)
     }
 
     QObject *o = component.create(d->context);
+    if(!o) {
+        d->errors = component.errors();
+        return;
+    }
+
     if (QQuickItem *item = qobject_cast<QQuickItem *>(o)) {
         d->root = item;
 
@@ -264,8 +276,13 @@ void HomeWindow::raise()
 {
     if (d->isWindow())
         d->window->raise();
-    else if (d->compositorWindow)
+    else if (d->compositorWindow) {
+        LipstickCompositor* c = LipstickCompositor::instance();
+        if (!c) {
+            return;
+        }
         LipstickCompositor::instance()->windowRaised(d->compositorWindow);
+    }
 }
 
 void HomeWindow::lower()

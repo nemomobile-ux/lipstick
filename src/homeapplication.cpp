@@ -59,9 +59,10 @@
 
 void HomeApplication::quitSignalHandler(int)
 {
-    uint64_t a = 1;
-    ssize_t unused = ::write(s_quitSignalFd, &a, sizeof(a));
-    Q_UNUSED(unused);
+    if (s_quitSignalFd >= 0) {
+        uint64_t a = 1;
+        ::write(s_quitSignalFd, &a, sizeof(a));
+    }
 }
 
 int HomeApplication::s_quitSignalFd = -1;
@@ -205,6 +206,11 @@ HomeApplication::~HomeApplication()
 
     emit aboutToDestroy();
 
+    if (s_quitSignalFd >= 0) {
+        ::close(s_quitSignalFd);
+        s_quitSignalFd = -1;
+    }
+
     delete m_mainWindowInstance;
     m_mainWindowInstance = nullptr;
 
@@ -248,8 +254,17 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 {
     if (!m_homeReadySent) {
         m_homeReadySent = true;
-        disconnect(LipstickCompositor::instance()->quickWindow(), SIGNAL(frameSwapped()), this, SLOT(sendHomeReadySignalIfNotAlreadySent()));
+        LipstickCompositor *c = LipstickCompositor::instance();
+        if (!c) {
+            return;
+        }
 
+        QQuickWindow* w = c->quickWindow();
+        if (!w) {
+            return;
+        }
+
+        disconnect(w, &QQuickWindow::frameSwapped, this, &HomeApplication::sendHomeReadySignalIfNotAlreadySent);
         emit homeReady();
     }
 }
@@ -257,7 +272,7 @@ void HomeApplication::sendHomeReadySignalIfNotAlreadySent()
 void HomeApplication::sendStartupNotifications()
 {
     /* Let systemd know that we are initialized */
-    if (arguments().indexOf("--systemd") >= 0) {
+    if (arguments().contains("--systemd")) {
         sd_notify(0, "READY=1");
     }
 
@@ -341,7 +356,8 @@ void HomeApplication::setCompositorPath(const QString& path)
         return;
     }
 
-    QQuickItem* compositor = qobject_cast<QQuickItem*>(component.beginCreate(m_qmlEngine->rootContext()));
+    QObject *obj = component.beginCreate(m_qmlEngine->rootContext());
+    QQuickItem* compositor = qobject_cast<QQuickItem*>(obj);
     if (compositor) {
         compositor->setParent(this);
 
@@ -352,8 +368,6 @@ void HomeApplication::setCompositorPath(const QString& path)
             compositor->setParentItem(LipstickCompositor::instance()->quickWindow()->contentItem());
         }
 
-        component.completeCreate();
-
         if (!m_qmlEngine->incubationController() && LipstickCompositor::instance()) {
             // install default incubation controller
             m_qmlEngine->setIncubationController(LipstickCompositor::instance()->quickWindow()->incubationController());
@@ -361,7 +375,10 @@ void HomeApplication::setCompositorPath(const QString& path)
     } else {
         qWarning() << "HomeApplication: Error creating compositor from" << path;
         qWarning() << component.errors();
+
+        delete obj;
     }
+    component.completeCreate();
 }
 
 HomeWindow* HomeApplication::mainWindowInstance()
