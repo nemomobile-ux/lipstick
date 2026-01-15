@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Chupligin Sergey <neochapay@gmail.com>
+ * Copyright (C) 2021-2026 Chupligin Sergey <neochapay@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -61,11 +61,12 @@ public slots:
 
 signals:
     void adapterAdded(const BluezQt::AdapterPtr adapter);
-    void showRequiesDialog(const QString btMacAddres, const QString name, const QString code);
+    void showRequestDialog(const QString btMacAddres, const QString name, const QString code);
     void connectedChanged();
     void availableChanged();
     void error(QString errorString);
     void showPinCode(QString code);
+    void showPasskey(QString passkey, QString entered);
     void requestConfirmationAccept();
     void requestConfirmationReject();
 
