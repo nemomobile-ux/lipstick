@@ -33,8 +33,6 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
             this, &PulseAudioControl::sinkRoleChangeHandler,
             Qt::QueuedConnection);
 
-    int step = 5; // TODO
-
     m_loop->start();
 }
 

@@ -414,7 +414,7 @@ void LipstickCompositorWindow::touchEvent(QTouchEvent *event)
             if (event->isAccepted() && !m_interceptingTouch) {
                 m_interceptingTouch = true;
                 if (QWindow *w = window()) {
-                    window()->installEventFilter(this);
+                    w->installEventFilter(this);
                 }
             }
         }

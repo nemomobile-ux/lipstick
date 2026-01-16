@@ -61,7 +61,10 @@ void HomeApplication::quitSignalHandler(int)
 {
     if (s_quitSignalFd >= 0) {
         uint64_t a = 1;
-        ::write(s_quitSignalFd, &a, sizeof(a));
+        ssize_t r = ::write(s_quitSignalFd, &a, sizeof(a));
+        if(r < 0) {
+            qWarning("Cant write signal quit signal handler");
+        }
     }
 }
 
