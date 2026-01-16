@@ -27,13 +27,8 @@ public:
     virtual void PulseAudioControlDestructor();
     virtual void update();
     virtual void setVolume(int volume);
-    virtual void pulseRegistered(const QString &service);
-    virtual void pulseUnregistered(const QString &service);
-    virtual void openConnection();
     virtual void setSteps(quint32 currentStep, quint32 stepCount);
     virtual void addSignalMatch();
-    virtual DBusHandlerResult stepsUpdatedSignalHandler(DBusConnection *conn, DBusMessage *message, void *control);
-    DBusConnection *dbusConnection ;
 };
 
 // 2. IMPLEMENT STUB
@@ -58,23 +53,6 @@ void PulseAudioControlStub::setVolume(int volume)
     stubMethodEntered("setVolume", params);
 }
 
-void PulseAudioControlStub::pulseRegistered(const QString &service)
-{
-    Q_UNUSED(service);
-    stubMethodEntered("pulseRegistered");
-}
-
-void PulseAudioControlStub::pulseUnregistered(const QString &service)
-{
-    Q_UNUSED(service);
-    stubMethodEntered("pulseUnregistered");
-}
-
-void PulseAudioControlStub::openConnection()
-{
-    stubMethodEntered("openConnection");
-}
-
 void PulseAudioControlStub::setSteps(quint32 currentStep, quint32 stepCount)
 {
     QList<ParameterBase *> params;
@@ -87,18 +65,6 @@ void PulseAudioControlStub::addSignalMatch()
 {
     stubMethodEntered("addSignalMatch");
 }
-
-DBusHandlerResult PulseAudioControlStub::stepsUpdatedSignalHandler(DBusConnection *conn, DBusMessage *message, void *control)
-{
-    QList<ParameterBase *> params;
-    params.append( new Parameter<DBusConnection * >(conn));
-    params.append( new Parameter<DBusMessage * >(message));
-    params.append( new Parameter<void * >(control));
-    stubMethodEntered("stepsUpdatedSignalHandler", params);
-    return stubReturnValue<DBusHandlerResult>("stepsUpdatedSignalHandler");
-}
-
-
 
 // 3. CREATE A STUB INSTANCE
 PulseAudioControlStub gDefaultPulseAudioControlStub;
@@ -126,34 +92,9 @@ void PulseAudioControl::setVolume(int volume)
     gPulseAudioControlStub->setVolume(volume);
 }
 
-void PulseAudioControl::pulseRegistered(const QString &service)
-{
-    gPulseAudioControlStub->pulseRegistered(service);
-}
-void PulseAudioControl::pulseUnregistered(const QString &service)
-{
-    gPulseAudioControlStub->pulseUnregistered(service);
-}
-
-void PulseAudioControl::openConnection()
-{
-    gPulseAudioControlStub->openConnection();
-}
-
 void PulseAudioControl::setSteps(quint32 currentStep, quint32 stepCount)
 {
     gPulseAudioControlStub->setSteps(currentStep, stepCount);
 }
-
-void PulseAudioControl::addSignalMatch()
-{
-    gPulseAudioControlStub->addSignalMatch();
-}
-
-DBusHandlerResult PulseAudioControl::signalHandler(DBusConnection *conn, DBusMessage *message, void *control)
-{
-    return gPulseAudioControlStub->stepsUpdatedSignalHandler(conn, message, control);
-}
-
 
 #endif
