@@ -22,7 +22,6 @@
 #include <QDBusServiceWatcher>
 #include <dbus/dbus.h>
 
-#include "mcebuttonhandler.h"
 #include "pulseaudioprivateloop.h"
 
 /*!
@@ -100,7 +99,6 @@ private:
     void setSteps(quint32 currentStep, quint32 stepCount);
 
     PulseAudioPrivateLoop *m_loop;
-    MceButtonHandler *m_buttonHandler;
 
     QString m_mediaState;
 
