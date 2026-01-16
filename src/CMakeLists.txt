@@ -44,7 +44,6 @@ set(HEADERS
     notifications/androidprioritystore.h
     screenlock/screenlock.h
     touchscreen/touchscreen_p.h
-    volume/mcebuttonhandler.h
     volume/volumecontrol.h
     volume/pulseaudiocontrol.h
     volume/pulseaudioprivateloop.h
@@ -87,7 +86,6 @@ set(SOURCES
     notifications/androidprioritystore.cpp
     screenlock/screenlock.cpp
     touchscreen/touchscreen.cpp
-    volume/mcebuttonhandler.cpp
     volume/volumecontrol.cpp
     volume/pulseaudiocontrol.cpp
     volume/pulseaudioprivateloop.cpp

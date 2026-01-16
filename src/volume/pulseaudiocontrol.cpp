@@ -23,7 +23,6 @@
 PulseAudioControl::PulseAudioControl(QObject *parent) :
     QObject(parent)
     , m_loop(new PulseAudioPrivateLoop(this))
-    , m_buttonHandler(new MceButtonHandler(this))
 {
     connect(m_loop, &PulseAudioPrivateLoop::volumeChanged,
             this, &PulseAudioControl::volumeChanged,
@@ -35,21 +34,6 @@ PulseAudioControl::PulseAudioControl(QObject *parent) :
             Qt::QueuedConnection);
 
     int step = 5; // TODO
-
-    connect(m_buttonHandler, &MceButtonHandler::volumeUp, this, [=]() {
-        int newVol = qMin(m_loop->currentVolume() + step, 100);
-        m_loop->setVolume(newVol);
-    });
-
-    connect(m_buttonHandler, &MceButtonHandler::volumeDown, this, [=]() {
-        int newVol = qMax(m_loop->currentVolume() - step, 0);
-        m_loop->setVolume(newVol);
-    });
-
-    connect(m_buttonHandler, &MceButtonHandler::volumeMute, this, [=]() {
-        m_loop->setMute(!m_loop->isMuted());
-    });
-
 
     m_loop->start();
 }
