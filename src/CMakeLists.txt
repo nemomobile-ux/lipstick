@@ -164,6 +164,10 @@ include_directories(utilities
     ${CMAKE_CURRENT_BINARY_DIR}/screenlock
     ${CMAKE_CURRENT_BINARY_DIR})
 
+if(CONTENTACTION_FOUND)
+    target_link_libraries(${PACKAGE} PUBLIC PkgConfig::CONTENTACTION)
+endif()
+
 target_link_libraries(${PACKAGE} PUBLIC
     Qt6::DBus
     Qt6::Qml

@@ -12,7 +12,12 @@ set(SRC
 
 add_executable(ut_${TESTNAME} ${SRC})
 add_dependencies(ut_${TESTNAME} lipstick-qt6)
-target_link_libraries(ut_${TESTNAME}
+
+if(CONTENTACTION_FOUND)
+    target_link_libraries(ut_${TESTNAME} PUBLIC PkgConfig::CONTENTACTION)
+endif()
+
+target_link_libraries(ut_${TESTNAME} PUBLIC
     Qt6::Core
     Qt6::Quick
     Qt6::DBus

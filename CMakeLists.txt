@@ -76,7 +76,12 @@ pkg_check_modules(TIMED_QT timed-qt6 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(WAYLAND_SERVER wayland-server REQUIRED IMPORTED_TARGET)
 pkg_check_modules(USB_MODED usb_moded REQUIRED IMPORTED_TARGET)
 pkg_check_modules(USB_MODED_QT usb-moded-qt6 REQUIRED IMPORTED_TARGET)
-pkg_check_modules(PULSE libpulse REQUIRED REQUIRED IMPORTED_TARGET)
+pkg_check_modules(PULSE libpulse REQUIRED IMPORTED_TARGET)
+pkg_check_modules(CONTENTACTION contentaction6 IMPORTED_TARGET)
+
+if(CONTENTACTION_FOUND)
+    add_definitions("-DHAVE_CONTENTACTION=1")
+endif()
 
 add_subdirectory(src)
 add_subdirectory(plugin)
