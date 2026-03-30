@@ -32,6 +32,8 @@
 #include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
 #include "lipstickrecorder.h"
+#include "lipstickviewporter.h"
+#include "lipstickfractionalscale.h"
 #include <qpa/qwindowsysteminterface.h>
 #include "logging.h"
 #include <private/qguiapplication_p.h>
@@ -156,6 +158,8 @@ LipstickCompositor::LipstickCompositor()
     QTimer::singleShot(0, this, SLOT(initialize()));
 
     m_recorder = new LipstickRecorderManager(this);
+    new ViewporterGlobal(this);
+    new FractionalScaleGlobal(this);
 
     QObject::connect(m_mceNameOwner, &QMceNameOwner::validChanged,
                      this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);

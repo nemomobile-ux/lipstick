@@ -79,6 +79,7 @@ pkg_check_modules(USB_MODED usb_moded REQUIRED IMPORTED_TARGET)
 pkg_check_modules(USB_MODED_QT usb-moded-qt6 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(PULSE libpulse REQUIRED IMPORTED_TARGET)
 pkg_check_modules(CONTENTACTION contentaction6 IMPORTED_TARGET)
+pkg_check_modules(WaylandProtocols REQUIRED wayland-protocols)
 
 if(CONTENTACTION_FOUND)
     add_definitions("-DHAVE_CONTENTACTION=1")

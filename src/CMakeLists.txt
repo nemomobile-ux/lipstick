@@ -79,6 +79,8 @@ set(SOURCES
     compositor/lipstickcompositorwindow.cpp
     compositor/lipstickcompositorprocwindow.cpp
     compositor/lipstickrecorder.cpp
+    compositor/lipstickviewporter.cpp
+    compositor/lipstickfractionalscale.cpp
     compositor/windowmodel.cpp
     compositor/windowpixmapitem.cpp
     notifications/notificationmanager.cpp
@@ -159,6 +161,8 @@ set_target_properties(${PACKAGE}
 qt6_generate_wayland_protocol_server_sources(${PACKAGE}
     FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/../protocol/lipstick-recorder.xml
+        ${WaylandProtocols_PREFIX}/share/wayland-protocols/stable/viewporter/viewporter.xml
+        ${WaylandProtocols_PREFIX}/share/wayland-protocols/staging/fractional-scale/fractional-scale-v1.xml
 )
 
 include_directories(utilities
