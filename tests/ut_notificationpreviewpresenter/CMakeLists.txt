@@ -20,6 +20,7 @@ target_link_libraries(ut_${TESTNAME}
     PkgConfig::NEMODEVICELOCK
     PkgConfig::SYSTEMSETTINGS
     PkgConfig::TIMED_QT
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

@@ -13,6 +13,7 @@ target_link_libraries(ut_${TESTNAME}
     Qt6::WaylandCompositor
     Qt6::Test
     PkgConfig::DBUS
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})
