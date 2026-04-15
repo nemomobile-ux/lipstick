@@ -20,6 +20,7 @@ target_link_libraries(ut_${TESTNAME}
     PkgConfig::LIBRESOURCE
     PkgConfig::NEMODEVICELOCK
     PkgConfig::USB_MODED_QT
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

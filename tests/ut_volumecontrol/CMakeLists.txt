@@ -19,6 +19,7 @@ target_link_libraries(ut_${TESTNAME}
     PkgConfig::GLIB2
     PkgConfig::LIBRESOURCE
     PkgConfig::TIMED_QT
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

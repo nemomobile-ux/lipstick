@@ -28,6 +28,7 @@ target_link_libraries(ut_${TESTNAME} PUBLIC
     PkgConfig::GIO_UNIX
     PkgConfig::MLITE
     PkgConfig::SYSTEMSETTINGS
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

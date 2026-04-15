@@ -24,6 +24,7 @@ target_link_libraries(ut_${TESTNAME}
     PkgConfig::TIMED_QT
     PkgConfig::USB_MODED
     PkgConfig::USB_MODED_QT
-    -llipstick-qt6 -L../../src)
+    lipstick-qt6
+)
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

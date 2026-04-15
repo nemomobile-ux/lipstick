@@ -38,7 +38,10 @@ target_link_libraries(${PACKAGE} PUBLIC
     PkgConfig::WAYLAND_SERVER
     PkgConfig::USB_MODED_QT
     KF6::BluezQt
-    -lrt -lEGL -L../src -llipstick-qt6)
+    lipstick-qt6
+    -lrt
+    -lEGL
+)
 
 install(TARGETS ${PACKAGE} LIBRARY DESTINATION "${QT_INSTALL_QML}/org/nemomobile/lipstick")
 
