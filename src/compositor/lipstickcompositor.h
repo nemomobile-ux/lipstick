@@ -62,6 +62,23 @@ struct QueuedSetUpdatesEnabledCall
     bool m_enable;
 };
 
+struct QueuedFileServiceCall
+{
+    QueuedFileServiceCall()
+        : m_connection(QDBusConnection::sessionBus())
+    {
+    }
+
+    QueuedFileServiceCall(const QDBusConnection &connection, const QDBusMessage &message)
+        : m_connection(connection)
+        , m_message(message)
+    {
+    }
+
+    QDBusConnection m_connection;
+    QDBusMessage m_message;
+};
+
 class LIPSTICK_EXPORT LipstickCompositor
 #ifndef LIPSTICK_UNIT_TEST_STUB
         : public QWaylandQuickCompositor
@@ -145,6 +162,12 @@ public:
         openUrlRequested(url);
         return true;
     }
+    void checkMimeSupported(const QString &mimeType, const QDBusMessage &message,
+                            const QDBusConnection &connection);
+    void checkUrlSupported(const QString &url, const QDBusMessage &message,
+                           const QDBusConnection &connection);
+    void respondSupportCheck(uint requestId, bool supported);
+
 
     LipstickCompositorProcWindow *mapProcWindow(const QString &title, const QString &category, const QRect &);
     LipstickCompositorProcWindow *mapProcWindow(const QString &title, const QString &category, const QRect &,
@@ -219,6 +242,8 @@ signals:
     void showUnlockScreen();
 
     void openUrlRequested(const QUrl &url);
+    void checkMimeSupportedRequested(uint requestId, const QString &mimeType);
+    void checkUrlSupportedRequested(uint requestId, const QUrl &url);
 
 public slots:
     uint privateGetSetupActions() const {
@@ -315,6 +340,8 @@ private:
     bool m_ambientModeEnabled;
 
     QList<QueuedSetUpdatesEnabledCall> m_queuedSetUpdatesEnabledCalls;
+    QHash<uint, QueuedFileServiceCall> m_queuedFileServiceCalls;
+    uint m_nextFileServiceCallId;
     QMceNameOwner *m_mceNameOwner;
 
     QString m_logindSession;

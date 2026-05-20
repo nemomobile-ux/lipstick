@@ -18,8 +18,10 @@
 #include <QDesktopServices>
 #include <QtSensors/QOrientationSensor>
 #include <QClipboard>
+#include <QMetaMethod>
 #include <QSettings>
 #include <QMimeData>
+#include <QVariantList>
 #include <QtGui/qpa/qplatformnativeinterface.h>
 #include "homeapplication.h"
 #include "touchscreen/touchscreen.h"
@@ -47,6 +49,8 @@
 #define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
 
 namespace {
+const int FileServiceRequestTimeout = 30 * 1000;
+
 bool debuggingCompositorHandover()
 {
     static int debugging = -1;
@@ -78,6 +82,7 @@ LipstickCompositor::LipstickCompositor()
     , m_onUpdatesDisabledUnfocusedWindowId(0)
     , m_fakeRepaintTriggered(false)
     , m_queuedSetUpdatesEnabledCalls()
+    , m_nextFileServiceCallId(1)
     , m_mceNameOwner(new QMceNameOwner(this))
     , m_sessionActivationTries(0)
 {
@@ -257,6 +262,53 @@ bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
     return true;
 }
 
+void LipstickCompositor::checkMimeSupported(const QString &mimeType, const QDBusMessage &message,
+                                            const QDBusConnection &connection)
+{
+    if (!isSignalConnected(QMetaMethod::fromSignal(&LipstickCompositor::checkMimeSupportedRequested))) {
+        connection.send(message.createReply(QVariantList() << false));
+        return;
+    }
+
+    const uint requestId = m_nextFileServiceCallId++;
+    if (m_nextFileServiceCallId == 0)
+        m_nextFileServiceCallId = 1;
+
+    m_queuedFileServiceCalls.insert(requestId, QueuedFileServiceCall(connection, message));
+    QTimer::singleShot(FileServiceRequestTimeout, this, [this, requestId]() {
+        respondSupportCheck(requestId, false);
+    });
+    emit checkMimeSupportedRequested(requestId, mimeType);
+}
+
+void LipstickCompositor::respondSupportCheck(uint requestId, bool supported)
+{
+    if (!m_queuedFileServiceCalls.contains(requestId))
+        return;
+
+    const QueuedFileServiceCall queued = m_queuedFileServiceCalls.take(requestId);
+    queued.m_connection.send(queued.m_message.createReply(QVariantList() << supported));
+}
+
+void LipstickCompositor::checkUrlSupported(const QString &url, const QDBusMessage &message,
+                                           const QDBusConnection &connection)
+{
+    if (!isSignalConnected(QMetaMethod::fromSignal(&LipstickCompositor::checkUrlSupportedRequested))) {
+        connection.send(message.createReply(QVariantList() << false));
+        return;
+    }
+
+    const uint requestId = m_nextFileServiceCallId++;
+    if (m_nextFileServiceCallId == 0)
+        m_nextFileServiceCallId = 1;
+
+    m_queuedFileServiceCalls.insert(requestId, QueuedFileServiceCall(connection, message));
+    QTimer::singleShot(FileServiceRequestTimeout, this, [this, requestId]() {
+        respondSupportCheck(requestId, false);
+    });
+    emit checkUrlSupportedRequested(requestId, QUrl(url));
+}
+
 void LipstickCompositor::retainedSelectionReceived(QMimeData *mimeData)
 {
     if (!m_retainedSelection)
@@ -396,7 +448,7 @@ void LipstickCompositor::setTopmostWindowId(int id)
         }
 
         QString applicationId = window && !window->policyApplicationId().isEmpty()
-                                ? window->policyApplicationId() : "none";
+                                    ? window->policyApplicationId() : "none";
 
         if (m_topmostWindowPolicyApplicationId != applicationId) {
             m_topmostWindowPolicyApplicationId = applicationId;
@@ -462,10 +514,10 @@ void LipstickCompositor::activateLogindSession()
     qCDebug(lcLipstickCoreLog) << "Activating session on seat0";
 
     QDBusMessage method = QDBusMessage::createMethodCall(
-                QStringLiteral("org.freedesktop.login1"),
-                QStringLiteral("/org/freedesktop/login1"),
-                QStringLiteral("org.freedesktop.login1.Manager"),
-                QStringLiteral("ActivateSession"));
+        QStringLiteral("org.freedesktop.login1"),
+        QStringLiteral("/org/freedesktop/login1"),
+        QStringLiteral("org.freedesktop.login1.Manager"),
+        QStringLiteral("ActivateSession"));
     method.setArguments({ m_logindSession });
 
     QDBusPendingCall call = QDBusConnection::systemBus().asyncCall(method);
@@ -505,9 +557,9 @@ void LipstickCompositor::initialize()
      * to us -> use ReplaceExistingService to facilitate this.
      */
     QDBusReply<QDBusConnectionInterface::RegisterServiceReply> reply =
-            systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
-                                                   QDBusConnectionInterface::ReplaceExistingService,
-                                                   QDBusConnectionInterface::DontAllowReplacement);
+        systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
+                                               QDBusConnectionInterface::ReplaceExistingService,
+                                               QDBusConnectionInterface::DontAllowReplacement);
     if (!reply.isValid()) {
         qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s",
                  reply.error().message().toUtf8().constData());

@@ -37,6 +37,7 @@ set(HEADERS
     3rdparty/dbus-gmain/dbus-gmain.h
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
+    compositor/fileserviceadaptor.h
     compositor/windowpixmapitem.h
     notifications/categorydefinitionstore.h
     notifications/batterynotifier.h
@@ -72,6 +73,7 @@ set(SOURCES
     components/launchermonitor.cpp
     components/launcherdbus.cpp
     components/launcherfoldermodel.cpp
+    compositor/fileserviceadaptor.cpp
     compositor/lipstickcompositor.cpp
     compositor/lipstickcompositorwindow.cpp
     compositor/lipstickcompositorprocwindow.cpp
@@ -141,13 +143,11 @@ qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/net.connman.vpn.Agent.xml"
     "VpnAgent"
     "connmanvpnagent"
     "ConnmanVpnAgentAdaptor")
-
 qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/compositor.xml"
     "lipstickcompositor.h"
     "LipstickCompositor"
     "lipstickcompositoradaptor"
     "LipstickCompositorAdaptor")
-qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/fileservice.xml" "fileserviceadaptor.h" "" "" "FileServiceAdaptor")
 
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
 set_target_properties(${PACKAGE}
