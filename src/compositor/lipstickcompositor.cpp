@@ -403,7 +403,9 @@ LipstickCompositorWindow *LipstickCompositor::createView(QWaylandSurface *surfac
 {
     int id = m_nextWindowId++;
     LipstickCompositorWindow *item = new LipstickCompositorWindow(id, "", surface, m_window->contentItem());
-    QObject::connect(item, SIGNAL(destroyed(QObject*)), this, SLOT(windowDestroyed()));
+    connect(item, &LipstickCompositorWindow::destroyed, this, [=] {
+        windowDestroyed(item);
+    });
     m_windows.insert(item->windowId(), item);
     return item;
 }
