@@ -4,7 +4,7 @@ project(lipstick
     VERSION 1.1
     DESCRIPTION "QML toolkit for homescreen creation")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -50,6 +50,7 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED
     Sql
     Test
     Sensors
+    ShaderTools
     WaylandCompositor
     LinguistTools)
 if(Qt6_VERSION VERSION_GREATER_EQUAL 6.10)

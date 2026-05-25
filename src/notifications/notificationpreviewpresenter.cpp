@@ -76,7 +76,7 @@ NotificationPreviewPresenter::NotificationPreviewPresenter(
     m_backgroundNotificationTimer.setSingleShot(true);
     m_backgroundNotificationTimer.setInterval(2000);
     connect(&m_backgroundNotificationTimer, &QTimer::timeout,
-            this, [=]() {
+            this, [=, this]() {
         setCurrentNotification(nullptr);
         showNextNotification();
     });

@@ -38,6 +38,16 @@ set(HEADERS
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
     compositor/windowpixmapitem.h
+    compositor/shaders/cornersurfacetexturematerial.h
+    compositor/shaders/cornersurfacetextureshader.h
+    compositor/shaders/opaquesurfacetexturematerial.h
+    compositor/shaders/opaquesurfacetextureshader.h
+    compositor/shaders/roundedmaterial.h
+    compositor/shaders/roundedshader.h
+    compositor/shaders/snapshottextureprovider.h
+    compositor/shaders/surfacenode.h
+    compositor/shaders/surfacetexturematerial.h
+    compositor/shaders/surfacetextureshader.h
     notifications/categorydefinitionstore.h
     notifications/batterynotifier.h
     notifications/notificationfeedbackplayer.h
@@ -77,6 +87,16 @@ set(SOURCES
     compositor/lipstickcompositorprocwindow.cpp
     compositor/windowmodel.cpp
     compositor/windowpixmapitem.cpp
+    compositor/shaders/cornersurfacetexturematerial.cpp
+    compositor/shaders/cornersurfacetextureshader.cpp
+    compositor/shaders/opaquesurfacetexturematerial.cpp
+    compositor/shaders/opaquesurfacetextureshader.cpp
+    compositor/shaders/roundedmaterial.cpp
+    compositor/shaders/roundedshader.cpp
+    compositor/shaders/snapshottextureprovider.cpp
+    compositor/shaders/surfacenode.cpp
+    compositor/shaders/surfacetexturematerial.cpp
+    compositor/shaders/surfacetextureshader.cpp
     notifications/notificationmanager.cpp
     notifications/lipsticknotification.cpp
     notifications/categorydefinitionstore.cpp
@@ -147,9 +167,28 @@ qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/compositor.xml"
     "LipstickCompositor"
     "lipstickcompositoradaptor"
     "LipstickCompositorAdaptor")
+
 qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/fileservice.xml" "fileserviceadaptor.h" "" "" "FileServiceAdaptor")
 
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
+
+
+qt6_add_shaders(${PACKAGE} "shaders"
+    PREFIX "/"
+    FILES
+        compositor/shaders/corner.vert
+        compositor/shaders/corner.frag
+        compositor/shaders/opaque.vert
+        compositor/shaders/opaque.frag
+)
+
+
+set_source_files_properties(opaque.vert PROPERTIES
+    QT_SHADER_SOURCE_FLAGS "--glsl 100,120,150,330,430")
+
+set_source_files_properties(corner.vert PROPERTIES
+    QT_SHADER_SOURCE_FLAGS "--glsl 100,120,150,330,430")
+
 set_target_properties(${PACKAGE}
     PROPERTIES VERSION ${CMAKE_PROJECT_VERSION}
     SOVERSION ${CMAKE_PROJECT_VERSION})
@@ -177,6 +216,7 @@ target_link_libraries(${PACKAGE} PUBLIC
     Qt6::Gui
     Qt6::QuickPrivate
     Qt6::Sensors
+    Qt6::ShaderTools
     Qt6::WaylandCompositor
     PkgConfig::DBUS
     PkgConfig::DSME_DBUS

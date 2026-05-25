@@ -108,7 +108,7 @@ TouchScreen::TouchScreen(QObject *parent)
     , d_ptr(new TouchScreenPrivate(this))
 {
     Q_D(TouchScreen);
-    connect(d->displayState, &DeviceState::DisplayStateMonitor::displayStateChanged, this, [=](DeviceState::DisplayStateMonitor::DisplayState state) {
+    connect(d->displayState, &DeviceState::DisplayStateMonitor::displayStateChanged, this, [=, this](DeviceState::DisplayStateMonitor::DisplayState state) {
         TouchScreen::DisplayState newState = (TouchScreen::DisplayState)state;
         if (d->currentDisplayState != newState) {
             TouchScreen::DisplayState oldState = d->currentDisplayState;

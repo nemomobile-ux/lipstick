@@ -51,7 +51,7 @@ void BluetoothObexAgent::authorizePush(BluezQt::ObexTransferPtr transfer, BluezQ
         request.reject();
     }, Qt::SingleShotConnection);
 
-    connect(this, &BluetoothObexAgent::requestConfirmationAccept, this, [=]() mutable {
+    connect(this, &BluetoothObexAgent::requestConfirmationAccept, this, [=, this]()  {
         QString cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation)+"/obexd";
         QString transferName = transfer->name();
 
