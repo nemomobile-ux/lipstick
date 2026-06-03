@@ -37,6 +37,7 @@ public:
     virtual int windowCount() const;
     virtual int ghostWindowCount() const;
     virtual bool homeActive() const;
+    virtual bool sessionActive() const;
     virtual void setHomeActive(bool);
     virtual void setFullscreenSurface(QWaylandSurface *surface);
     virtual void setTopmostWindowId(int id);
@@ -150,6 +151,12 @@ bool LipstickCompositorStub::homeActive() const
 {
     stubMethodEntered("homeActive");
     return stubReturnValue<bool>("homeActive");
+}
+
+bool LipstickCompositorStub::sessionActive() const
+{
+    stubMethodEntered("sessionActive");
+    return stubReturnValue<bool>("sessionActive");
 }
 
 void LipstickCompositorStub::setHomeActive(bool homeActive)
@@ -445,6 +452,11 @@ int LipstickCompositor::ghostWindowCount() const
 bool LipstickCompositor::homeActive() const
 {
     return gLipstickCompositorStub->homeActive();
+}
+
+bool LipstickCompositor::sessionActive() const
+{
+    return gLipstickCompositorStub->sessionActive();
 }
 
 void LipstickCompositor::setHomeActive(bool homeActive)
