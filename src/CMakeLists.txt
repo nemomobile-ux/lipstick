@@ -177,6 +177,7 @@ target_link_libraries(${PACKAGE} PUBLIC
     Qt6::Gui
     Qt6::QuickPrivate
     Qt6::Sensors
+    Qt6::ShaderTools
     Qt6::WaylandCompositor
     PkgConfig::DBUS
     PkgConfig::DSME_DBUS

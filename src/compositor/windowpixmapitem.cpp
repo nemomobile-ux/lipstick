@@ -62,4 +62,3 @@ void WindowPixmapItem::setWindowId(int id)
 
     emit windowIdChanged();
 }
-

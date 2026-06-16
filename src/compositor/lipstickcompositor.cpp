@@ -97,7 +97,10 @@ LipstickCompositor::LipstickCompositor()
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
 
     m_wm = new QWaylandQtWindowManager(this);
-    connect(m_wm, &QWaylandQtWindowManager::openUrl, this, &LipstickCompositor::openUrl);
+    connect(m_wm, &QWaylandQtWindowManager::openUrl, this,
+            [this](QWaylandClient* client, const QUrl& url) {
+                this->openUrl(client, url);
+            });
 
     QGuiApplication::primaryScreen()->handle()->setPowerState(QPlatformScreen::PowerStateOn);
 
@@ -400,7 +403,9 @@ LipstickCompositorWindow *LipstickCompositor::createView(QWaylandSurface *surfac
 {
     int id = m_nextWindowId++;
     LipstickCompositorWindow *item = new LipstickCompositorWindow(id, "", surface, m_window->contentItem());
-    QObject::connect(item, SIGNAL(destroyed(QObject*)), this, SLOT(windowDestroyed()));
+    connect(item, &LipstickCompositorWindow::destroyed, this, [=] {
+        windowDestroyed(item);
+    });
     m_windows.insert(item->windowId(), item);
     return item;
 }
@@ -600,7 +605,6 @@ void LipstickCompositor::windowSwapped()
 void LipstickCompositor::windowObjectDestroyed()
 {
     m_totalWindowCount--;
-    m_windows.remove(static_cast<LipstickCompositorWindow *>(sender())->windowId());
     emit ghostWindowCountChanged();
 }
 
