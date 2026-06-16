@@ -31,6 +31,7 @@
 #include "lipstickcompositoradaptor.h"
 #include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
+#include "lipstickrecorder.h"
 #include <qpa/qwindowsysteminterface.h>
 #include "logging.h"
 #include <private/qguiapplication_p.h>
@@ -128,6 +129,7 @@ LipstickCompositor::LipstickCompositor()
 
     connect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
     QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
+    connect(this->quickWindow(), &QQuickWindow::afterRendering, this, &LipstickCompositor::readContent, Qt::DirectConnection);
 
     m_orientationSensor = new QOrientationSensor(this);
     QObject::connect(m_orientationSensor, SIGNAL(readingChanged()), this, SLOT(setScreenOrientationFromSensor()));
@@ -152,6 +154,8 @@ LipstickCompositor::LipstickCompositor()
     }
 
     QTimer::singleShot(0, this, SLOT(initialize()));
+
+    m_recorder = new LipstickRecorderManager(this);
 
     QObject::connect(m_mceNameOwner, &QMceNameOwner::validChanged,
                      this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
@@ -585,6 +589,11 @@ void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)
 
     m_windows.remove(id);
     surfaceUnmapped(item);
+}
+
+void LipstickCompositor::readContent()
+{
+    m_recorder->recordFrame(this->quickWindow());
 }
 
 void LipstickCompositor::onHasContentChanged()

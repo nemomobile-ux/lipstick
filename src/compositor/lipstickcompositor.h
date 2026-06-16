@@ -46,6 +46,7 @@ class WindowModel;
 class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
+class LipstickRecorderManager;
 class QMceNameOwner;
 
 struct QueuedSetUpdatesEnabledCall
@@ -299,6 +300,7 @@ private:
     void windowAdded(int);
     void windowRemoved(int);
     void windowDestroyed(LipstickCompositorWindow *item);
+    void readContent();
     void surfaceCommitted();
     void onSurfaceCreated(QWaylandSurface *surface);
 
@@ -330,6 +332,7 @@ private:
     bool m_completed;
     bool m_synthesizeBackEvent;
     int m_onUpdatesDisabledUnfocusedWindowId;
+    LipstickRecorderManager *m_recorder;
     bool m_fakeRepaintTriggered;
     QQuickWindow *m_window;
     QWaylandOutput *m_output;

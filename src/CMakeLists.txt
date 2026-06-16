@@ -38,6 +38,7 @@ set(HEADERS
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
     compositor/fileserviceadaptor.h
+    compositor/lipstickrecorder.h
     compositor/windowpixmapitem.h
     notifications/categorydefinitionstore.h
     notifications/batterynotifier.h
@@ -77,6 +78,7 @@ set(SOURCES
     compositor/lipstickcompositor.cpp
     compositor/lipstickcompositorwindow.cpp
     compositor/lipstickcompositorprocwindow.cpp
+    compositor/lipstickrecorder.cpp
     compositor/windowmodel.cpp
     compositor/windowpixmapitem.cpp
     notifications/notificationmanager.cpp
@@ -153,6 +155,11 @@ add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
 set_target_properties(${PACKAGE}
     PROPERTIES VERSION ${CMAKE_PROJECT_VERSION}
     SOVERSION ${CMAKE_PROJECT_VERSION})
+
+qt6_generate_wayland_protocol_server_sources(${PACKAGE}
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../protocol/lipstick-recorder.xml
+)
 
 include_directories(utilities
     touchscreen
