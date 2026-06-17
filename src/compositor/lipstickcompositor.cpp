@@ -241,6 +241,7 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
         connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
         connect(topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositor::onWindowActivated);
+        connect(topLevel, &QWaylandXdgToplevel::setMaximized, this, &LipstickCompositor::onToplevelMaximized);
     }
 }
 
@@ -276,6 +277,27 @@ void LipstickCompositor::onWindowActivated()
     if(window && window->activated()) {
         emit windowRaised(window);
     }
+}
+
+void LipstickCompositor::onToplevelMaximized()
+{
+    QWaylandXdgToplevel *toplevel = qobject_cast<QWaylandXdgToplevel *>(sender());
+    if (!toplevel) {
+        return;
+    }
+
+    QWaylandSurface *surface = toplevel->xdgSurface()->surface();
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+
+    if (!window)
+        return;
+
+    QRect geom = m_output->geometry();
+
+    window->setPosition(geom.topLeft());
+    window->setSize(geom.size());
+
+    toplevel->sendMaximized(geom.size());
 }
 
 void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)

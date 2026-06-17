@@ -286,6 +286,7 @@ private slots:
     void onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *shellSurface);
 
     void onWindowActivated();
+    void onToplevelMaximized();
 
 private:
     friend class LipstickCompositorWindow;
