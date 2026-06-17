@@ -40,6 +40,7 @@ LipstickCompositorWindow::LipstickCompositorWindow(int windowId, const QString &
     , m_focusOnTouch(false)
     , m_notificationMode(0)
     , m_topLevel(nullptr)
+    , m_popup(nullptr)
 {
     setFlags(QQuickItem::ItemIsFocusScope | flags());
 
@@ -685,4 +686,43 @@ void LipstickCompositorWindow::setWindowProperties(const QVariantMap &newWindowP
         return;
     m_windowProperties = newWindowProperties;
     emit windowPropertiesChanged();
+}
+
+void LipstickCompositorWindow::setPopup(QWaylandXdgPopup *popup)
+{
+    if (!popup) {
+        return;
+    }
+
+    if (m_popup == popup) {
+        return;
+    }
+
+    if (m_popup) {
+        m_popup->sendPopupDone();
+        m_popup = nullptr;
+    }
+
+    m_popup = popup;
+
+    QWaylandSurface *surface = m_popup->xdgSurface()->surface();
+    if (!surface) {
+        return;
+    }
+
+    setZ(1000);
+
+    QObject::connect(m_popup, &QObject::destroyed, [=]() {
+                         m_popup = nullptr;
+                     });
+
+    connect(surface, &QWaylandSurface::hasContentChanged, [this, surface]() {
+
+                if (!m_popup || !surface->hasContent()) {
+                    return;
+                }
+
+                QPoint pos = m_popup->unconstrainedPosition();
+                setPosition(position() + pos);
+            });
 }

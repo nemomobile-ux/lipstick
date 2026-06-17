@@ -104,6 +104,7 @@ LipstickCompositor::LipstickCompositor()
 
     m_xdgShell = new QWaylandXdgShell(this);
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
+    connect(m_xdgShell, &QWaylandXdgShell::popupCreated, this, &LipstickCompositor::onPopupCreated);
 
     m_wm = new QWaylandQtWindowManager(this);
     connect(m_wm, &QWaylandQtWindowManager::openUrl, this,
@@ -241,6 +242,31 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
         connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
         connect(topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositor::onWindowActivated);
     }
+}
+
+void LipstickCompositor::onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *shellSurface)
+{
+    QWaylandSurface *surface = shellSurface->surface();
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+
+    if (!window)
+        window = createView(surface);
+
+    window->setPopup(popup);
+
+    QRect popupGeometry = popup->xdgSurface()->windowGeometry();
+    QRect outputGeom = m_output->geometry();
+
+    if (popupGeometry.right() > outputGeom.right())
+        popupGeometry.moveRight(outputGeom.right());
+    if (popupGeometry.bottom() > outputGeom.bottom())
+        popupGeometry.moveBottom(outputGeom.bottom());
+
+    window->setPosition(popupGeometry.topLeft());
+
+    connect(popup, &QWaylandXdgPopup::destroyed, this, [this, window]() {
+        window->deleteLater();
+    });
 }
 
 void LipstickCompositor::onWindowActivated()

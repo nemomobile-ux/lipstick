@@ -283,6 +283,7 @@ private slots:
     void processQueuedSetUpdatesEnabledCalls();
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
+    void onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *shellSurface);
 
     void onWindowActivated();
 

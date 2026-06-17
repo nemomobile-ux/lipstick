@@ -91,6 +91,8 @@ public:
     QVariantMap windowProperties() const;
     void setWindowProperties(const QVariantMap &newWindowProperties);
 
+    void setPopup(QWaylandXdgPopup *popup);
+
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data);
@@ -163,6 +165,7 @@ private:
     uint m_notificationMode;
     QPointer<QWaylandXdgToplevel> m_topLevel;
     QVariantMap m_windowProperties;
+    QWaylandXdgPopup *m_popup;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H
