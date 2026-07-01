@@ -46,6 +46,7 @@ class WindowModel;
 class LipstickCompositorWindow;
 class LipstickCompositorProcWindow;
 class QOrientationSensor;
+class LipstickRecorderManager;
 class QMceNameOwner;
 
 struct QueuedSetUpdatesEnabledCall
@@ -62,6 +63,23 @@ struct QueuedSetUpdatesEnabledCall
     bool m_enable;
 };
 
+struct QueuedFileServiceCall
+{
+    QueuedFileServiceCall()
+        : m_connection(QDBusConnection::sessionBus())
+    {
+    }
+
+    QueuedFileServiceCall(const QDBusConnection &connection, const QDBusMessage &message)
+        : m_connection(connection)
+        , m_message(message)
+    {
+    }
+
+    QDBusConnection m_connection;
+    QDBusMessage m_message;
+};
+
 class LIPSTICK_EXPORT LipstickCompositor
 #ifndef LIPSTICK_UNIT_TEST_STUB
         : public QWaylandQuickCompositor
@@ -74,6 +92,7 @@ class LIPSTICK_EXPORT LipstickCompositor
     Q_PROPERTY(int windowCount READ windowCount NOTIFY windowCountChanged)
     Q_PROPERTY(int ghostWindowCount READ ghostWindowCount NOTIFY ghostWindowCountChanged)
     Q_PROPERTY(bool homeActive READ homeActive WRITE setHomeActive NOTIFY homeActiveChanged)
+    Q_PROPERTY(bool sessionActive READ sessionActive NOTIFY sessionActiveChanged)
     Q_PROPERTY(bool debug READ debug CONSTANT)
     Q_PROPERTY(int topmostWindowId READ topmostWindowId WRITE setTopmostWindowId NOTIFY topmostWindowIdChanged)
     Q_PROPERTY(Qt::ScreenOrientation topmostWindowOrientation READ topmostWindowOrientation WRITE setTopmostWindowOrientation NOTIFY topmostWindowOrientationChanged)
@@ -103,6 +122,7 @@ public:
 
     bool homeActive() const;
     void setHomeActive(bool);
+    bool sessionActive() const;
 
     int topmostWindowId() const { return m_topmostWindowId; }
     void setTopmostWindowId(int id);
@@ -143,6 +163,12 @@ public:
         openUrlRequested(url);
         return true;
     }
+    void checkMimeSupported(const QString &mimeType, const QDBusMessage &message,
+                            const QDBusConnection &connection);
+    void checkUrlSupported(const QString &url, const QDBusMessage &message,
+                           const QDBusConnection &connection);
+    void respondSupportCheck(uint requestId, bool supported);
+
 
     LipstickCompositorProcWindow *mapProcWindow(const QString &title, const QString &category, const QRect &);
     LipstickCompositorProcWindow *mapProcWindow(const QString &title, const QString &category, const QRect &,
@@ -187,6 +213,7 @@ signals:
 
     void homeActiveChanged();
     void directRenderingActiveChanged();
+    void sessionActiveChanged();
     void topmostWindowIdChanged();
     void privateTopmostWindowProcessIdChanged(int pid);
     void privateTopmostWindowPolicyApplicationIdChanged(QString applicationId);
@@ -216,6 +243,8 @@ signals:
     void showUnlockScreen();
 
     void openUrlRequested(const QUrl &url);
+    void checkMimeSupportedRequested(uint requestId, const QString &mimeType);
+    void checkUrlSupportedRequested(uint requestId, const QUrl &url);
 
 public slots:
     uint privateGetSetupActions() const {
@@ -254,8 +283,10 @@ private slots:
     void processQueuedSetUpdatesEnabledCalls();
 
     void onToplevelCreated(QWaylandXdgToplevel * topLevel, QWaylandXdgSurface * shellSurface);
+    void onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *shellSurface);
 
     void onWindowActivated();
+    void onToplevelMaximized();
 
 private:
     friend class LipstickCompositorWindow;
@@ -271,6 +302,7 @@ private:
     void windowAdded(int);
     void windowRemoved(int);
     void windowDestroyed(LipstickCompositorWindow *item);
+    void readContent();
     void surfaceCommitted();
     void onSurfaceCreated(QWaylandSurface *surface);
 
@@ -287,6 +319,7 @@ private:
     QList<WindowModel *> m_windowModels;
 
     bool m_homeActive;
+    bool m_sessionActive;
 
     int m_topmostWindowId;
     int m_topmostWindowProcessId;
@@ -301,6 +334,7 @@ private:
     bool m_completed;
     bool m_synthesizeBackEvent;
     int m_onUpdatesDisabledUnfocusedWindowId;
+    LipstickRecorderManager *m_recorder;
     bool m_fakeRepaintTriggered;
     QQuickWindow *m_window;
     QWaylandOutput *m_output;
@@ -311,6 +345,8 @@ private:
     bool m_ambientModeEnabled;
 
     QList<QueuedSetUpdatesEnabledCall> m_queuedSetUpdatesEnabledCalls;
+    QHash<uint, QueuedFileServiceCall> m_queuedFileServiceCalls;
+    uint m_nextFileServiceCallId;
     QMceNameOwner *m_mceNameOwner;
 
     QString m_logindSession;

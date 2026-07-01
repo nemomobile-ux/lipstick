@@ -37,6 +37,8 @@ set(HEADERS
     3rdparty/dbus-gmain/dbus-gmain.h
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
+    compositor/fileserviceadaptor.h
+    compositor/lipstickrecorder.h
     compositor/windowpixmapitem.h
     notifications/categorydefinitionstore.h
     notifications/batterynotifier.h
@@ -72,9 +74,13 @@ set(SOURCES
     components/launchermonitor.cpp
     components/launcherdbus.cpp
     components/launcherfoldermodel.cpp
+    compositor/fileserviceadaptor.cpp
     compositor/lipstickcompositor.cpp
     compositor/lipstickcompositorwindow.cpp
     compositor/lipstickcompositorprocwindow.cpp
+    compositor/lipstickrecorder.cpp
+    compositor/lipstickviewporter.cpp
+    compositor/lipstickfractionalscale.cpp
     compositor/windowmodel.cpp
     compositor/windowpixmapitem.cpp
     notifications/notificationmanager.cpp
@@ -141,18 +147,23 @@ qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/net.connman.vpn.Agent.xml"
     "VpnAgent"
     "connmanvpnagent"
     "ConnmanVpnAgentAdaptor")
-
 qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/compositor.xml"
     "lipstickcompositor.h"
     "LipstickCompositor"
     "lipstickcompositoradaptor"
     "LipstickCompositorAdaptor")
-qt_add_dbus_adaptor(SOURCES "${CMAKE_SOURCE_DIR}/src/compositor/fileservice.xml" "fileserviceadaptor.h" "" "" "FileServiceAdaptor")
 
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
 set_target_properties(${PACKAGE}
     PROPERTIES VERSION ${CMAKE_PROJECT_VERSION}
     SOVERSION ${CMAKE_PROJECT_VERSION})
+
+qt6_generate_wayland_protocol_server_sources(${PACKAGE}
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../protocol/lipstick-recorder.xml
+        ${WaylandProtocols_PREFIX}/share/wayland-protocols/stable/viewporter/viewporter.xml
+        ${WaylandProtocols_PREFIX}/share/wayland-protocols/staging/fractional-scale/fractional-scale-v1.xml
+)
 
 include_directories(utilities
     touchscreen

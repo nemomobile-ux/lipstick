@@ -39,6 +39,7 @@ class LIPSTICK_EXPORT LipstickCompositorWindow : public QWaylandQuickItem
 
     Q_PROPERTY(QRect mouseRegionBounds READ mouseRegionBounds NOTIFY mouseRegionBoundsChanged)
     Q_PROPERTY(bool focusOnTouch READ focusOnTouch WRITE setFocusOnTouch NOTIFY focusOnTouchChanged)
+    Q_PROPERTY(double bufferScale READ bufferScale WRITE setBufferScale NOTIFY bufferScaleChanged)
     Q_PROPERTY(uint notificationMode READ notificationMode WRITE setNotificationMode NOTIFY notificationModeChanged)
 
     Q_PROPERTY(bool activated READ activated NOTIFY activatedChanged)
@@ -84,11 +85,17 @@ public:
     Q_INVOKABLE void unsetFullscreen();
     Q_INVOKABLE void resize(const QSize &size);
 
+    qreal bufferScale() const;
+    void setBufferScale(qreal scale);
+
     QVariantMap windowProperties() const;
     void setWindowProperties(const QVariantMap &newWindowProperties);
 
+    void setPopup(QWaylandXdgPopup *popup);
+
 protected:
     void itemChange(ItemChange change, const ItemChangeData &data);
+    QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data);
 
     virtual bool event(QEvent *);
     virtual void mousePressEvent(QMouseEvent *event);
@@ -107,6 +114,7 @@ signals:
     void windowFlagsChanged();
     void notificationModeChanged();
     void resized();
+    void bufferScaleChanged();
     void activatedChanged();
 
     void windowPropertiesChanged();
@@ -114,6 +122,7 @@ signals:
 private slots:
     void handleTouchCancel();
     void killProcess();
+    void configure();
 
 private:
     friend class LipstickCompositor;
@@ -151,9 +160,12 @@ private:
         QList<int> keys;
     } m_pressedGrabbedKeys;
     QVector<QQuickItem *> m_refs;
+    QRectF m_sourceRect;
+    qreal m_bufferScale;
     uint m_notificationMode;
     QPointer<QWaylandXdgToplevel> m_topLevel;
     QVariantMap m_windowProperties;
+    QWaylandXdgPopup *m_popup;
 };
 
 #endif // LIPSTICKCOMPOSITORWINDOW_H

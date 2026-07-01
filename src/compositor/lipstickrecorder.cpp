@@ -1,0 +1,233 @@
+/***************************************************************************
+**
+** Copyright (c) 2014 Jolla Ltd.
+**
+** This file is part of lipstick.
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License version 2.1 as published by the Free Software Foundation
+** and appearing in the file LICENSE.LGPL included in the packaging
+** of this file.
+**
+****************************************************************************/
+
+#include <sys/time.h>
+#include <grp.h>
+
+#include <QMutexLocker>
+
+#include "lipstickrecorder.h"
+#include "lipstickcompositor.h"
+
+#include <wayland-server.h>
+
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
+
+static uint32_t getTime()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+static const QEvent::Type FrameEventType = (QEvent::Type)QEvent::registerEventType();
+static const QEvent::Type FailedEventType = (QEvent::Type)QEvent::registerEventType();
+
+class FrameEvent : public QEvent
+{
+public:
+    FrameEvent(uint32_t t)
+        : QEvent(FrameEventType)
+        , time(t)
+    { }
+    uint32_t time;
+};
+
+class FailedEvent : public QEvent
+{
+public:
+    FailedEvent(int r)
+        : QEvent(FailedEventType)
+        , result(r)
+    { }
+    int result;
+};
+
+LipstickRecorderManager::LipstickRecorderManager(QWaylandCompositor *compositor)
+{
+    setExtensionContainer(compositor);
+}
+
+void LipstickRecorderManager::initialize()
+{
+    QWaylandCompositorExtensionTemplate::initialize();
+
+    if (!extensionContainer())
+        return;
+
+    auto *compositor = static_cast<QWaylandCompositor *>(extensionContainer());
+    init(compositor->display(), 1);
+}
+
+void LipstickRecorderManager::recordFrame(QWindow *window)
+{
+
+    QMutexLocker lock(&m_mutex);
+
+    if (m_requests.isEmpty())
+        return;
+
+    uint32_t time = getTime();
+
+    const auto recorders = m_requests.values(window);
+
+    for (LipstickRecorder *recorder : recorders) {
+        wl_shm_buffer *buffer = recorder->buffer();
+        if (!buffer)
+            continue;
+
+        uchar *pixels = static_cast<uchar *>(wl_shm_buffer_get_data(buffer));
+
+        int width  = wl_shm_buffer_get_width(buffer);
+        int height = wl_shm_buffer_get_height(buffer);
+        int stride = wl_shm_buffer_get_stride(buffer);
+        int bpp = 4;
+
+        if (width < window->width() ||
+            height < window->height() ||
+            stride < window->width() * bpp) {
+
+            QCoreApplication::postEvent(
+                recorder,
+                new FailedEvent(QtWaylandServer::lipstick_recorder::result_bad_buffer));
+            continue;
+        }
+
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(0, 0,
+                     width, height,
+                     GL_RGBA,
+                     GL_UNSIGNED_BYTE,
+                     pixels);
+
+        QCoreApplication::postEvent(recorder, new FrameEvent(time));
+
+        m_requests.remove(window, recorder);
+    }
+}
+
+void LipstickRecorderManager::requestFrame(QWindow *window, LipstickRecorder *recorder)
+{
+    QMutexLocker lock(&m_mutex);
+    m_requests.insert(window, recorder);
+}
+
+void LipstickRecorderManager::remove(QWindow *window, LipstickRecorder *recorder)
+{
+    QMutexLocker lock(&m_mutex);
+    m_requests.remove(window, recorder);
+}
+
+void LipstickRecorderManager::bind_resource(Resource *resource)
+{
+    gid_t gid = 0;
+
+    wl_client_get_credentials(
+        resource->client(),
+        nullptr,
+        nullptr,
+        &gid);
+
+    group *g = getgrgid(gid);
+
+    if (!g || strcmp(g->gr_name, "privileged") != 0) {
+        wl_resource_post_error(
+            resource->handle,
+            WL_DISPLAY_ERROR_INVALID_OBJECT,
+            "Permission to bind lipstick_recorder_manager denied");
+
+        wl_resource_destroy(resource->handle);
+    }
+}
+
+void LipstickRecorderManager::lipstick_recorder_manager_create_recorder(Resource *resource, uint32_t id,
+                                                                        ::wl_resource *output)
+{
+    // TODO: we should find out the window associated with this output, but there isn't
+    // a way to do that in qtcompositor yet. Just ignore it for now and use the one window we have.
+    Q_UNUSED(output)
+
+    new LipstickRecorder(this, resource->client(), id, LipstickCompositor::instance()->quickWindow());
+}
+
+LipstickRecorder::LipstickRecorder(LipstickRecorderManager *manager
+                                   , wl_client *client
+                                   , quint32 id
+                                   , QQuickWindow *window)
+    : QtWaylandServer::lipstick_recorder(client, id, 1)
+    , m_manager(manager)
+    , m_bufferResource(Q_NULLPTR)
+    , m_client(client)
+    , m_window(window)
+{
+    send_setup(window->width(), window->height(), window->width() * 4, WL_SHM_FORMAT_RGBA8888);
+}
+
+LipstickRecorder::~LipstickRecorder()
+{
+    m_manager->remove(m_window, this);
+}
+
+void LipstickRecorder::lipstick_recorder_destroy_resource(Resource *resource)
+{
+    Q_UNUSED(resource)
+    delete this;
+}
+
+void LipstickRecorder::lipstick_recorder_destroy(Resource *resource)
+{
+    wl_resource_destroy(resource->handle);
+}
+
+void LipstickRecorder::lipstick_recorder_record_frame(Resource *resource, ::wl_resource *buffer)
+{
+    Q_UNUSED(resource)
+    if (m_bufferResource) {
+        send_cancelled(buffer);
+    }
+    m_bufferResource = buffer;
+    m_buffer = wl_shm_buffer_get(buffer);
+    if (m_buffer) {
+        m_manager->requestFrame(m_window, this);
+    } else {
+        m_bufferResource = Q_NULLPTR;
+        send_failed(result_bad_buffer, buffer);
+    }
+}
+
+void LipstickRecorder::lipstick_recorder_repaint(Resource *resource)
+{
+    Q_UNUSED(resource)
+    if (m_bufferResource) {
+        m_window->update();
+    }
+}
+
+bool LipstickRecorder::event(QEvent *e)
+{
+    if (e->type() == FrameEventType) {
+        FrameEvent *fe = static_cast<FrameEvent *>(e);
+        send_frame(m_bufferResource, fe->time, QtWaylandServer::lipstick_recorder::transform_y_inverted);
+    } else if (e->type() == FailedEventType) {
+        FailedEvent *fe = static_cast<FailedEvent *>(e);
+        send_failed(fe->result, m_bufferResource);
+    } else {
+        return QObject::event(e);
+    }
+
+    m_bufferResource = Q_NULLPTR;
+    wl_client_flush(client());
+    return true;
+}

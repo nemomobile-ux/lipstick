@@ -1,0 +1,62 @@
+/***************************************************************************
+**
+** Copyright (c) 2026 Jolla Mobile Ltd
+**
+** This file is part of lipstick.
+**
+** This library is free software; you can redistribute it and/or
+** modify it under the terms of the GNU Lesser General Public
+** License version 2.1 as published by the Free Software Foundation
+** and appearing in the file LICENSE.LGPL included in the packaging
+** of this file.
+**
+****************************************************************************/
+
+#ifndef LIPSTICKFRACTIONALSCALE_H
+#define LIPSTICKFRACTIONALSCALE_H
+
+#include <QObject>
+#include <QtWaylandCompositor/QWaylandSurface>
+
+#include "qwayland-server-fractional-scale-v1.h"
+
+class QWaylandSurface;
+
+class FractionalScaleGlobal : public QObject
+{
+    Q_OBJECT
+public:
+    explicit FractionalScaleGlobal(QObject *parent = nullptr);
+    void bind(wl_client *client, uint32_t version, uint32_t id);
+};
+
+class FractionalScaleManager : public QObject, public QtWaylandServer::wp_fractional_scale_manager_v1
+{
+public:
+    FractionalScaleManager(wl_client *client, uint32_t version, uint32_t id, QObject *parent);
+    ~FractionalScaleManager();
+
+protected:
+    void wp_fractional_scale_manager_v1_destroy_resource(Resource *resource) override;
+    void wp_fractional_scale_manager_v1_destroy(Resource *resource) override;
+    void wp_fractional_scale_manager_v1_get_fractional_scale(Resource *resource, uint32_t id, ::wl_resource *surface) override;
+};
+
+class FractionalScale
+    : public QObject
+    , public QtWaylandServer::wp_fractional_scale_v1
+{
+public:
+    FractionalScale(QWaylandSurface *surface, uint32_t version, uint32_t id, QObject *parent);
+    ~FractionalScale();
+
+protected:
+    void wp_fractional_scale_v1_destroy_resource(Resource *resource) override;
+    void wp_fractional_scale_v1_destroy(Resource *resource) override;
+
+private:
+    QWaylandSurface *m_surface = nullptr;
+    qreal m_scale = 1.0;
+};
+
+#endif

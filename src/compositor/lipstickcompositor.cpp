@@ -18,8 +18,10 @@
 #include <QDesktopServices>
 #include <QtSensors/QOrientationSensor>
 #include <QClipboard>
+#include <QMetaMethod>
 #include <QSettings>
 #include <QMimeData>
+#include <QVariantList>
 #include <QtGui/qpa/qplatformnativeinterface.h>
 #include "homeapplication.h"
 #include "touchscreen/touchscreen.h"
@@ -29,6 +31,9 @@
 #include "lipstickcompositoradaptor.h"
 #include "fileserviceadaptor.h"
 #include "lipsticksettings.h"
+#include "lipstickrecorder.h"
+#include "lipstickviewporter.h"
+#include "lipstickfractionalscale.h"
 #include <qpa/qwindowsysteminterface.h>
 #include "logging.h"
 #include <private/qguiapplication_p.h>
@@ -47,6 +52,8 @@
 #define MCE_DISPLAY_LPM_SET_SUPPORTED "set_lpm_supported"
 
 namespace {
+const int FileServiceRequestTimeout = 30 * 1000;
+
 bool debuggingCompositorHandover()
 {
     static int debugging = -1;
@@ -65,6 +72,7 @@ LipstickCompositor::LipstickCompositor()
     : m_totalWindowCount(0)
     , m_nextWindowId(1)
     , m_homeActive(true)
+    , m_sessionActive(false)
     , m_topmostWindowId(0)
     , m_topmostWindowProcessId(0)
     , m_topmostWindowOrientation(Qt::PrimaryOrientation)
@@ -77,6 +85,7 @@ LipstickCompositor::LipstickCompositor()
     , m_onUpdatesDisabledUnfocusedWindowId(0)
     , m_fakeRepaintTriggered(false)
     , m_queuedSetUpdatesEnabledCalls()
+    , m_nextFileServiceCallId(1)
     , m_mceNameOwner(new QMceNameOwner(this))
     , m_sessionActivationTries(0)
 {
@@ -95,6 +104,7 @@ LipstickCompositor::LipstickCompositor()
 
     m_xdgShell = new QWaylandXdgShell(this);
     connect(m_xdgShell, &QWaylandXdgShell::toplevelCreated, this, &LipstickCompositor::onToplevelCreated);
+    connect(m_xdgShell, &QWaylandXdgShell::popupCreated, this, &LipstickCompositor::onPopupCreated);
 
     m_wm = new QWaylandQtWindowManager(this);
     connect(m_wm, &QWaylandQtWindowManager::openUrl, this,
@@ -122,6 +132,7 @@ LipstickCompositor::LipstickCompositor()
 
     connect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
     QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
+    connect(this->quickWindow(), &QQuickWindow::afterRendering, this, &LipstickCompositor::readContent, Qt::DirectConnection);
 
     m_orientationSensor = new QOrientationSensor(this);
     QObject::connect(m_orientationSensor, SIGNAL(readingChanged()), this, SLOT(setScreenOrientationFromSensor()));
@@ -146,6 +157,10 @@ LipstickCompositor::LipstickCompositor()
     }
 
     QTimer::singleShot(0, this, SLOT(initialize()));
+
+    m_recorder = new LipstickRecorderManager(this);
+    new ViewporterGlobal(this);
+    new FractionalScaleGlobal(this);
 
     QObject::connect(m_mceNameOwner, &QMceNameOwner::validChanged,
                      this, &LipstickCompositor::processQueuedSetUpdatesEnabledCalls);
@@ -226,7 +241,33 @@ void LipstickCompositor::onToplevelCreated(QWaylandXdgToplevel * topLevel, QWayl
         connect(topLevel, &QWaylandXdgToplevel::titleChanged, this, &LipstickCompositor::surfaceTitleChanged);
         connect(topLevel, &QWaylandXdgToplevel::setFullscreen, this, &LipstickCompositor::surfaceSetFullScreen);
         connect(topLevel, &QWaylandXdgToplevel::activatedChanged, this, &LipstickCompositor::onWindowActivated);
+        connect(topLevel, &QWaylandXdgToplevel::setMaximized, this, &LipstickCompositor::onToplevelMaximized);
     }
+}
+
+void LipstickCompositor::onPopupCreated(QWaylandXdgPopup *popup, QWaylandXdgSurface *shellSurface)
+{
+    QWaylandSurface *surface = shellSurface->surface();
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+
+    if (!window)
+        window = createView(surface);
+
+    window->setPopup(popup);
+
+    QRect popupGeometry = popup->xdgSurface()->windowGeometry();
+    QRect outputGeom = m_output->geometry();
+
+    if (popupGeometry.right() > outputGeom.right())
+        popupGeometry.moveRight(outputGeom.right());
+    if (popupGeometry.bottom() > outputGeom.bottom())
+        popupGeometry.moveBottom(outputGeom.bottom());
+
+    window->setPosition(popupGeometry.topLeft());
+
+    connect(popup, &QWaylandXdgPopup::destroyed, this, [this, window]() {
+        window->deleteLater();
+    });
 }
 
 void LipstickCompositor::onWindowActivated()
@@ -236,6 +277,27 @@ void LipstickCompositor::onWindowActivated()
     if(window && window->activated()) {
         emit windowRaised(window);
     }
+}
+
+void LipstickCompositor::onToplevelMaximized()
+{
+    QWaylandXdgToplevel *toplevel = qobject_cast<QWaylandXdgToplevel *>(sender());
+    if (!toplevel) {
+        return;
+    }
+
+    QWaylandSurface *surface = toplevel->xdgSurface()->surface();
+    LipstickCompositorWindow *window = surfaceWindow(surface);
+
+    if (!window)
+        return;
+
+    QRect geom = m_output->geometry();
+
+    window->setPosition(geom.topLeft());
+    window->setSize(geom.size());
+
+    toplevel->sendMaximized(geom.size());
 }
 
 void LipstickCompositor::onSurfaceCreated(QWaylandSurface *surface)
@@ -254,6 +316,53 @@ bool LipstickCompositor::openUrl(QWaylandClient *client, const QUrl &url)
     openUrlRequested(url);
 
     return true;
+}
+
+void LipstickCompositor::checkMimeSupported(const QString &mimeType, const QDBusMessage &message,
+                                            const QDBusConnection &connection)
+{
+    if (!isSignalConnected(QMetaMethod::fromSignal(&LipstickCompositor::checkMimeSupportedRequested))) {
+        connection.send(message.createReply(QVariantList() << false));
+        return;
+    }
+
+    const uint requestId = m_nextFileServiceCallId++;
+    if (m_nextFileServiceCallId == 0)
+        m_nextFileServiceCallId = 1;
+
+    m_queuedFileServiceCalls.insert(requestId, QueuedFileServiceCall(connection, message));
+    QTimer::singleShot(FileServiceRequestTimeout, this, [this, requestId]() {
+        respondSupportCheck(requestId, false);
+    });
+    emit checkMimeSupportedRequested(requestId, mimeType);
+}
+
+void LipstickCompositor::respondSupportCheck(uint requestId, bool supported)
+{
+    if (!m_queuedFileServiceCalls.contains(requestId))
+        return;
+
+    const QueuedFileServiceCall queued = m_queuedFileServiceCalls.take(requestId);
+    queued.m_connection.send(queued.m_message.createReply(QVariantList() << supported));
+}
+
+void LipstickCompositor::checkUrlSupported(const QString &url, const QDBusMessage &message,
+                                           const QDBusConnection &connection)
+{
+    if (!isSignalConnected(QMetaMethod::fromSignal(&LipstickCompositor::checkUrlSupportedRequested))) {
+        connection.send(message.createReply(QVariantList() << false));
+        return;
+    }
+
+    const uint requestId = m_nextFileServiceCallId++;
+    if (m_nextFileServiceCallId == 0)
+        m_nextFileServiceCallId = 1;
+
+    m_queuedFileServiceCalls.insert(requestId, QueuedFileServiceCall(connection, message));
+    QTimer::singleShot(FileServiceRequestTimeout, this, [this, requestId]() {
+        respondSupportCheck(requestId, false);
+    });
+    emit checkUrlSupportedRequested(requestId, QUrl(url));
 }
 
 void LipstickCompositor::retainedSelectionReceived(QMimeData *mimeData)
@@ -282,6 +391,11 @@ int LipstickCompositor::ghostWindowCount() const
 bool LipstickCompositor::homeActive() const
 {
     return m_homeActive;
+}
+
+bool LipstickCompositor::sessionActive() const
+{
+    return m_sessionActive;
 }
 
 void LipstickCompositor::setHomeActive(bool a)
@@ -390,7 +504,7 @@ void LipstickCompositor::setTopmostWindowId(int id)
         }
 
         QString applicationId = window && !window->policyApplicationId().isEmpty()
-                                ? window->policyApplicationId() : "none";
+                                    ? window->policyApplicationId() : "none";
 
         if (m_topmostWindowPolicyApplicationId != applicationId) {
             m_topmostWindowPolicyApplicationId = applicationId;
@@ -440,6 +554,10 @@ void LipstickCompositor::activateLogindSession()
     }
 
     if (sd_session_is_active(m_logindSession.toUtf8()) > 0) {
+        if (!m_sessionActive) {
+            m_sessionActive = true;
+            emit sessionActiveChanged();
+        }
         qCInfo(lcLipstickCoreLog) << "Session" << m_logindSession << "successfully activated";
         return;
     }
@@ -452,10 +570,10 @@ void LipstickCompositor::activateLogindSession()
     qCDebug(lcLipstickCoreLog) << "Activating session on seat0";
 
     QDBusMessage method = QDBusMessage::createMethodCall(
-                QStringLiteral("org.freedesktop.login1"),
-                QStringLiteral("/org/freedesktop/login1"),
-                QStringLiteral("org.freedesktop.login1.Manager"),
-                QStringLiteral("ActivateSession"));
+        QStringLiteral("org.freedesktop.login1"),
+        QStringLiteral("/org/freedesktop/login1"),
+        QStringLiteral("org.freedesktop.login1.Manager"),
+        QStringLiteral("ActivateSession"));
     method.setArguments({ m_logindSession });
 
     QDBusPendingCall call = QDBusConnection::systemBus().asyncCall(method);
@@ -495,9 +613,9 @@ void LipstickCompositor::initialize()
      * to us -> use ReplaceExistingService to facilitate this.
      */
     QDBusReply<QDBusConnectionInterface::RegisterServiceReply> reply =
-            systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
-                                                   QDBusConnectionInterface::ReplaceExistingService,
-                                                   QDBusConnectionInterface::DontAllowReplacement);
+        systemBus.interface()->registerService(QStringLiteral("org.nemomobile.compositor"),
+                                               QDBusConnectionInterface::ReplaceExistingService,
+                                               QDBusConnectionInterface::DontAllowReplacement);
     if (!reply.isValid()) {
         qWarning("Unable to register D-Bus service org.nemomobile.compositor: %s",
                  reply.error().message().toUtf8().constData());
@@ -523,6 +641,11 @@ void LipstickCompositor::windowDestroyed(LipstickCompositorWindow *item)
 
     m_windows.remove(id);
     surfaceUnmapped(item);
+}
+
+void LipstickCompositor::readContent()
+{
+    m_recorder->recordFrame(this->quickWindow());
 }
 
 void LipstickCompositor::onHasContentChanged()
