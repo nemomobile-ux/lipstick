@@ -15,6 +15,8 @@
 
 
 #include <QWaylandSeat>
+#include <QWaylandKeymap>
+#include "lipstickkeymap.h"
 #include <QDesktopServices>
 #include <QtSensors/QOrientationSensor>
 #include <QClipboard>
@@ -1163,5 +1165,65 @@ void LipstickCompositor::sendKeyEvent(QEvent::Type type, Qt::Key key, quint32 na
         QCoreApplication::sendEvent(m_window->activeFocusItem(), &event);
     } else {
         seatFor(&event)->sendFullKeyEvent(&event);
+    }
+}
+
+LipstickKeymap *LipstickCompositor::keymap() const
+{
+    return m_keymap;
+}
+
+void LipstickCompositor::setKeymap(LipstickKeymap *keymap)
+{
+    if (m_keymap == keymap)
+        return;
+
+    bool update = true;
+
+    if (m_keymap && keymap)
+        update = (*m_keymap != *keymap);
+
+    if (m_keymap)
+        disconnect(m_keymap, nullptr, this, nullptr);
+
+    m_keymap = keymap;
+
+    if (m_keymap) {
+        connect(m_keymap, &LipstickKeymap::rulesChanged, this, &LipstickCompositor::updateKeymap);
+        connect(m_keymap, &LipstickKeymap::modelChanged, this, &LipstickCompositor::updateKeymap);
+        connect(m_keymap, &LipstickKeymap::layoutChanged, this, &LipstickCompositor::updateKeymap);
+        connect(m_keymap, &LipstickKeymap::variantChanged, this, &LipstickCompositor::updateKeymap);
+        connect(m_keymap, &LipstickKeymap::optionsChanged, this, &LipstickCompositor::updateKeymap);
+    }
+
+    if (update)
+        updateKeymap();
+
+    emit keymapChanged();
+}
+
+void LipstickCompositor::updateKeymap()
+{
+    QWaylandSeat *seat = defaultSeat();
+    if (!seat)
+        return;
+
+    QWaylandKeymap *seatKeymap = seat->keymap();
+    if (!seatKeymap)
+        return;
+
+    if (m_keymap) {
+        seatKeymap->setLayout(m_keymap->layout());
+        seatKeymap->setVariant(m_keymap->variant());
+        seatKeymap->setOptions(m_keymap->options());
+        seatKeymap->setRules(m_keymap->rules());
+        seatKeymap->setModel(m_keymap->model());
+    } else {
+        QWaylandKeymap defaults;
+        seatKeymap->setLayout(defaults.layout());
+        seatKeymap->setVariant(defaults.variant());
+        seatKeymap->setOptions(defaults.options());
+        seatKeymap->setRules(defaults.rules());
+        seatKeymap->setModel(defaults.model());
     }
 }

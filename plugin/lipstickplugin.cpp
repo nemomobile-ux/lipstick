@@ -32,6 +32,7 @@
 #include <bluetooth/bluetoothobexagent.h>
 #include <compositor/lipstickcompositor.h>
 #include <compositor/lipstickcompositorwindow.h>
+#include <compositor/lipstickkeymap.h>
 #include <compositor/windowmodel.h>
 #include <compositor/windowpixmapitem.h>
 #include <compositor/windowproperty.h>
@@ -84,6 +85,7 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterUncreatableType<ShutdownScreen>("org.nemomobile.lipstick", 0, 1, "ShutdownScreen", "This type is initialized by HomeApplication");
 
     qmlRegisterType<LipstickCompositor>("org.nemomobile.lipstick", 0, 1, "Compositor");
+    qmlRegisterType<LipstickKeymap>("org.nemomobile.lipstick", 0, 1, "Keymap");
     qmlRegisterUncreatableType<QWaylandSurface>("org.nemomobile.lipstick", 0, 1, "WaylandSurface", "This type is created by the compositor");
     qmlRegisterType<WindowModel>("org.nemomobile.lipstick", 0, 1, "WindowModel");
     qmlRegisterType<WindowPixmapItem>("org.nemomobile.lipstick", 0, 1, "WindowPixmapItem");

@@ -48,6 +48,7 @@ class LipstickCompositorProcWindow;
 class QOrientationSensor;
 class LipstickRecorderManager;
 class QMceNameOwner;
+#include "lipstickkeymap.h"
 
 struct QueuedSetUpdatesEnabledCall
 {
@@ -107,6 +108,7 @@ class LIPSTICK_EXPORT LipstickCompositor
     Q_PROPERTY(bool ambientSupported READ ambientSupported CONSTANT)
     Q_PROPERTY(bool ambientEnabled READ ambientEnabled WRITE setAmbientEnabled NOTIFY ambientEnabledChanged)
     Q_PROPERTY(bool displayAmbient READ displayAmbient NOTIFY displayAmbientChanged)
+    Q_PROPERTY(LipstickKeymap *keymap READ keymap WRITE setKeymap NOTIFY keymapChanged)
 
 public:
     LipstickCompositor();
@@ -193,6 +195,9 @@ public:
     Q_INVOKABLE void setUpdatesEnabled(bool enabled, bool inAmbientMode = false);
     LipstickCompositorWindow *createView(QWaylandSurface *surf);
 
+    LipstickKeymap *keymap() const;
+    void setKeymap(LipstickKeymap *keymap);
+
     QQuickWindow *quickWindow() { return m_window; }
 
 protected:
@@ -240,6 +245,7 @@ signals:
 
     void completedChanged();
     void synthesizeBackEventChanged();
+    void keymapChanged();
 
     void showUnlockScreen();
 
@@ -269,6 +275,7 @@ public slots:
 
 private slots:
     void onHasContentChanged();
+    void updateKeymap();
     void surfaceTitleChanged();
     void surfaceSetFullScreen(QWaylandOutput *output);
     void surfaceDamaged(const QRegion &);
@@ -359,6 +366,8 @@ private:
 
     QString m_logindSession;
     uint m_sessionActivationTries;
+
+    LipstickKeymap *m_keymap = nullptr;
 };
 
 #endif // LIPSTICKCOMPOSITOR_H

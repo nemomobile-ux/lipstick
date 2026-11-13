@@ -19,6 +19,7 @@ set(PUBLICHEADERS
     compositor/lipstickcompositor.h
     compositor/lipstickcompositorwindow.h
     compositor/lipstickcompositorprocwindow.h
+    compositor/lipstickkeymap.h
     compositor/windowmodel.h
     notifications/notificationmanager.h
     notifications/lipsticknotification.h
@@ -37,6 +38,7 @@ set(HEADERS
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
     compositor/fileserviceadaptor.h
+    compositor/lipstickkeymap.h
     compositor/lipstickrecorder.h
     compositor/windowpixmapitem.h
     compositor/windowproperty.h
@@ -87,6 +89,7 @@ set(SOURCES
     compositor/lipstickcompositor.cpp
     compositor/lipstickcompositorwindow.cpp
     compositor/lipstickcompositorprocwindow.cpp
+    compositor/lipstickkeymap.cpp
     compositor/lipstickrecorder.cpp
     compositor/lipstickviewporter.cpp
     compositor/lipstickfractionalscale.cpp
