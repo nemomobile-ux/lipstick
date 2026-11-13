@@ -14,6 +14,12 @@ PulseAudioPrivateLoop::PulseAudioPrivateLoop(QObject *parent)
 
 PulseAudioPrivateLoop::~PulseAudioPrivateLoop()
 {
+    if (m_mainloop) {
+        pa_mainloop_quit(m_mainloop, 0);
+    }
+
+    wait();
+
     pa_context *context = m_context;
     m_context = nullptr;
 
@@ -23,12 +29,9 @@ PulseAudioPrivateLoop::~PulseAudioPrivateLoop()
     }
 
     if (m_mainloop) {
-        pa_mainloop_quit(m_mainloop, 0);
         pa_mainloop_free(m_mainloop);
         m_mainloop = nullptr;
     }
-
-    wait();
 }
 
 void PulseAudioPrivateLoop::run()
