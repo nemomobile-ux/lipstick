@@ -32,35 +32,15 @@
 
 #include <qusbmoded.h>
 
-#include "usb_moded-dbus.h"
-#include "usb_moded-modes.h"
-
-// States (from usb_moded-dbus.h)
-const QString QUsbMode::Mode::Connected(USB_CONNECTED);
-const QString QUsbMode::Mode::DataInUse(DATA_IN_USE);
-const QString QUsbMode::Mode::Disconnected(USB_DISCONNECTED);
-const QString QUsbMode::Mode::ModeRequest(USB_CONNECTED_DIALOG_SHOW);
-const QString QUsbMode::Mode::PreUnmount(USB_PRE_UNMOUNT);
-const QString QUsbMode::Mode::ReMountFailed(RE_MOUNT_FAILED);
-const QString QUsbMode::Mode::ModeSettingFailed(MODE_SETTING_FAILED);
-const QString QUsbMode::Mode::ChargerConnected(CHARGER_CONNECTED);
-const QString QUsbMode::Mode::ChargerDisconnected(CHARGER_DISCONNECTED);
-
-// Modes (from usb_moded-modes.h)
-const QString QUsbMode::Mode::Undefined(MODE_UNDEFINED);
-const QString QUsbMode::Mode::Ask(MODE_ASK);
-const QString QUsbMode::Mode::MassStorage(MODE_MASS_STORAGE);
-const QString QUsbMode::Mode::Developer(MODE_DEVELOPER);
-const QString QUsbMode::Mode::MTP(MODE_MTP);
-const QString QUsbMode::Mode::Host(MODE_HOST);
-const QString QUsbMode::Mode::ConnectionSharing(MODE_CONNECTION_SHARING);
-const QString QUsbMode::Mode::Diag(MODE_DIAG);
-const QString QUsbMode::Mode::Adb(MODE_ADB);
-const QString QUsbMode::Mode::PCSuite(MODE_PC_SUITE);
-const QString QUsbMode::Mode::Charging(MODE_CHARGING);
-const QString QUsbMode::Mode::Charger(MODE_CHARGER);
-const QString QUsbMode::Mode::ChargingFallback(MODE_CHARGING_FALLBACK);
-const QString QUsbMode::Mode::Busy(MODE_BUSY);
+// QUsbMode::Mode::* constants are declared in qusbmode.h and defined
+// (and exported) by libusb-moded-qt6, which we link against.  The stub
+// intentionally does not redefine them: their values come from the same
+// usb_moded-dbus.h / usb_moded-modes.h macros, so the stub, usbmodeselector
+// and the test data all agree on the strings.  Defining them here as well
+// would make the executable's copies preempt the library's ones, so both
+// sets of static initializers would run over the same objects and register
+// their destructors twice, aborting in __run_exit_handlers with
+// "corrupted double-linked list" at exit.
 
 QUsbMode::QUsbMode(QObject *aParent) :
     QObject(aParent)

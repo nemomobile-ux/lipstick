@@ -12,11 +12,9 @@ target_link_libraries(ut_${TESTNAME}
     Qt6::Core
     Qt6::Quick
     Qt6::DBus
-    Qt6::Gui
     Qt6::Test
     PkgConfig::DBUS
     PkgConfig::MLITE
-    PkgConfig::GLIB2
     PkgConfig::LIBRESOURCE
     PkgConfig::NEMODEVICELOCK
     PkgConfig::USB_MODED_QT

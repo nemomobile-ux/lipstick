@@ -222,11 +222,27 @@ QVariantMap LipstickCompositorWindow::windowProperties() const
     return qLipstickCompositorWindowProperties;
 }
 
+// NotificationPreviewPresenter::isNotificationShowable() reads the preview
+// mode of the topmost window from the compositor window table, so the tests
+// need a window registered there.
+LipstickCompositorWindow *gTopmostWindow = 0;
+
 void Ut_NotificationPreviewPresenter::initTestCase()
 {
     qRegisterMetaType<LipstickNotification *>();
-    gLipstickCompositorStub->stubSetReturnValue("instance", new LipstickCompositor());
+    LipstickCompositor *compositor = new LipstickCompositor();
+    gLipstickCompositorStub->stubSetReturnValue("instance", compositor);
     NotificationManager::instance()->setParent(this);
+
+    gTopmostWindow = new LipstickCompositorWindow(1, QString(), 0);
+    compositor->m_windows.insert(1, gTopmostWindow);
+    compositor->m_topmostWindowId = 1;
+}
+
+void Ut_NotificationPreviewPresenter::cleanupTestCase()
+{
+    delete gTopmostWindow;
+    gTopmostWindow = 0;
 }
 
 void Ut_NotificationPreviewPresenter::init()
@@ -673,6 +689,17 @@ void Ut_NotificationPreviewPresenter::testNotificationPreviewsDisabled()
 
     gLipstickCompositorStub->stubSetReturnValue("surfaceForId", surface);
     qLipstickCompositorWindowProperties = windowProperties;
+
+    // The topmost window is only present when the test row has a surface;
+    // its notification preview mode comes from the window properties.
+    LipstickCompositor *compositor = LipstickCompositor::instance();
+    if (surface) {
+        compositor->m_topmostWindowId = gTopmostWindow->windowId();
+        gTopmostWindow->setNotificationMode(
+            windowProperties.value("NOTIFICATION_PREVIEWS_DISABLED").toUInt());
+    } else {
+        compositor->m_topmostWindowId = 0;
+    }
 
     NotificationPreviewPresenter presenter(screenLock, deviceLock);
     createNotification(1, static_cast<Urgency>(urgency));

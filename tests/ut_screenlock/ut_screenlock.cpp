@@ -30,6 +30,8 @@
 #include "displaystate_stub.h"
 #include "lipsticktest.h"
 
+#include <QTouchEvent>
+
 TouchScreen *gTouchScreen = 0;
 
 HomeApplication::~HomeApplication()
@@ -165,6 +167,10 @@ void Ut_ScreenLock::testTkLockOpen()
     int reply = screenLock->tklock_open(TEST_SERVICE, TEST_PATH, TEST_INTERFACE, TEST_METHOD, mode, false, false);
     QCOMPARE(reply, (int)ScreenLock::TkLockReplyOk);
 
+    // tklock_open() defers the actual state changes to zero timers
+    // (MCE needs an immediate D-Bus reply), so process them before checking
+    QCoreApplication::processEvents();
+
     // Check that main window title and stacking layer were only changed if needed (and to the correct state)
     if (mainWindowModified) {
         QCOMPARE(spy.count(), 1);
@@ -189,6 +195,9 @@ void Ut_ScreenLock::testTkLockClose()
     QSignalSpy spy(screenLock, SIGNAL(screenLockedChanged(bool)));
     int reply = screenLock->tklock_close(false);
     QCOMPARE(reply, (int)ScreenLock::TkLockReplyOk);
+
+    // tklock_close() defers hideScreenLock() to a zero timer
+    QCoreApplication::processEvents();
 
     // The screen should no longer be locked
     QCOMPARE(spy.count(), 1);

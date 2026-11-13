@@ -42,6 +42,8 @@ void Ut_NotificationListModel::testModelPopulatesOnConstruction()
     gNotificationManagerStub->stubSetReturnValue("notificationIds", QList<uint>() << 1);
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
     NotificationListModel model;
+    // The constructor populates the model from a zero timer
+    QCoreApplication::processEvents();
     QCOMPARE(model.populated(), true);
     QCOMPARE(model.itemCount(), 1);
     QCOMPARE(model.get(0), &notification);
@@ -53,6 +55,7 @@ void Ut_NotificationListModel::testNotificationIsOnlyAddedIfNotAlreadyAdded()
     gNotificationManagerStub->stubSetReturnValue("notificationIds", QList<uint>() << 1);
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
     NotificationListModel model;
+    QCoreApplication::processEvents();
     model.updateNotification(1);
     QCOMPARE(model.itemCount(), 1);
 }
@@ -78,6 +81,7 @@ void Ut_NotificationListModel::testNotificationIsNotAddedIfNoSummaryOrBody()
     gNotificationManagerStub->stubSetReturnValue("notificationIds", QList<uint>() << 1);
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
     NotificationListModel model;
+    QCoreApplication::processEvents();
     QCOMPARE(model.itemCount(), addItemCount);
 }
 
@@ -87,6 +91,7 @@ void Ut_NotificationListModel::testAlreadyAddedNotificationIsRemovedIfNoLongerAd
     gNotificationManagerStub->stubSetReturnValue("notificationIds", QList<uint>() << 1);
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
     NotificationListModel model;
+    QCoreApplication::processEvents();
     QCOMPARE(model.itemCount(), 0);
 }
 
@@ -95,6 +100,7 @@ void Ut_NotificationListModel::testNotificationRemoval()
     LipstickNotification notification("appName", "appName", "appName", 1, "appIcon", "summary", "body", QStringList() << "action", QVariantHash(), 1);
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
     NotificationListModel model;
+    QCoreApplication::processEvents();
     model.removeNotification(1);
     QCOMPARE(model.itemCount(), 0);
     QCOMPARE(model.populated(), true);
@@ -103,6 +109,7 @@ void Ut_NotificationListModel::testNotificationRemoval()
 void Ut_NotificationListModel::testNotificationOrdering()
 {
     NotificationListModel model;
+    QCoreApplication::processEvents();
     QVariantHash hints1;
     QVariantHash hints2;
     QVariantHash hints3;
@@ -147,6 +154,7 @@ void Ut_NotificationListModel::testNotificationUpdate()
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
 
     NotificationListModel model;
+    QCoreApplication::processEvents();
     QCOMPARE(model.itemCount(), 1);
     QCOMPARE(model.get(0)->property("id").value<uint>(), 1u);
 
@@ -185,6 +193,7 @@ void Ut_NotificationListModel::testRemoteActions()
     gNotificationManagerStub->stubSetReturnValue("notification", &notification);
 
     NotificationListModel model;
+    QCoreApplication::processEvents();
     QCOMPARE(model.itemCount(), 1);
     LipstickNotification *modelNotification(qobject_cast<LipstickNotification *>(model.get(0)));
     QCOMPARE(modelNotification, &notification);

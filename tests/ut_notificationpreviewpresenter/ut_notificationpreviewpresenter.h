@@ -30,6 +30,7 @@ class Ut_NotificationPreviewPresenter : public QObject
 
 private slots:
     void initTestCase();
+    void cleanupTestCase();
     void init();
     void cleanup();
     void testAddNotificationWhenWindowNotOpen();

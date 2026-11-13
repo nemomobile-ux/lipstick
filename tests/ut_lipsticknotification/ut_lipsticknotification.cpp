@@ -13,9 +13,13 @@
 ****************************************************************************/
 
 #include <QtTest/QtTest>
-#include <QDBusArgument>
+#include "qdbusargument_fake.h"
 #include "ut_lipsticknotification.h"
 #include "lipsticknotification.h"
+
+void Ut_Notification::initTestCase()
+{
+}
 
 void Ut_Notification::testGettersAndSetters()
 {

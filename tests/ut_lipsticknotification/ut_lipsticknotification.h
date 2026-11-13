@@ -21,6 +21,7 @@ class Ut_Notification : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void testGettersAndSetters();
     void testIcon_data();
     void testIcon();

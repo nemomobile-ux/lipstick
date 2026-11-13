@@ -22,7 +22,6 @@ HomeApplication::HomeApplication(int &argc, char **argv, const QString &qmlPath)
 
 bool HomeApplication::event(QEvent *)
 {
-    qFatal("Not implemented");
     return true;
 }
 

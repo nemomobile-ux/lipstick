@@ -156,7 +156,9 @@ void Ut_LauncherModel::testUpdating()
 
     launcherModel->updatingFinished("somepackage", "org.example.caller");
 
-    QVERIFY(launcherModel->packageInModel("somepackage") == NULL);
+    // The temporary item is removed asynchronously after a holdback period
+    // (LAUNCHER_UPDATING_REMOVAL_HOLDBACK_MS in launchermodel.cpp is 3000 ms)
+    QTRY_VERIFY_WITH_TIMEOUT(launcherModel->packageInModel("somepackage") == NULL, 5000);
     QVERIFY(launcherModel->temporaryItemToReplace() == NULL);
 }
 
