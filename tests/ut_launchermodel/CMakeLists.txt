@@ -25,7 +25,6 @@ target_link_libraries(ut_${TESTNAME} PUBLIC
     Qt6::WaylandCompositor
     Qt6::Test
     PkgConfig::DBUS
-    PkgConfig::GIO_UNIX
     PkgConfig::MLITE
     PkgConfig::SYSTEMSETTINGS
     lipstick-qt6

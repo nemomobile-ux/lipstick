@@ -60,8 +60,6 @@ find_package(KF6BluezQt REQUIRED)
 
 pkg_check_modules(DBUS dbus-1 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(DSME_DBUS dsme_dbus_if REQUIRED IMPORTED_TARGET)
-pkg_check_modules(GLIB2 glib-2.0 REQUIRED IMPORTED_TARGET)
-pkg_check_modules(GIO_UNIX gio-unix-2.0 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(KEEPALIVE keepalive REQUIRED IMPORTED_TARGET)
 pkg_check_modules(LIBRESOURCE libresourceqt6 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(LIBSYSTEMD libsystemd REQUIRED IMPORTED_TARGET)

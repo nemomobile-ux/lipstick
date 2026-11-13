@@ -24,8 +24,8 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QStack>
+#include <QSettings>
 #include <mdesktopentry.h>
-#include <glib.h>
 
 static const int FOLDER_MODEL_SAVE_TIMER_MS = 1000;
 static const QString CONFIG_FOLDER_SUBDIRECTORY("/lipstick/");
@@ -228,57 +228,42 @@ void LauncherFolderItem::loadDirectoryFile(const QString &filename)
         m_directoryFile = absoluteConfigPath(m_directoryFile);
     }
 
-    GKeyFile *keyfile = g_key_file_new();
-    GError *err = NULL;
+    QSettings settings(m_directoryFile, QSettings::IniFormat);
+    settings.beginGroup(QStringLiteral("Desktop Entry"));
+    const QString icon = settings.value(QStringLiteral("Icon")).toString();
+    settings.endGroup();
 
-    if (g_key_file_load_from_file(keyfile, m_directoryFile.toLatin1(), G_KEY_FILE_NONE, &err)) {
-        m_iconId = QString::fromLatin1(g_key_file_get_string(keyfile, "Desktop Entry", "Icon", &err));
+    if (!icon.isEmpty() && icon != m_iconId) {
+        m_iconId = icon;
         emit iconIdChanged();
+    } else if (settings.status() != QSettings::NoError) {
+        qWarning() << "Failed to load .directory file" << m_directoryFile;
     }
-
-    if (err != NULL) {
-        qWarning() << "Failed to load .directory file" << err->message;
-        g_error_free(err);
-    }
-
-    g_key_file_free(keyfile);
 }
 
 void LauncherFolderItem::saveDirectoryFile()
 {
-    QScopedPointer<QFile> dirFile;
     if (m_directoryFile.isEmpty()) {
-        QTemporaryFile *tempFile = new QTemporaryFile(absoluteConfigPath("FolderXXXXXX.directory"));
-        dirFile.reset(tempFile);
-        if(!tempFile->open()) {
+        QTemporaryFile tempFile(absoluteConfigPath(QStringLiteral("FolderXXXXXX.directory")));
+        tempFile.setAutoRemove(false);
+        if (!tempFile.open()) {
             qWarning() << "Can`t open tmp file";
+            return;
         }
-        tempFile->setAutoRemove(false);
-        m_directoryFile = tempFile->fileName();
+        m_directoryFile = tempFile.fileName();
+        tempFile.close();
         emit directoryFileChanged();
         emit saveNeeded();
-    } else {
-        dirFile.reset(new QFile(m_directoryFile));
-        dirFile.data()->open(QIODevice::WriteOnly);
     }
 
-    if (!dirFile.data()->isOpen()) {
-        qWarning() << "Cannot open" << m_directoryFile;
-        return;
-    }
+    QSettings settings(m_directoryFile, QSettings::IniFormat);
+    settings.beginGroup(QStringLiteral("Desktop Entry"));
+    settings.setValue(QStringLiteral("Icon"), m_iconId);
+    settings.endGroup();
+    settings.sync();
 
-    GKeyFile *keyfile = g_key_file_new();
-    GError *err = NULL;
-
-    g_key_file_load_from_file(keyfile, m_directoryFile.toLatin1(), G_KEY_FILE_NONE, &err);
-    g_key_file_set_string(keyfile, "Desktop Entry", "Icon", m_iconId.toLatin1());
-
-    gchar *data = g_key_file_to_data(keyfile, NULL, &err);
-    dirFile.data()->write(data);
-    dirFile.data()->close();
-    g_free(data);
-
-    g_key_file_free(keyfile);
+    if (settings.status() != QSettings::NoError)
+        qWarning() << "Cannot save" << m_directoryFile;
 }
 
 void LauncherFolderItem::clear()

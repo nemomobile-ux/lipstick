@@ -34,7 +34,6 @@ set(PUBLICHEADERS
 set(HEADERS
     ${PUBLICHEADERS}
     3rdparty/synchronizelists.h
-    3rdparty/dbus-gmain/dbus-gmain.h
     bluetooth/bluetoothagent.h
     bluetooth/bluetoothobexagent.h
     compositor/fileserviceadaptor.h
@@ -70,7 +69,6 @@ set(HEADERS
     logging.h)
 
 set(SOURCES
-    3rdparty/dbus-gmain/dbus-gmain.c
     bluetooth/bluetoothagent.cpp
     bluetooth/bluetoothobexagent.cpp
     homeapplication.cpp
@@ -230,8 +228,6 @@ target_link_libraries(${PACKAGE} PUBLIC
     Qt6::WaylandCompositor
     PkgConfig::DBUS
     PkgConfig::DSME_DBUS
-    PkgConfig::GLIB2
-    PkgConfig::GIO_UNIX
     PkgConfig::KEEPALIVE
     PkgConfig::LIBRESOURCE
     PkgConfig::LIBSYSTEMD

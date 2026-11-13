@@ -16,7 +16,6 @@ target_link_libraries(ut_${TESTNAME}
     Qt6::Test
     PkgConfig::DBUS
     PkgConfig::MLITE
-    PkgConfig::GLIB2
     PkgConfig::LIBRESOURCE
     PkgConfig::TIMED_QT
     lipstick-qt6

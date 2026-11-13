@@ -38,10 +38,9 @@
 #ifdef HAVE_CONTENTACTION
 #include <contentaction.h>
 #else
-#undef signals
-#include <gio/gdesktopappinfo.h>
-#include <gio/gio.h>
-#include <glib.h>
+#include <QProcess>
+#include <QRegularExpression>
+#include <unistd.h>
 #endif
 
 const auto DesktopEntryGroup = QStringLiteral("Desktop Entry");
@@ -332,14 +331,115 @@ void LauncherItem::launchApplication()
 }
 
 #if !defined(HAVE_CONTENTACTION)
-static void setupProcessIds(gpointer)
+namespace {
+void resetProcessIds()
 {
     const gid_t gid = getgid();
     const uid_t uid = getuid();
 
     if (setregid(gid, gid) < 0 || setreuid(uid, uid) < 0) {
-        ::_exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     }
+}
+
+QStringList parseExecLine(const QString &exec)
+{
+    QStringList args;
+    QString current;
+    bool inSingle = false;
+    bool inDouble = false;
+
+    for (int i = 0; i < exec.size(); ++i) {
+        const QChar c = exec.at(i);
+        if (!inSingle && c == QLatin1Char('\\') && i + 1 < exec.size()) {
+            current.append(exec.at(++i));
+        } else if (!inDouble && c == QLatin1Char('\'')) {
+            inSingle = !inSingle;
+        } else if (!inSingle && c == QLatin1Char('"')) {
+            inDouble = !inDouble;
+        } else if (!inSingle && !inDouble && c.isSpace()) {
+            if (!current.isEmpty() || i > 0) {
+                if (!current.isEmpty() || (!args.isEmpty())) {
+                    // preserve empty tokens only when explicitly produced; otherwise split
+                }
+            }
+            if (!current.isEmpty()) {
+                args.append(current);
+                current.clear();
+            } else {
+                // skip repeated whitespace
+            }
+        } else {
+            current.append(c);
+        }
+    }
+    if (!current.isEmpty())
+        args.append(current);
+    return args;
+}
+
+QStringList expandExecFieldCodes(const QString &exec, const QString &icon, const QString &name,
+                                 const QString &desktopFile, const QStringList &arguments)
+{
+    const QStringList tokens = parseExecLine(exec);
+    QStringList expanded;
+    bool argsInserted = false;
+
+    for (const QString &token : tokens) {
+        QString out;
+        for (int i = 0; i < token.size(); ++i) {
+            if (token.at(i) == QLatin1Char('%') && i + 1 < token.size()) {
+                const QChar code = token.at(++i);
+                if (code == QLatin1Char('f') || code == QLatin1Char('u')) {
+                    if (!arguments.isEmpty())
+                        out.append(arguments.first());
+                    argsInserted = true;
+                } else if (code == QLatin1Char('F') || code == QLatin1Char('U')) {
+                    if (!arguments.isEmpty()) {
+                        if (!out.isEmpty()) {
+                            expanded.append(out);
+                            out.clear();
+                        }
+                        expanded.append(arguments);
+                        argsInserted = true;
+                    } else {
+                        argsInserted = true;
+                    }
+                } else if (code == QLatin1Char('i')) {
+                    if (!icon.isEmpty()) {
+                        if (!out.isEmpty()) {
+                            expanded.append(out);
+                            out.clear();
+                        }
+                        expanded.append(QStringLiteral("--icon"));
+                        expanded.append(icon);
+                    }
+                } else if (code == QLatin1Char('c')) {
+                    out.append(name);
+                } else if (code == QLatin1Char('k')) {
+                    out.append(desktopFile);
+                } else if (code == QLatin1Char('%')) {
+                    out.append(QLatin1Char('%'));
+                } else {
+                    // deprecated/unknown codes (%d,%D,%n,%N,%v,%m) -> ignore
+                }
+            } else {
+                out.append(token.at(i));
+            }
+        }
+        if (!out.isEmpty() || (!token.isEmpty() && !token.contains(QLatin1Char('%'))))
+            expanded.append(out);
+        else if (out.isEmpty() && token.contains(QStringLiteral("%F")) || token.contains(QStringLiteral("%U"))) {
+            // list codes may have produced no out token
+        }
+    }
+
+    // If no field code consumed arguments, append them (common behavior)
+    if (!argsInserted && !arguments.isEmpty())
+        expanded.append(arguments);
+
+    return expanded;
+}
 }
 #endif
 
@@ -370,33 +470,26 @@ void LauncherItem::launchWithArguments(const QStringList &arguments)
 #else
     qCDebug(lcLipstickAppLaunchLog) << "launching exec line for" << m_desktopEntry->name();
 
-    if (GDesktopAppInfo *appInfo = g_desktop_app_info_new_from_filename(
-                m_desktopEntry->fileName().toUtf8().constData())) {
-        GError *error = 0;
-        GList *uris = NULL;
+    const QString exec = m_desktopEntry->exec();
+    QStringList argv = expandExecFieldCodes(exec, m_desktopEntry->icon(), m_desktopEntry->name(),
+                                            m_desktopEntry->fileName(), arguments);
+    if (argv.isEmpty()) {
+        qWarning() << "Failed to execute" << filename() << "empty Exec line";
+        setIsLaunching(true);
+        return;
+    }
 
-        for (const QString &argument : arguments) {
-            uris = g_list_append(uris, g_strdup(argument.toUtf8().constData()));
-        }
-
-        g_desktop_app_info_launch_uris_as_manager(
-                    appInfo,
-                    uris,
-                    NULL,
-                    G_SPAWN_SEARCH_PATH,
-                    setupProcessIds,
-                    NULL,
-                    NULL,
-                    NULL,
-                    &error);
-        if (error != NULL) {
-            qWarning() << "Failed to execute" << filename() << error->message;
-            g_error_free(error);
-        }
-        g_list_foreach(uris, (GFunc)g_free, NULL);
-        g_list_free(uris);
-
-        g_object_unref(appInfo);
+    const QString program = argv.takeFirst();
+    QProcess process;
+    process.setProgram(program);
+    process.setArguments(argv);
+    process.setStandardInputFile(QProcess::nullDevice());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    process.setChildProcessModifier(&resetProcessIds);
+#endif
+    qint64 pid = 0;
+    if (!process.startDetached(&pid)) {
+        qWarning() << "Failed to execute" << filename() << process.errorString();
     }
 #endif
 

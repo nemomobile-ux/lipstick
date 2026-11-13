@@ -17,6 +17,7 @@ include_directories(${CMAKE_SOURCE_DIR}/tests)
 include_directories(${CMAKE_SOURCE_DIR}/tests/stubs)
 
 add_subdirectory(ut_closeeventeater)
+add_subdirectory(ut_launcherfolder)
 add_subdirectory(ut_launchermodel)
 add_subdirectory(ut_lipstickcompositor)
 add_subdirectory(ut_lipsticknotification)

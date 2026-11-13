@@ -20,7 +20,6 @@ target_link_libraries(ut_${TESTNAME}
     Qt6::Sensors
     Qt6::Sql
     PkgConfig::DBUS
-    PkgConfig::GLIB2
     PkgConfig::LIBRESOURCE
     PkgConfig::MLITE
     PkgConfig::MCE

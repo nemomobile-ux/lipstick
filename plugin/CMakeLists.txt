@@ -24,8 +24,6 @@ target_link_libraries(${PACKAGE} PUBLIC
     Qt6::WaylandCompositor
     PkgConfig::DBUS
     PkgConfig::DSME_DBUS
-    PkgConfig::GLIB2
-    PkgConfig::GIO_UNIX
     PkgConfig::KEEPALIVE
     PkgConfig::LIBRESOURCE
     PkgConfig::LIBSYSTEMD
