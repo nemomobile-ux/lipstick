@@ -14,14 +14,18 @@ PulseAudioPrivateLoop::PulseAudioPrivateLoop(QObject *parent)
 
 PulseAudioPrivateLoop::~PulseAudioPrivateLoop()
 {
-    if (m_context) {
-        pa_context_disconnect(m_context);
-        pa_context_unref(m_context);
+    pa_context *context = m_context;
+    m_context = nullptr;
+
+    if (context) {
+        pa_context_disconnect(context);
+        pa_context_unref(context);
     }
 
     if (m_mainloop) {
         pa_mainloop_quit(m_mainloop, 0);
         pa_mainloop_free(m_mainloop);
+        m_mainloop = nullptr;
     }
 
     wait();
