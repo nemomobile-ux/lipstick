@@ -240,6 +240,7 @@ private:
 
     //! Call active status
     bool m_callActive;
+    bool m_volumeInitialized;
 
     bool m_upPressed;
     bool m_downPressed;

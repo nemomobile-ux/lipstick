@@ -53,7 +53,8 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     m_callActive(false),
     m_upPressed(false),
     m_downPressed(false),
-    m_mediaState(MediaStateUnknown)
+    m_mediaState(MediaStateUnknown),
+    m_volumeInitialized(false)
 {
     if (hwKeysCapability) {
         Q_ASSERT_X(!s_hwKeysCreated, Q_FUNC_INFO, "Hw key capable VolumeControl must be a singleton created from C++");
@@ -153,7 +154,11 @@ void VolumeControl::setVolume(int volume)
         emit volumeChanged();
     }
 
-    setWindowVisible(true);
+    if (m_volumeInitialized) {
+        setWindowVisible(true);
+    } else {
+        m_volumeInitialized = true;
+    }
 }
 
 int VolumeControl::maximumVolume() const
