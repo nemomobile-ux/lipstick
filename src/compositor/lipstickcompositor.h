@@ -288,6 +288,12 @@ private slots:
     void onWindowActivated();
     void onToplevelMaximized();
 
+#ifdef UNIT_TEST
+    friend class Ut_NotificationFeedbackPlayer;
+    friend class Ut_NotificationPreviewPresenter;
+    friend class Ut_LipstickCompositor;
+#endif
+
 private:
     friend class LipstickCompositorWindow;
     friend class LipstickCompositorProcWindow;

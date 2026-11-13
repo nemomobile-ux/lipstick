@@ -179,8 +179,10 @@ void DeviceState::disconnectNotify(const QMetaMethod &signal) {
 #ifdef HAVE_SAILFISHUSERMANAGER
             disconnectUserManager();
 #endif
-            d->userManagerWatcher->deleteLater();
-            d->userManagerWatcher = nullptr;
+            if (d->userManagerWatcher) {
+                d->userManagerWatcher->deleteLater();
+                d->userManagerWatcher = nullptr;
+            }
         }
     }
 }

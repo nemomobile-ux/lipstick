@@ -128,6 +128,9 @@ private:
     friend class LipstickCompositor;
     friend class WindowModel;
     friend class WindowPixmapItem;
+#ifdef UNIT_TEST
+    friend class Ut_LipstickCompositor;
+#endif
     void imageAddref(QQuickItem *item);
     void imageRelease(QQuickItem *item);
 
