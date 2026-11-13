@@ -34,6 +34,7 @@
 #include <compositor/lipstickcompositorwindow.h>
 #include <compositor/windowmodel.h>
 #include <compositor/windowpixmapitem.h>
+#include <compositor/windowproperty.h>
 #include <lipstickapi.h>
 #include <homeapplication.h>
 
@@ -86,6 +87,7 @@ void LipstickPlugin::registerTypes(const char *uri)
     qmlRegisterUncreatableType<QWaylandSurface>("org.nemomobile.lipstick", 0, 1, "WaylandSurface", "This type is created by the compositor");
     qmlRegisterType<WindowModel>("org.nemomobile.lipstick", 0, 1, "WindowModel");
     qmlRegisterType<WindowPixmapItem>("org.nemomobile.lipstick", 0, 1, "WindowPixmapItem");
+    qmlRegisterType<WindowProperty>("org.nemomobile.lipstick", 0, 1, "WindowProperty");
     qmlRegisterSingletonType<LipstickApi>("org.nemomobile.lipstick", 0, 1, "Lipstick", lipstickApi_callback);
     qmlRegisterUncreatableType<ScreenshotResult>("org.nemomobile.lipstick", 0, 1, "ScreenshotResult", "This type is initialized by LipstickApi");
     qmlRegisterUncreatableType<BluetoothAgent>("org.nemomobile.lipstick", 0, 1, "BluetoothAgent", "This type is created by lipstick");

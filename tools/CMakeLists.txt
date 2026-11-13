@@ -1,2 +1,3 @@
 add_subdirectory(screenshottool)
 add_subdirectory(notificationtool)
+add_subdirectory(windowpixmapitem)

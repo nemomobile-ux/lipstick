@@ -30,5 +30,7 @@ add_subdirectory(ut_screenlock)
 add_subdirectory(ut_shutdownscreen)
 add_subdirectory(ut_touchscreen)
 add_subdirectory(ut_usbmodeselector)
+add_subdirectory(ut_windowpixmapitem)
+add_subdirectory(ut_windowproperty)
 add_subdirectory(ut_volumecontrol)
 

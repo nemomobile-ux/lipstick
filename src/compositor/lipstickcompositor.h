@@ -175,6 +175,7 @@ public:
                                                 QQuickItem *rootItem);
 
     QWaylandSurface *surfaceForId(int) const;
+    int windowIdForLink(int, uint) const;
 
     bool completed();
 
@@ -298,6 +299,7 @@ private:
     friend class LipstickCompositorWindow;
     friend class LipstickCompositorProcWindow;
     friend class WindowModel;
+    friend class WindowProperty;
     friend class NotificationPreviewPresenter;
     friend class NotificationFeedbackPlayer;
 

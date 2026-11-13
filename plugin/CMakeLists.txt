@@ -4,6 +4,8 @@ set(HEADERS lipstickplugin.h)
 
 add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
 
+configure_file(qmldir ${CMAKE_CURRENT_BINARY_DIR}/qmldir COPYONLY)
+
 include_directories(../src
     ../src/utilities
     ../src/compositor

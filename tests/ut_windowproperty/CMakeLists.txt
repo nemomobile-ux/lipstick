@@ -1,0 +1,22 @@
+set(TESTNAME windowproperty)
+set(SRC
+    ut_${TESTNAME}.cpp
+    ut_${TESTNAME}.h
+    ../stubs/homeapplication.cpp
+    ../stubs/stubbase.cpp)
+
+add_executable(ut_${TESTNAME} ${SRC})
+add_dependencies(ut_${TESTNAME} lipstick-qt6)
+target_link_libraries(ut_${TESTNAME}
+    Qt6::Core
+    Qt6::Quick
+    Qt6::DBus
+    Qt6::Gui
+    Qt6::WaylandCompositor
+    Qt6::Test
+    PkgConfig::DBUS
+    PkgConfig::MLITE
+    lipstick-qt6
+)
+
+add_test(ut_${TESTNAME} ut_${TESTNAME})

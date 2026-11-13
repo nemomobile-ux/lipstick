@@ -446,6 +446,23 @@ QWaylandSurface *LipstickCompositor::surfaceForId(int id) const
     return window ? window->surface() : 0;
 }
 
+int LipstickCompositor::windowIdForLink(int siblingId, uint link) const
+{
+    if (LipstickCompositorWindow *sibling = m_windows.value(siblingId)) {
+        for (LipstickCompositorWindow *window : m_windows) {
+            QWaylandSurface *windowSurface = window->surface();
+
+            if (windowSurface
+                    && sibling->processId() == window->processId()
+                    && window->windowProperties().value("WINID", uint(0)).toUInt() == link) {
+                return window->windowId();
+            }
+        }
+    }
+
+    return 0;
+}
+
 bool LipstickCompositor::completed()
 {
     return m_completed;
