@@ -51,5 +51,6 @@ void OpaqueSurfaceTextureShader::updateSampledImage(
 
     *texture = material->texture();
 
-    Q_ASSERT(*texture);
+    if (!*texture)
+        qWarning() << "OpaqueSurfaceTextureShader: null texture from material";
 }

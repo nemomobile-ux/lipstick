@@ -133,7 +133,9 @@ LipstickCompositor::LipstickCompositor()
     }
 
     connect(m_window, SIGNAL(visibleChanged(bool)), this, SLOT(onVisibleChanged(bool)));
-    QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
+    if (HomeApplication::instance()) {
+        QObject::connect(HomeApplication::instance(), SIGNAL(aboutToDestroy()), this, SLOT(homeApplicationAboutToDestroy()));
+    }
     connect(this->quickWindow(), &QQuickWindow::afterRendering, this, &LipstickCompositor::readContent, Qt::DirectConnection);
 
     m_orientationSensor = new QOrientationSensor(this);
@@ -144,7 +146,9 @@ LipstickCompositor::LipstickCompositor()
         if (!m_orientationSensor->start())
             qWarning() << "Could not start the orientation sensor";
     }
-    emit HomeApplication::instance()->homeActiveChanged();
+    if (HomeApplication::instance()) {
+        emit HomeApplication::instance()->homeActiveChanged();
+    }
 
     QDesktopServices::setUrlHandler("http", this, "openUrl");
     QDesktopServices::setUrlHandler("https", this, "openUrl");
@@ -615,9 +619,13 @@ void LipstickCompositor::initialize()
 {
     activateLogindSession();
 
-    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    reactOnDisplayStateChanges(TouchScreen::DisplayUnknown, touchScreen->currentDisplayState());
-    connect(touchScreen, &TouchScreen::displayStateChanged, this, &LipstickCompositor::reactOnDisplayStateChanges);
+    if (HomeApplication::instance()) {
+        TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+        if (touchScreen) {
+            reactOnDisplayStateChanges(TouchScreen::DisplayUnknown, touchScreen->currentDisplayState());
+            connect(touchScreen, &TouchScreen::displayStateChanged, this, &LipstickCompositor::reactOnDisplayStateChanges);
+        }
+    }
 
     new LipstickCompositorAdaptor(this);
 
@@ -856,8 +864,10 @@ void LipstickCompositor::setScreenOrientation(Qt::ScreenOrientation screenOrient
 
 bool LipstickCompositor::displayDimmed() const
 {
-    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    return touchScreen->currentDisplayState() == TouchScreen::DisplayDimmed;
+    HomeApplication *app = HomeApplication::instance();
+    if (!app || !app->touchScreen())
+        return false;
+    return app->touchScreen()->currentDisplayState() == TouchScreen::DisplayDimmed;
 }
 
 void LipstickCompositor::reactOnDisplayStateChanges(TouchScreen::DisplayState oldState, TouchScreen::DisplayState newState)
@@ -1019,9 +1029,9 @@ void LipstickCompositor::scheduleAmbientUpdate()
 
 void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 {
-    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
+    HomeApplication *app = HomeApplication::instance();
     if (enabled) {
-        if (touchScreen->currentDisplayState() == TouchScreen::DisplayOn) {
+        if (app && app->touchScreen() && app->touchScreen()->currentDisplayState() == TouchScreen::DisplayOn) {
             return;
         }
         if (!ambientEnabled()) {
@@ -1036,8 +1046,10 @@ void LipstickCompositor::setAmbientUpdatesEnabled(bool enabled)
 
 bool LipstickCompositor::displayAmbient() const
 {
-    TouchScreen *touchScreen = HomeApplication::instance()->touchScreen();
-    return touchScreen->currentDisplayState() == TouchScreen::DisplayDimmed;
+    HomeApplication *app = HomeApplication::instance();
+    if (!app || !app->touchScreen())
+        return false;
+    return app->touchScreen()->currentDisplayState() == TouchScreen::DisplayDimmed;
 }
 
 void LipstickCompositor::setUpdatesEnabledNow(bool enabled, bool inAmbientMode)

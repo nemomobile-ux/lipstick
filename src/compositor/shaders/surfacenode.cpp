@@ -1,5 +1,7 @@
 #include "surfacenode.h"
 
+#include <QDebug>
+
 SurfaceNode::SurfaceNode()
 {
     setGeometry(&m_geometry);
@@ -30,7 +32,20 @@ void SurfaceNode::setRect(const QRectF &r)
 
 void SurfaceNode::setTextureProvider(QSGTextureProvider *p, bool owned)
 {
-    if (p == nullptr || p == m_provider) {
+    if (!p) {
+        if (m_provider) {
+            QObject::disconnect(m_provider, &QSGTextureProvider::destroyed, this, &SurfaceNode::providerDestroyed);
+            QObject::disconnect(m_provider, &QSGTextureProvider::textureChanged, this, &SurfaceNode::textureChanged);
+            if (m_providerOwned)
+                delete m_provider;
+            m_provider = nullptr;
+        }
+        setTexture(nullptr);
+        return;
+    }
+
+    if (p == m_provider) {
+        setTexture(m_provider->texture());
         return;
     }
 
@@ -46,14 +61,10 @@ void SurfaceNode::setTextureProvider(QSGTextureProvider *p, bool owned)
     m_provider = p;
     m_providerOwned = owned;
 
-    if (!m_provider.isNull()) {
-        QObject::connect(m_provider, &QSGTextureProvider::destroyed, this, &SurfaceNode::providerDestroyed);
-        QObject::connect(m_provider, &QSGTextureProvider::textureChanged, this, &SurfaceNode::textureChanged);
+    QObject::connect(m_provider, &QSGTextureProvider::destroyed, this, &SurfaceNode::providerDestroyed);
+    QObject::connect(m_provider, &QSGTextureProvider::textureChanged, this, &SurfaceNode::textureChanged);
 
-        setTexture(m_provider->texture());
-    } else {
-        qWarning() << "Provider is null!!!";
-    }
+    setTexture(m_provider->texture());
 }
 
 void SurfaceNode::updateGeometry()
@@ -167,6 +178,7 @@ void SurfaceNode::setRadius(qreal radius)
 
 void SurfaceNode::setTexture(QSGTexture *texture)
 {
+    qDebug() << "SurfaceNode: setTexture" << texture;
     m_opaqueMaterial.setTexture(texture);
 
     QRectF tr;
@@ -176,8 +188,6 @@ void SurfaceNode::setTexture(QSGTexture *texture)
 
     m_texture = texture;
     m_textureRect = tr;
-
-    m_texture = texture;
 
     markDirty(DirtyMaterial);
     if (m_radius > 0) {

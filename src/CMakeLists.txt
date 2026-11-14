@@ -46,6 +46,8 @@ set(HEADERS
     compositor/shaders/cornersurfacetextureshader.h
     compositor/shaders/opaquesurfacetexturematerial.h
     compositor/shaders/opaquesurfacetextureshader.h
+    compositor/shaders/roundedclipmaterial.h
+    compositor/shaders/roundedclipshader.h
     compositor/shaders/roundedmaterial.h
     compositor/shaders/roundedshader.h
     compositor/shaders/snapshottextureprovider.h
@@ -100,6 +102,8 @@ set(SOURCES
     compositor/shaders/cornersurfacetextureshader.cpp
     compositor/shaders/opaquesurfacetexturematerial.cpp
     compositor/shaders/opaquesurfacetextureshader.cpp
+    compositor/shaders/roundedclipmaterial.cpp
+    compositor/shaders/roundedclipshader.cpp
     compositor/shaders/roundedmaterial.cpp
     compositor/shaders/roundedshader.cpp
     compositor/shaders/snapshottextureprovider.cpp
@@ -180,18 +184,16 @@ add_library(${PACKAGE} SHARED ${SOURCES} ${HEADERS})
 
 qt6_add_shaders(${PACKAGE} "shaders"
     PREFIX "/"
+    BATCHABLE
+    GLSL "100es,120,150,300es,330,440"
     FILES
         compositor/shaders/corner.vert
         compositor/shaders/corner.frag
         compositor/shaders/opaque.vert
         compositor/shaders/opaque.frag
+        compositor/shaders/roundedclip.vert
+        compositor/shaders/roundedclip.frag
 )
-
-set_source_files_properties(opaque.vert PROPERTIES
-    QT_SHADER_SOURCE_FLAGS "--glsl 100,120,150,330,430")
-
-set_source_files_properties(corner.vert PROPERTIES
-    QT_SHADER_SOURCE_FLAGS "--glsl 100,120,150,330,430")
 
 set_target_properties(${PACKAGE}
     PROPERTIES VERSION ${CMAKE_PROJECT_VERSION}

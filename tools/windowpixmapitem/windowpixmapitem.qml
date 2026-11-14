@@ -1,70 +1,111 @@
-/*
- * Example QML for testing WindowPixmapItem.
- */
-
 import QtQuick 2.6
 import QtQuick.Window 2.2
 import org.nemomobile.lipstick 0.1
 
 Window {
+    id: root
     visible: true
-    width: 540
-    height: 960
+    width: 640
+    height: 480
     title: "WindowPixmapItem test"
-    color: "gray"
+    color: "#333333"
 
-    property int testWindowId: windowIdOverride
+    property int selectedWindowId: (typeof windowIdOverride !== "undefined" ? windowIdOverride : 0)
 
-    Rectangle {
-        id: pixmapBackground
+    WindowModel {
+        id: windowModel
+    }
+
+    function pickFirst() {
+        if (windowModel.itemCount > 0 && selectedWindowId === 0) {
+            selectedWindowId = windowModel.windowId(0)
+        }
+    }
+
+    Connections {
+        target: windowModel
+        function onItemCountChanged() { pickFirst() }
+    }
+
+    Component.onCompleted: pickFirst()
+
+    Row {
         anchors.fill: parent
-        anchors.margins: 40
-        color: "green"
-    }
+        anchors.margins: 12
+        spacing: 12
 
-    WindowPixmapItem {
-        id: windowPixmap
-        anchors.fill: pixmapBackground
-        windowId: testWindowId
-        opaque: true
-        radius: 16
-        xOffset: 0
-        yOffset: 0
-        xScale: 1
-        yScale: 1
-        smooth: true
-    }
+        Column {
+            width: 220
+            spacing: 6
 
-    Rectangle {
-        id: testWindow
-        x: 40
-        y: 40
-        width: 200
-        height: 120
-        color: "green"
-        border.color: "white"
+            Text {
+                text: "Windows: " + windowModel.itemCount
+                color: "white"
+            }
 
-        Text {
-            anchors.centerIn: parent
-            text: "Test window"
-            color: "white"
-            font.pixelSize: 16
+            Repeater {
+                model: windowModel
+                delegate: Rectangle {
+                    width: 220
+                    height: 28
+                    color: root.selectedWindowId === model.window ? "#4466aa" : "#555555"
+                    radius: 4
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 6
+                        color: "white"
+                        text: model.window + (model.title ? " - " + model.title : "")
+                        elide: Text.ElideRight
+                        width: parent.width - 12
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: root.selectedWindowId = model.window
+                    }
+                }
+            }
+
+            Text {
+                color: "#cccccc"
+                width: 220
+                wrapMode: Text.WordWrap
+                text: "Run inside a Lipstick compositor to preview real windows."
+            }
         }
-    }
 
-    Column {
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 8
+        Rectangle {
+            id: previewBg
+            width: parent.width - 232
+            height: parent.height
+            color: "#222222"
+            radius: 8
 
-        Text {
-            text: "hasPixmap: " + windowPixmap.hasPixmap
-            color: "white"
-        }
+            Rectangle {
+                id: greenBg
+                anchors.fill: parent
+                anchors.margins: 20
+                color: "green"
+                radius: 16
+            }
 
-        Text {
-            text: "windowSize: " + windowPixmap.windowSize
-            color: "white"
+            WindowPixmapItem {
+                id: pixmap
+                anchors.fill: greenBg
+                windowId: root.selectedWindowId
+                radius: 16
+                smooth: true
+            }
+
+            Column {
+                anchors.left: parent.left
+                anchors.bottom: parent.bottom
+                anchors.margins: 10
+                spacing: 2
+                Text { color: "white"; text: "windowId: " + pixmap.windowId }
+                Text { color: "white"; text: "hasPixmap: " + pixmap.hasPixmap }
+                Text { color: "white"; text: "windowSize: " + pixmap.windowSize.width + " x " + pixmap.windowSize.height }
+            }
         }
     }
 }
