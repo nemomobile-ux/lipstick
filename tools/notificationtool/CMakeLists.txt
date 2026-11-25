@@ -13,7 +13,7 @@ add_executable(${PACKAGE} ${SOURCES})
 target_link_libraries(${PACKAGE} PUBLIC
     Qt6::Core
     Qt6::DBus
-    -llipstick-qt6)
+    lipstick-qt6)
 
 target_include_directories(${PACKAGE} PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
