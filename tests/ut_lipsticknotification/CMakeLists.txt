@@ -6,14 +6,11 @@ set(SRC
     ${CMAKE_SOURCE_DIR}/src/notifications/lipsticknotification.cpp)
 
 add_executable(ut_${TESTNAME} ${SRC})
-add_dependencies(ut_${TESTNAME} lipstick-qt6)
+target_include_directories(ut_${TESTNAME} BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ut_${TESTNAME}
     Qt6::Core
     Qt6::DBus
-    Qt6::WaylandCompositor
     Qt6::Test
-    PkgConfig::DBUS
-    lipstick-qt6
 )
 
 add_test(ut_${TESTNAME} ut_${TESTNAME})

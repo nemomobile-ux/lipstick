@@ -1,3 +1,6 @@
+#ifndef QDBUSARGUMENT_FAKE_H
+#define QDBUSARGUMENT_FAKE_H
+
 #include <QTest>
 #include <qdbusextratypes.h>
 
@@ -64,6 +67,7 @@ class QDBusArgument
         QDBusArgument &operator<<(const QDBusSignature &arg);
         QDBusArgument &operator<<(const QStringList &arg);
         QDBusArgument &operator<<(const QByteArray &arg);
+        QDBusArgument &operator<<(const QVariantHash &arg);
 
         // unmarshalling
 
@@ -92,6 +96,7 @@ class QDBusArgument
         const QDBusArgument &operator>>(QDBusSignature &arg) const;
         const QDBusArgument &operator>>(QStringList &arg) const;
         const QDBusArgument &operator>>(QByteArray &arg) const;
+        const QDBusArgument &operator>>(QVariantHash &arg) const;
 
     private:
         void assertMarker(QVariant& arg) const;
@@ -155,28 +160,28 @@ class QDBusArgumentMarker
 
 Q_DECLARE_METATYPE(QDBusArgumentMarker);
 
-QDBusArgument::QDBusArgument()
+inline QDBusArgument::QDBusArgument()
     : index(0)
 {
 }
 
 // marshalling
 
-void QDBusArgument::beginStructure()
+inline void QDBusArgument::beginStructure()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_STRUCTURE);
     data.append(token);
 }
 
-void QDBusArgument::endStructure()
+inline void QDBusArgument::endStructure()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_STRUCTURE);
     data.append(token);
 }
 
-void QDBusArgument::beginArray(int elementMetaTypeId) 
+inline void QDBusArgument::beginArray(int elementMetaTypeId) 
 {
     Q_UNUSED(elementMetaTypeId);
 
@@ -185,19 +190,19 @@ void QDBusArgument::beginArray(int elementMetaTypeId)
     data.append(token);
 }
 
-void QDBusArgument::beginArray(QMetaType elementMetaTypeId)
+inline void QDBusArgument::beginArray(QMetaType elementMetaTypeId)
 {
     beginArray(elementMetaTypeId.id());
 }
 
-void QDBusArgument::endArray()
+inline void QDBusArgument::endArray()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_ARRAY);
     data.append(token);
 }
 
-void QDBusArgument::beginMap(int keyMetaTypeId, int valueMetaTypeId)
+inline void QDBusArgument::beginMap(int keyMetaTypeId, int valueMetaTypeId)
 {
     Q_UNUSED(keyMetaTypeId);
     Q_UNUSED(valueMetaTypeId);
@@ -207,139 +212,146 @@ void QDBusArgument::beginMap(int keyMetaTypeId, int valueMetaTypeId)
     data.append(token);
 }
 
-void QDBusArgument::beginMap(QMetaType keyMetaTypeId, QMetaType valueMetaTypeId)
+inline void QDBusArgument::beginMap(QMetaType keyMetaTypeId, QMetaType valueMetaTypeId)
 {
     beginMap(keyMetaTypeId.id(), valueMetaTypeId.id());
 }
 
-void QDBusArgument::endMap()
+inline void QDBusArgument::endMap()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_MAP);
     data.append(token);
 }
 
-void QDBusArgument::beginMapEntry()
+inline void QDBusArgument::beginMapEntry()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_MAP_ENTRY);
     data.append(token);
 }
 
-void QDBusArgument::endMapEntry()
+inline void QDBusArgument::endMapEntry()
 {
     assertMarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_MAP_ENTRY);
     data.append(token);
 }
 
-QDBusArgument &QDBusArgument::operator<<(uchar arg)
+inline QDBusArgument &QDBusArgument::operator<<(uchar arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(bool arg)
+inline QDBusArgument &QDBusArgument::operator<<(bool arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(short arg)
+inline QDBusArgument &QDBusArgument::operator<<(short arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(ushort arg)
+inline QDBusArgument &QDBusArgument::operator<<(ushort arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(int arg)
+inline QDBusArgument &QDBusArgument::operator<<(int arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(uint arg)
+inline QDBusArgument &QDBusArgument::operator<<(uint arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(qlonglong arg)
+inline QDBusArgument &QDBusArgument::operator<<(qlonglong arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(qulonglong arg)
+inline QDBusArgument &QDBusArgument::operator<<(qulonglong arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(double arg)
+inline QDBusArgument &QDBusArgument::operator<<(double arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(const QString &arg)
+inline QDBusArgument &QDBusArgument::operator<<(const QString &arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(const QDBusVariant &arg)
+inline QDBusArgument &QDBusArgument::operator<<(const QDBusVariant &arg)
 {
     assertMarshalling();
     data.append(QVariant::fromValue(arg));
     return *this;
 }
-QDBusArgument &QDBusArgument::operator<<(const QDBusObjectPath &arg)
-{
-    assertMarshalling();
-    data.append(QVariant::fromValue(arg));
-    return *this;
-}
-
-QDBusArgument &QDBusArgument::operator<<(const QDBusSignature &arg)
+inline QDBusArgument &QDBusArgument::operator<<(const QDBusObjectPath &arg)
 {
     assertMarshalling();
     data.append(QVariant::fromValue(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(const QStringList &arg)
+inline QDBusArgument &QDBusArgument::operator<<(const QDBusSignature &arg)
+{
+    assertMarshalling();
+    data.append(QVariant::fromValue(arg));
+    return *this;
+}
+
+inline QDBusArgument &QDBusArgument::operator<<(const QStringList &arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
     return *this;
 }
 
-QDBusArgument &QDBusArgument::operator<<(const QByteArray &arg)
+inline QDBusArgument &QDBusArgument::operator<<(const QByteArray &arg)
 {
     assertMarshalling();
     data.append(QVariant(arg));
+    return *this;
+}
+
+inline QDBusArgument &QDBusArgument::operator<<(const QVariantHash &arg)
+{
+    assertMarshalling();
+    data.append(QVariant::fromValue(arg));
     return *this;
 }
 
 // unmarshaling
 
-void QDBusArgument::assertMarker(QVariant& other) const
+inline void QDBusArgument::assertMarker(QVariant& other) const
 {
     QDBusArgumentMarker mine = data.value(index).value<QDBusArgumentMarker>();
     QDBusArgumentMarker his = other.value<QDBusArgumentMarker>();
@@ -353,7 +365,7 @@ void QDBusArgument::assertMarker(QVariant& other) const
     }
 }
 
-void QDBusArgument::assertMarshalling() const
+inline void QDBusArgument::assertMarshalling() const
 {
     if (index != 0)
     {
@@ -361,14 +373,14 @@ void QDBusArgument::assertMarshalling() const
     }
 }
 
-void QDBusArgument::assertUnmarshalling() const
+inline void QDBusArgument::assertUnmarshalling() const
 {
     // Can't really make sure we're unmarshalling -- we can always start
     // unmarshalling a partially marshalled QDBusArgument...
 }
 
 
-void QDBusArgument::beginStructure() const
+inline void QDBusArgument::beginStructure() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_STRUCTURE);
@@ -376,7 +388,7 @@ void QDBusArgument::beginStructure() const
     index++;
 }
 
-void QDBusArgument::endStructure() const
+inline void QDBusArgument::endStructure() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_STRUCTURE);
@@ -384,7 +396,7 @@ void QDBusArgument::endStructure() const
     index++;
 }
 
-void QDBusArgument::beginArray() const
+inline void QDBusArgument::beginArray() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_ARRAY);
@@ -392,7 +404,7 @@ void QDBusArgument::beginArray() const
     index++;
 }
 
-void QDBusArgument::endArray() const
+inline void QDBusArgument::endArray() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_ARRAY);
@@ -400,7 +412,7 @@ void QDBusArgument::endArray() const
     index++;
 }
 
-void QDBusArgument::beginMap() const
+inline void QDBusArgument::beginMap() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_MAP);
@@ -408,7 +420,7 @@ void QDBusArgument::beginMap() const
     index++;
 }
 
-void QDBusArgument::endMap() const
+inline void QDBusArgument::endMap() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_MAP);
@@ -416,7 +428,7 @@ void QDBusArgument::endMap() const
     index++;
 }
 
-void QDBusArgument::beginMapEntry() const
+inline void QDBusArgument::beginMapEntry() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::BEGIN_MAP_ENTRY);
@@ -424,7 +436,7 @@ void QDBusArgument::beginMapEntry() const
     index++;
 }
 
-void QDBusArgument::endMapEntry() const
+inline void QDBusArgument::endMapEntry() const
 {
     assertUnmarshalling();
     QVariant token = QDBusArgumentMarker(QDBusArgumentMarker::END_MAP_ENTRY);
@@ -432,7 +444,7 @@ void QDBusArgument::endMapEntry() const
     index++;
 }
 
-bool QDBusArgument::atEnd() const
+inline bool QDBusArgument::atEnd() const
 {
     // If we're at the end of the data list, we're "at end"
     if(index >= data.count())
@@ -459,115 +471,124 @@ bool QDBusArgument::atEnd() const
     return false;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(uchar &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(uchar &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<uchar>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(bool &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(bool &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<bool>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(short &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(short &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<short>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(ushort &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(ushort &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<ushort>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(int &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(int &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<int>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(uint &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(uint &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<uint>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(qlonglong &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(qlonglong &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<qlonglong>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(qulonglong &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(qulonglong &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<qulonglong>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(double &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(double &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<double>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QString &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QString &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QString>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QDBusVariant &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QDBusVariant &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QDBusVariant>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QDBusObjectPath &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QDBusObjectPath &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QDBusObjectPath>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QDBusSignature &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QDBusSignature &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QDBusSignature>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QStringList &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QStringList &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QStringList>();
     return *this;
 }
 
-const QDBusArgument &QDBusArgument::operator>>(QByteArray &arg) const
+const inline QDBusArgument &QDBusArgument::operator>>(QByteArray &arg) const
 {
     assertUnmarshalling();
     arg = data.value(index++).value<QByteArray>();
     return *this;
 }
 
-const QDBusArgument &operator>>(const QDBusArgument &a, QVariant &v)
+const inline QDBusArgument &QDBusArgument::operator>>(QVariantHash &arg) const
+{
+    assertUnmarshalling();
+    arg = data.value(index++).value<QVariantHash>();
+    return *this;
+}
+
+inline const QDBusArgument &operator>>(const QDBusArgument &a, QVariant &v)
 {
     QDBusVariant dbv;
     a >> dbv;
     v = dbv.variant();
     return a;
 }
+
+#endif // QDBUSARGUMENT_FAKE_H

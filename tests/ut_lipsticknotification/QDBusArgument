@@ -1,0 +1,6 @@
+#ifndef QDBUSARGUMENT_H
+#define QDBUSARGUMENT_H
+
+#include "qdbusargument_fake.h"
+
+#endif // QDBUSARGUMENT_H
