@@ -51,10 +51,10 @@ VolumeControl::VolumeControl(bool hwKeysCapability, QObject *parent) :
     m_audioWarning(new MDConfItem("/desktop/nemo/audiowarning", this)),
     m_safeVolume(0),
     m_callActive(false),
+    m_volumeInitialized(false),
     m_upPressed(false),
     m_downPressed(false),
-    m_mediaState(MediaStateUnknown),
-    m_volumeInitialized(false)
+    m_mediaState(MediaStateUnknown)
 {
     if (hwKeysCapability) {
         Q_ASSERT_X(!s_hwKeysCreated, Q_FUNC_INFO, "Hw key capable VolumeControl must be a singleton created from C++");
